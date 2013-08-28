@@ -1,0 +1,23 @@
+classdef vignette < handle
+    %
+    %   Class:
+    %   seg_worm.vignette
+    
+    properties
+        img_data
+    end
+    
+    methods
+        function obj = vignette(vignette_file_path,height,width)
+            
+            temp = sl.io.fileRead(vignette_file_path,'int32=>int8');
+            
+            obj.img_data = reshape(temp,width,height);
+        end
+        function fixed_data = apply(obj,frame_data)
+            = uint8(single(fixed_images{iFrame}) - single(vImg));
+        end
+    end
+    
+end
+
