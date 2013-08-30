@@ -3,6 +3,11 @@ classdef skeleton < handle
     %   Class:
     %   seg_worm.worm.skeleton
     
+    
+    properties
+       N_SEGS = 24 
+    end
+    
     properties
         
         %SKELETON

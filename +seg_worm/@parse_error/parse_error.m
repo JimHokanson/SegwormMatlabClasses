@@ -33,39 +33,39 @@ classdef parse_error < handle
                     title('Original Image');
                 end
             else
-                errNum = [];
-                errMsg = [];
+                errNum = 0;
+                errMsg = '';
             end
         end
         function [errNum,errMsg] = contourTouchesBoundary(obj,contour,img)
             % The contour touches a boundary.
-            errNum = [];
-            errMsg = [];
-            [m,n] = size(obj.img);
+            errNum = 0;
+            errMsg = '';
+            [m,n] = size(obj.original_image);
             if min(contour(:,1)) == 1 || min(contour(:,2)) == 1 || ...
                     max(contour(:,1)) == m || max(contour(:,2)) == n
                 errNum = 102;
                 errMsg = 'The worm contour touches the image boundary.';
                 warnID = 'segWorm:ContourTouchesBoundary';
-                helper__showOrigAndNewVerbose(obj,warnID,img);
+                helper__showOrigAndNewVerbose(obj,warnID,errMsg,img);
             end
         end
         function [errNum,errMsg] = contourTooSmall(obj,contour,C_WORM_SEGS,img)
             % The contour is too small.
-            errNum = [];
-            errMsg = [];
+            errNum = 0;
+            errMsg = '';
             if size(contour, 1) < C_WORM_SEGS
                 errNum = 103;
                 errMsg = 'The worm contour is too small.';
                 warnID = 'segWorm:ContourTooSmall';
-                helper__showOrigAndNewVerbose(obj,warnID,img);
+                helper__showOrigAndNewVerbose(obj,warnID,errMsg,img);
             end
         end
     end
     
 end
 
-function helper__showOrigAndNewVerbose(obj,warnID,img)
+function helper__showOrigAndNewVerbose(obj,warnID,errMsg,img)
 % Show the failure.
 if obj.verbose
     warning(warnID, ['Frame %d: ' errMsg],obj.frame_number);

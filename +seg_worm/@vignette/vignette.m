@@ -14,9 +14,11 @@ classdef vignette < handle
             %
             %???? Why int32 to int8
             %
-            temp = single(sl.io.fileRead(vignette_file_path,'int32=>int8'));
+            %For some reason the data is written as a 4 byte value
+            %when only occuping 1 byte
+            temp = single(sl.io.fileRead(vignette_file_path,'int32=>int8','endian','b'));
             
-            obj.img_data = reshape(temp,width,height);
+            obj.img_data = reshape(temp,height,width)';
         end
         function fixed_data = apply(obj,frame_data)
             fixed_data = uint8(single(frame_data) - obj.img_data);
