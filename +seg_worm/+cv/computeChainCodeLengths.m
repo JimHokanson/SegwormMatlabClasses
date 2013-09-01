@@ -1,8 +1,8 @@
 function lengths = computeChainCodeLengths(points)
-%COMPUTECHAINCODELENGTHS Compute the chain-code length, at each point, for
+%computeChainCodeLengths Compute the chain-code length, at each point, for
 %   a continuous line of points.
 %
-%   LENGTHS = COMPUTECHAINCODELENGTHS(POINTS)
+%   LENGTHS = seg_worm.cv.computeChainCodeLengths(POINTS)
 %
 %   Input:
 %       points - the continuous line of points on which to measure the
@@ -11,7 +11,9 @@ function lengths = computeChainCodeLengths(points)
 %   Output:
 %       lengths - the chain-code length at each point
 %
-% See also CHAINCODELENGTH2INDEX, CIRCCOMPUTECHAINCODELENGTHS
+%   See also: 
+%   CHAINCODELENGTH2INDEX
+%   seg_worm.cv.circComputeChainCodeLengths
 %
 %
 % © Medical Research Council 2012
@@ -24,6 +26,15 @@ if ndims(points) ~=2 || (size(points, 1) ~= 2 && size(points, 2) ~= 2)
     error('computeChainCodeLengths:PointsNot2D', ...
         'The matrix of points must be 2 dimensional');
 end
+
+
+keyboard
+
+
+d       = @(x1,x2) sqrt(abs(x1(:,1)-x2(:,1)).^2 + abs(x1(:,2)-x2(:,2)).^2);
+%NOTE: This places the wrap around length as the first element
+lengths = cumsum([d(points(1,:),points(end,:)); d(points(1:end-1,:),points(2:end,:))]);
+
 
 % Orient the points as a N-by-2 matrix.
 isTransposed = false;

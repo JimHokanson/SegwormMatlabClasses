@@ -15,7 +15,8 @@ function indices = chainCodeLength2Index(lengths, chainCodeLengths)
 %       indices - the indices for the elements closest to the desired
 %                 lengths
 %
-% See also COMPUTECHAINCODELENGTHS, CIRCCOMPUTECHAINCODELENGTHS
+%   See also:
+%   COMPUTECHAINCODELENGTHS, CIRCCOMPUTECHAINCODELENGTHS
 %
 %
 % © Medical Research Council 2012

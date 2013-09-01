@@ -4,10 +4,11 @@ function [peaks,indices] = peaksCircDist(x, dist,use_max,value_cutoff,chain_code
 %
 %   [peaks,indices] = seg_worm.util.peaksCircDist(x, dist, *chain_code_lengths)
 %
-%   Algorithm: ???? - grab best peaks or sequential peaks start at index 1?
-%
 %       I think this algorithm grabs the best peaks, starting with the
 %       first, then grabbing the 2nd (if we can), then the 3rd, etc ...
+%
+%       Importantly, a peak is not grabbed if it is not the max or min over
+%       the window in which it is operating
 %
 %   Inputs:
 %       x                - the vector of values
@@ -27,8 +28,6 @@ function [peaks,indices] = peaksCircDist(x, dist,use_max,value_cutoff,chain_code
 if ~exist('chain_code_lengths','var') || isempty(chain_code_lengths)
     % Use the array indices for length.
     chain_code_lengths = 1:length(x);
-else
-    keyboard
 end
 
 if use_max
@@ -41,89 +40,76 @@ else
     I = I1(I2);
 end
 
-n_sort = length(I);
-n_x = length(x);
-
 if size(x,1) > 1
     x = x';
 end
 
 
-%   Algorithm: 
-%   Every point is given an absolute location based on distance. We then
-%   replicate the points once on the left and the right, to account for the
-%   edges. For each new peak, we turn off all points that are within a
-%   certain distance of that peak.
+%Let's say we have the following distances, all relative to the first index
+%-10 -3 -2 0 1 3 5 10 15 30 etc <- this is computed from x, see getLinearDistances
+%          s
+%          1 2 3 4 5  6  7 <- indices of the regular worm
 %
-%   Worked example (see below). Let's say we choose c, which is at 4. Then
-%   let's say we do +/- 5, this puts our edges at -1 and 9. From the chart
-%   below, we see that this encompasses a through c, so a&b can not be used
-%   as peaks since they are too close to c. Note, that if a or b had
-%   already been chosen, then c would have been ineleligble as a peak. If
-%   we expand the max distance to being +/- 6, instead of 5, then c would
-%   just be touching e and d. d is obvious but e would be touched because
-%   it is at -2 (4 - 6 => -2)
+%   Let's say our data length is 50 (length(x) => 50), then the following 
+%   are indices on the front pad
+%48  49 50 (corresponding to -10 -3 -2)
 %
-%Consider the following
-%               1 2 3   4    5  index
-%------------------------------------------------------------------
-%               a b c   d   e   'a' <= points
-%                1 3 6   7    2     <= distance between cells
-%                1 4 10  17   19    <= chain_code_lengths
-%               0 1 4   10  19      <= absolute location 
+%   So, for example, if go +/- 6 on the first sampple, this would take us from
+%   49 to 4 (distances -3 to 5). Using the indices output of 
+%   getLinearDistances() we can grab 49,50,1,2,3,4 really easily. When
+%   choosing index 1, we thus say we can no longer grab these other
+%   indices.
 %
-%             x
-%   a   b   c   d   e   a   b   c   d   e   a   b   c   d   e
-%     1   3   6   7   2   1   3   6   7   2   1   3   6   7   2       
-%      -18  -15 -9  -2  0   1   4   10  17  19  20  23  29  36     
-%
-%       2   3   4   5   1   2   3   4   5   1   2   3   4   5
-
-%These few lines are a mess, but make more sense if you look at the example above
-%--------------------------------------------------------------------
-rev_data = cumsum(diff(chain_code_lengths(end:-1:1)));
-end_data = chain_code_lengths(end) + chain_code_lengths(1:end-1);
-relative_distances  = [rev_data(end:-1:1) 0 chain_code_lengths end_data];
-offset_index_values = [2:n_x 1:n_x 1:n_x];
+%   NOTE: The distances are padded on both sides, not just the front
 
 
-x_location = [0 chain_code_lengths(1:end-1)];
+[distances,indices,~,x_locations] = seg_worm.util.getLinearDistances(chain_code_lengths);
 
-x_cutoff_left  = x_location - dist;
-x_cutoff_right = x_location + dist; 
+x_cutoff_left  = x_locations - dist;
+x_cutoff_right = x_locations + dist; 
 
-%Remove need for -1
-%TODO: Move computeEdgeIndices to STD_LIB
-%start <= distance < end
+n_distances = length(distances);
+%round for both of these instead????
+%It probably doesn't matter ...
+start_I     = ceil(interp1(distances,1:n_distances,x_cutoff_left));
+end_I       = floor(interp1(distances,1:n_distances,x_cutoff_right));
 
-[start_I,end_I] = computeEdgeIndices(relative_distances,x_cutoff_left,x_cutoff_right);
-start_I = start_I - 1;
+if use_max
+   minMaxFH = @max;
+else
+   minMaxFH = @min;
+end
 
-% taken_start_I       = offset_index_values(start_I);
-% taken_end_I         = offset_index_values(end_I);
-
+n_sort = length(I);
+n_x    = length(x);
 is_peak_mask = false(1,n_x); 
 taken_mask   = false(1,n_x); %Indicates that the index is close to or is 
 %a peak and thus can not be used as a peak
 for iElem = 1:n_sort
     cur_index = I(iElem);
     if ~taken_mask(cur_index)
-       is_peak_mask(cur_index)  = true;
-       temp_indices             = offset_index_values(start_I(cur_index):end_I(cur_index));
+       %NOTE: Even if this isn't the local max, it is greater
+       %than anything that is by it, so it prevents anything
+       %else from being used, so we might as well mark those indices
+       %within it's distance as taken as well
+       temp_indices             = indices(start_I(cur_index):end_I(cur_index));
        taken_mask(temp_indices) = true;
+       
+       %We need to ensure that within it's window of operatin that the
+       %currently chosen value is a max or a min
+       is_peak_mask(cur_index)  = minMaxFH(x(temp_indices)) == x(cur_index);
     end
 end
 
 indices = find(is_peak_mask);
 peaks   = x(indices);
 
-%[peaks,indices] = helper__oldCode(x, dist, chain_code_lengths,win_size)
-
-
+%This is only for max
+%[peaks2,indices2] = helper__oldCodeMax(x, dist, chain_code_lengths,2*dist+1);
 
 end
 
-function [peaks,indices] = helper__oldCode(x, dist, chain_code_lengths,winSize) %#ok<DEFNU>
+function [peaks,indices] = helper__oldCodeMax(x, dist, chain_code_lengths,winSize) %#ok<DEFNU>
 % Initialize the peaks and indices.
 wins    = ceil(length(x) / winSize);
 peaks   = zeros(wins, 1); % pre-allocate memory

@@ -2,9 +2,7 @@ function angles = circCurvature(points, edge_length, chain_code_lengths)
 %CIRCCURVATURE Compute the curvature for a clockwise, circularly-connected
 %vector of points.
 %
-%   ANGLES = circCurvature(points, edge_length)
-%
-%   ANGLES = circCurvature(points, edge_length, chain_code_lengths)
+%   ANGLES = seg_worm.cv.circCurvature(points, edge_length,*chain_code_lengths)
 %
 %   Inputs:
 %       points           - the vector of clockwise, circularly-connected
@@ -17,13 +15,9 @@ function angles = circCurvature(points, edge_length, chain_code_lengths)
 %                maximum curvature). The sign represents whether the angle
 %                is convex (+) or concave (-).
 %
-% See also CURVATURE, CIRCCOMPUTECHAINCODELENGTHS
-%
-%
-% © Medical Research Council 2012
-% You will not remove any copyright or other notices from the Software;
-% you must reproduce all copyright notices and other proprietary
-% notices on any copies of the Software.
+%   See also:
+%   CURVATURE
+%   CIRCCOMPUTECHAINCODELENGTHS
 
 % Are the the points 2 dimensional?
 if ~ismatrix(points) || (size(points, 1) ~= 2 && size(points, 2) ~= 2)
@@ -60,7 +54,7 @@ if isempty(chain_code_lengths)
     chain_code_lengths = 1:n_points;
 end
 
-[distances,indices,start_index] = seg_worm.cv.getLinearDistances(chain_code_lengths);
+[distances,indices,start_index] = seg_worm.util.getLinearDistances(chain_code_lengths);
 
 distance_center = distances(start_index:start_index + n_points - 1);
 distance_left   = distance_center - edge_length;

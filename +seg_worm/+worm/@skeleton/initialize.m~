@@ -1,0 +1,29 @@
+function initialize(obj,contour)
+
+USE_MAX = true;
+USE_MIN = false;
+CUT_OFF = 0;
+
+[lfCMaxP,lfCMaxI] = contour.getLocalPeaksOfAngles('lf_angles',USE_MAX,CUT_OFF);
+[lfCMinP,lfCMinI] = contour.getLocalPeaksOfAngles('lf_angles',USE_MIN,CUT_OFF);
+
+keyboard
+
+headI = contour.head_I;
+tailI = contour.tail_I;
+contour_pixels = contour.cleaned_pixels;
+cc_lengths = contour.cc_lengths;
+wormSegLength = contour.getAverageSegmentWidth
+
+% Compute the worm's skeleton.
+[skeleton,cWidths] = obj.linearSkeleton(...
+    headI, tailI, lfCMinP, lfCMinI, ...
+    lfCMaxP, lfCMaxI, contour_pixels, wormSegLength, cc_lengths);
+
+% Measure the skeleton's chain code length.
+sCCLengths = computeChainCodeLengths(skeleton);
+sLength = sCCLengths(end);
+
+
+
+end
