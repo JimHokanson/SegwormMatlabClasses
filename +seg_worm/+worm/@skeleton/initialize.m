@@ -1,4 +1,7 @@
 function initialize(obj,contour)
+%
+%
+%   seg_worm.skeleton.initialize
 
 lfCMaxP = contour.lf_ap_max;
 lfCMaxI = contour.lf_ap_max_I;
@@ -12,8 +15,9 @@ cc_lengths     = contour.cc_lengths;
 wormSegLength  = contour.avg_segment_length(true);
 
 % Compute the worm's skeleton.
-[obj.pixels,obj.c_widths] = obj.linearSkeleton(...
+obj.linearSkeleton(...
     headI, tailI, lfCMinP, lfCMinI, ...
     lfCMaxP, lfCMaxI, contour_pixels, wormSegLength, cc_lengths);
+
 
 end

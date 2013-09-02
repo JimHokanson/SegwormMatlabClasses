@@ -1,4 +1,4 @@
-classdef contour < handle
+classdef contour < sl.obj.handle_light
     %
     %   Class:
     %   seg_worm.worm.contour
@@ -93,9 +93,6 @@ classdef contour < handle
     properties
         head_I  %(cHeadI)  the contour index for the worm's head
         tail_I  %(cTailI)  the contour index for the worm's tail
-        
-
-        
         
         %More advanced properties
         %--------------------------------------------------------------

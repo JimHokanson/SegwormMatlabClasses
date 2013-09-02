@@ -12,6 +12,7 @@ classdef parse_error < handle
         verbose
     end
     
+    %Contour ==============================================================
     methods
         function obj = parse_error(original_image,frame_number,verbose)
             obj.original_image = original_image;
@@ -81,6 +82,9 @@ classdef parse_error < handle
             end
         end
         function lopsidedSides(obj,c_obj)
+            
+            %TODO: Add verbose ...
+            
             cc_lengths_local = c_obj.cc_lengths;
             head_I = c_obj.head_I;
             tail_I = c_obj.tail_I;
@@ -109,6 +113,40 @@ classdef parse_error < handle
         end
     end
     
+    %Head/Tail ============================================================
+    methods
+        function checkHeadTailArea(obj,hArea,tArea)
+            
+            % Is the tail too small (or the head too large)?
+            % Note: the area of the head and tail should be roughly the same size.
+            % A 2-fold difference is huge!
+            if hArea > 2 * tArea
+                obj.error_found  = true;
+                obj.error_number = 109;
+                obj.error_message = ['The worm tail is less than half the size of its ' ...
+                    'head. Therefore, the worm is significantly obscured and ' ...
+                    'cannot be segmented.'];
+                
+                % Defer organizing the available worm information.
+                if obj.verbose
+                    warning('segWorm:SmallTail', 'Frame %d: %s',obj.frame_number,obj.error_message);
+                end
+            elseif tArea > 2 * hArea
+                obj.error_found  = true;
+                obj.error_number = 110;
+                obj.error_message = ['The worm head is less than half the size of its ' ...
+                    'tail. Therefore, the worm is significantly obscured and ' ...
+                    'cannot be segmented.'];
+                
+                % Defer organizing the available worm information.
+                if obj.verbose
+                    warning('segWorm:SmallHead','Frame %d: %s',obj.frame_number,obj.error_message);
+                else
+                    return;
+                end
+            end
+        end
+    end
 end
 
 function helper__showOrigAndNewVerbose(obj,warnID,errMsg,img)

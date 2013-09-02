@@ -1,4 +1,4 @@
-function [cSkeleton cWidths] = cleanSkeleton(skeleton, widths, wormSegSize)
+function [cSkeleton,cWidths] = cleanSkeleton(obj,skeleton, widths, wormSegSize)
 %CLEANSKELETON Clean an 8-connected skeleton by removing any overlap and
 %interpolating any missing points.
 %
@@ -32,6 +32,10 @@ function [cSkeleton cWidths] = cleanSkeleton(skeleton, widths, wormSegSize)
 % You will not remove any copyright or other notices from the Software; 
 % you must reproduce all copyright notices and other proprietary 
 % notices on any copies of the Software.
+
+
+%JAH NOTE: I have not looked at this code ...
+
 
 % If a worm touches itself, the cuticle prevents the worm from folding and
 % touching adjacent pairs of muscle segments; therefore, the distance

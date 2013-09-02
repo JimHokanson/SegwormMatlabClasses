@@ -2,7 +2,7 @@ function lengths = computeChainCodeLengths(points)
 %computeChainCodeLengths Compute the chain-code length, at each point, for
 %   a continuous line of points.
 %
-%   LENGTHS = seg_worm.cv.computeChainCodeLengths(POINTS)
+%   lengths = seg_worm.cv.computeChainCodeLengths(points)
 %
 %   Input:
 %       points - the continuous line of points on which to measure the
@@ -22,26 +22,32 @@ function lengths = computeChainCodeLengths(points)
 % notices on any copies of the Software.
 
 % Are the points 2 dimensional?
-if ndims(points) ~=2 || (size(points, 1) ~= 2 && size(points, 2) ~= 2)
+if ~ismatrix(points) || (size(points, 1) ~= 2 && size(points, 2) ~= 2)
     error('computeChainCodeLengths:PointsNot2D', ...
         'The matrix of points must be 2 dimensional');
 end
 
+% Orient the points as a N-by-2 matrix.
+is_transposed = false;
+if size(points, 2) ~= 2
+    points = points';
+    is_transposed = true;
+end
 
-keyboard
 
+%lengths = helper_oldCode(points);
 
 d       = @(x1,x2) sqrt(abs(x1(:,1)-x2(:,1)).^2 + abs(x1(:,2)-x2(:,2)).^2);
 %NOTE: This places the wrap around length as the first element
-lengths = cumsum([d(points(1,:),points(end,:)); d(points(1:end-1,:),points(2:end,:))]);
+lengths = cumsum([0; d(points(1:end-1,:),points(2:end,:))]);
 
-
-% Orient the points as a N-by-2 matrix.
-isTransposed = false;
-if size(points, 2) ~= 2
-    points = points';
-    isTransposed = true;
+% Transpose the lengths.
+if is_transposed
+    lengths = lengths';
 end
+end
+
+function lengths = helper_oldCode(points) %#ok<DEFNU>
 
 % Pre-allocate memory.
 lengths = double(zeros(size(points, 1), 1));
@@ -67,8 +73,4 @@ for i = 2:length(lengths)
     end
 end
 
-% Transpose the lengths.
-if isTransposed
-    lengths = lengths';
-end
 end

@@ -42,6 +42,9 @@ end
 
 if size(x,1) > 1
     x = x';
+    is_transposed = true;
+else
+    is_transposed = false;
 end
 
 
@@ -103,6 +106,11 @@ end
 
 indices = find(is_peak_mask);
 peaks   = x(indices);
+
+if is_transposed
+   indices = indices';
+   peaks = peaks';
+end
 
 %This is only for max
 %[peaks2,indices2] = helper__oldCodeMax(x, dist, chain_code_lengths,2*dist+1);

@@ -1,5 +1,5 @@
 function [skeleton,cWidths] = linearSkeleton(obj,headI, tailI, minP, minI, ...
-    maxP, maxI, contour, wormSegSize, chainCodeLengths)
+    maxP, maxI, contour, wormSegSize, cc_lengths)
 %LINEARSKELETON Skeletonize a linear (non-looped) worm. The worm is
 %skeletonized by splitting its contour, from head to tail, into short
 %segments. These short segments are bounded by matching pairs of minimal
@@ -50,8 +50,8 @@ function [skeleton,cWidths] = linearSkeleton(obj,headI, tailI, minP, minI, ...
 import seg_worm.cv.*
 
 % Are there chain-code lengths?
-if ~exist('chainCodeLengths','var') || isempty(chainCodeLengths)
-    chainCodeLengths = 1:size(contour,1);
+if ~exist('cc_lengths','var') || isempty(cc_lengths)
+    cc_lengths = (1:size(contour,1))';
 end
 
 % Compute the edge size to use in searching for opposing contour points.
@@ -61,8 +61,34 @@ end
 % sides of the contour. Therefore, in addition to using scaled locations,
 % we also use a large search window to ensure we correctly identify
 % opposing contour locations.
-searchEdgeSize = chainCodeLengths(end) / 8;
 
+[sHeadI,eHeadI,sTailI,eTailI] = helper__getHeadTailBoundaries(...
+    cc_lengths,wormSegSize,headI,tailI);
+
+%??? - what is this used for????
+% Find the large minimal bends away from the head and tail.
+bendI = [minI(minP < -20); maxI(maxP > 20)];
+bendI(betweenPoints(bendI, sHeadI, eHeadI)) = [];
+bendI(betweenPoints(bendI, sTailI, eTailI)) = [];
+
+
+%,sHeadI,eHeadI,sTailI,eTail
+
+[mI,b1,ib1,b2,ib2,h1,h2,t1,t2] = helper__doStuff(contour,headI,tailI,cc_lengths,bendI,sHeadI,eHeadI,sTailI,eTailI);
+
+[mhSkeleton,mtSkeleton,mhWidths,mtWidths] = helper__skeletonize(contour,mI,b1,ib1,b2,ib2,h1,h2,t1,t2);
+
+% Reconstruct the skeleton.
+skeleton = [contour(headI,:); flipud(mhSkeleton); mtSkeleton; contour(tailI,:)];
+cWidths = [0; flipud(mhWidths); mtWidths; 0];
+
+% Clean up the rough skeleton.
+skeleton = round(skeleton);
+[obj.pixels,obj.c_widths] = obj.cleanSkeleton(skeleton, cWidths, wormSegSize);
+
+end
+
+function [sHeadI,eHeadI,sTailI,eTailI] = helper__getHeadTailBoundaries(cc_lengths,wormSegSize,headI,tailI)
 % Compute the segment size to use in excluding the head and tail angles.
 % Due to bends and obscure boundaries at the head and tail, it is difficult
 % to match opposing contour points near these locations.The worm's head and
@@ -80,43 +106,129 @@ searchEdgeSize = chainCodeLengths(end) / 8;
 % www.wormatlas.org
 htSegSize = wormSegSize * 4;
 
+FH = @seg_worm.cv.chainCodeLength2Index;
+
+
 % Find small head boundaries.
 %--------------------------------------------------------
-sHeadI = chainCodeLengths(headI) - htSegSize;
-if sHeadI < chainCodeLengths(1)
-    sHeadI = sHeadI + chainCodeLengths(end);
+sHeadI = cc_lengths(headI) - htSegSize;
+if sHeadI < cc_lengths(1)
+    sHeadI = sHeadI + cc_lengths(end);
 end
-sHeadI = chainCodeLength2Index(sHeadI, chainCodeLengths);
-eHeadI = chainCodeLengths(headI) + htSegSize;
-if eHeadI > chainCodeLengths(end)
-    eHeadI = eHeadI - chainCodeLengths(end);
+sHeadI = FH(sHeadI, cc_lengths);
+
+eHeadI = cc_lengths(headI) + htSegSize;
+if eHeadI > cc_lengths(end)
+    eHeadI = eHeadI - cc_lengths(end);
 end
-eHeadI = chainCodeLength2Index(eHeadI, chainCodeLengths);
+eHeadI = FH(eHeadI, cc_lengths);
 
 % Find small tail boundaries.
 %---------------------------------------------------------
-sTailI = chainCodeLengths(tailI) - htSegSize;
-if sTailI < chainCodeLengths(1)
-    sTailI = sTailI + chainCodeLengths(end);
+sTailI = cc_lengths(tailI) - htSegSize;
+if sTailI < cc_lengths(1)
+    sTailI = sTailI + cc_lengths(end);
 end
-sTailI = chainCodeLength2Index(sTailI, chainCodeLengths);
-eTailI = chainCodeLengths(tailI) + htSegSize;
-if eTailI > chainCodeLengths(end)
-    eTailI = eTailI - chainCodeLengths(end);
+sTailI = FH(sTailI, cc_lengths);
+
+eTailI = cc_lengths(tailI) + htSegSize;
+if eTailI > cc_lengths(end)
+    eTailI = eTailI - cc_lengths(end);
 end
-eTailI = chainCodeLength2Index(eTailI, chainCodeLengths);
-
-% Find the large minimal bends away from the head and tail.
-bendI = [minI(minP < -20); maxI(maxP > 20)];
-bendI(betweenPoints(bendI, sHeadI, eHeadI)) = [];
-bendI(betweenPoints(bendI, sTailI, eTailI)) = [];
+eTailI = FH(eTailI, cc_lengths);
 
 
+end
+
+function [mhSkeleton,mtSkeleton,mhWidths,mtWidths] = helper__skeletonize(contour,mI,b1,ib1,b2,ib2,h1,h2,t1,t2)
+
+import seg_worm.cv.*
+
+% Skeletonize the worm from its midbody to its head.
+mhSkeleton = zeros(size(contour, 1), 2);
+mhWidths = zeros(size(contour, 1), 1);
+i = mI;
+j = 1;
+while i > 1
+    
+    % Skeletonize the segment from the bend to the interbend.
+    [segment,widths] = skeletonize(b1(i), ib1(i - 1), -1, ...
+        b2(i), ib2(i - 1), 1, contour, contour, false);
+    nextJ = j + size(segment, 1) - 1;
+    mhSkeleton(j:nextJ,:) = segment;
+    mhWidths(j:nextJ) = widths;
+    j = nextJ + 1;
+    i = i - 1;
+    
+    % Skeletonize the segment from the next bend back to the interbend.
+    [segment,widths] = skeletonize(b1(i), ib1(i), 1, ...
+        b2(i), ib2(i), -1, contour, contour, false);
+    nextJ = j + size(segment, 1) - 1;
+    mhSkeleton(j:nextJ,:) = flipud(segment);
+    mhWidths(j:nextJ) = flipud(widths);
+    j = nextJ + 1;
+end
+
+% Skeletonize the segment from the last bend to the head.
+[segment,widths] = skeletonize(b1(i), h1, -1, b2(i), h2, 1, ...
+    contour, contour, false);
+nextJ = j + size(segment, 1) - 1;
+mhSkeleton(j:nextJ,:) = segment;
+mhWidths(j:nextJ) = widths;
+
+% Clean up.
+mhSkeleton((nextJ + 1):end,:) = [];
+mhWidths((nextJ + 1):end) = [];
+
+% Skeletonize the worm from its midbody to its tail.
+mtSkeleton = zeros(size(contour, 1), 2);
+mtWidths = zeros(size(contour, 1), 1);
+i = mI;
+j = 1;
+while i < length(b1)
+    
+    % Skeletonize the segment from the bend to the interbend.
+    [segment,widths] = skeletonize(b1(i), ib1(i), 1, ...
+        b2(i), ib2(i), -1, contour, contour, false);
+    nextJ = j + size(segment, 1) - 1;
+    mtSkeleton(j:nextJ,:) = segment;
+    mtWidths(j:nextJ) = widths;
+    j = nextJ + 1;
+    i = i + 1;
+
+    % Skeletonize the segment from the next bend back to the interbend.
+    [segment,widths] = skeletonize(b1(i), ib1(i - 1), -1, ...
+        b2(i), ib2(i - 1), 1, contour, contour, false);
+    nextJ = j + size(segment, 1) - 1;
+    mtSkeleton(j:nextJ,:) = flipud(segment);
+    mtWidths(j:nextJ) = flipud(widths);
+    j = nextJ + 1;
+end
+
+% Skeletonize the segment from the last bend to the tail.
+[segment,widths] = skeletonize(b1(i), t1, 1, b2(i), t2, -1, contour, contour, false);
+nextJ = j + size(segment, 1) - 1;
+mtSkeleton(j:nextJ,:) = segment;
+mtWidths(j:nextJ) = widths;
+
+% Clean up.
+mtSkeleton((nextJ + 1):end,:) = [];
+mtWidths((nextJ + 1):end) = [];
+
+% % Skeletonize the worm from its midbody to its head and tail.
+% [mhSkeleton mhWidths] = skeletonize(m1, h1, -1, m2, h2, 1, ...
+%     contour, contour, false);
+% [mtSkeleton mtWidths] = skeletonize(m1, t1, 1, m2, t2, -1, ...
+%     contour, contour, false);
+
+end
+
+function [mI,b1,ib1,b2,ib2,h1,h2,t1,t2] = helper__doStuff(contour,headI,tailI,cc_lengths,bendI,sHeadI,eHeadI,sTailI,eTailI)
 
 
+searchEdgeSize = cc_lengths(end)/8;
 
-
-
+import seg_worm.cv.*
 
 % Compute the head, tail, midbody, and bends for both sides.
 % Skeletonization occurs piecemeal, stitching together segments starting at
@@ -141,20 +253,20 @@ if headI <= tailI
     end
     
     % Compute the midbody indices for side 1.
-    m1s1 = chainCodeLength2Index((chainCodeLengths(headI) + ...
-        chainCodeLengths(tailI)) / 2, chainCodeLengths);
+    m1s1 = chainCodeLength2Index((cc_lengths(headI) + ...
+cc_lengths(tailI)) / 2, cc_lengths);
     m1s2 = circOpposingNearestPoints(m1s1, contour, headI, tailI, ...
-        searchEdgeSize, chainCodeLengths);
+        searchEdgeSize, cc_lengths);
     
     % Compute the midbody indices for side 2.
-    m2s2 = (chainCodeLengths(headI) + chainCodeLengths(tailI) + ...
-        chainCodeLengths(end)) / 2;
-    if m2s2 > chainCodeLengths(end)
-        m2s2 = m2s2 - chainCodeLengths(end);
+    m2s2 = (cc_lengths(headI) + cc_lengths(tailI) + ...
+        cc_lengths(end)) / 2;
+    if m2s2 > cc_lengths(end)
+        m2s2 = m2s2 - cc_lengths(end);
     end
-    m2s2 = chainCodeLength2Index(m2s2, chainCodeLengths);
+    m2s2 = chainCodeLength2Index(m2s2, cc_lengths);
     m2s1 = circOpposingNearestPoints(m2s2, contour, headI, tailI, ...
-        searchEdgeSize, chainCodeLengths);
+        searchEdgeSize, cc_lengths);
     
     % The closest points are the true midbody indices.
     if sum((contour(m1s1,:) - contour(m1s2,:)) .^ 2) <= ...
@@ -177,7 +289,7 @@ if headI <= tailI
     bendI1 = bendI >= headI & bendI <= tailI;
     b1 = bendI(bendI1);
     oppB1 = circOpposingNearestPoints(b1, contour, headI, tailI, ...
-        searchEdgeSize, chainCodeLengths);
+        searchEdgeSize, cc_lengths);
     
     % Remove any bend indices too close to the head and/or tail.
     headB1 = betweenPoints(oppB1, sHeadI, eHeadI);
@@ -194,7 +306,7 @@ if headI <= tailI
     
     % Minimize the width at the bend.
     b1 = circOpposingNearestPoints(oppB1, contour, headI, tailI, ...
-        searchEdgeSize, chainCodeLengths);
+        searchEdgeSize, cc_lengths);
     
     % Remove any bend indices too close to the head and/or tail.
     headB1 = betweenPoints(b1, sHeadI, eHeadI);
@@ -212,7 +324,7 @@ if headI <= tailI
     % Compute the bend indices for side 2.
     b2 = bendI(~bendI1);
     oppB2 = circOpposingNearestPoints(b2, contour, headI, tailI, ...
-        searchEdgeSize, chainCodeLengths);
+        searchEdgeSize, cc_lengths);
     
     % Remove any bend indices too close to the head and/or tail.
     headB2 = betweenPoints(oppB2, sHeadI, eHeadI);
@@ -229,7 +341,7 @@ if headI <= tailI
     
     % Minimize the width at the bend.
     b2 = circOpposingNearestPoints(oppB2, contour, headI, tailI, ...
-        searchEdgeSize, chainCodeLengths);
+        searchEdgeSize, cc_lengths);
     
     % Remove any bend indices too close to the head and/or tail.
     headB2 = betweenPoints(b2, sHeadI, eHeadI);
@@ -252,8 +364,8 @@ if headI <= tailI
     mI = find(bO == 1);
 
     % Compute the inter-bend indices.
-    ib1 = chainCodeLength2Index((chainCodeLengths(b1(1:(end - 1))) + ...
-        chainCodeLengths(b1(2:end))) / 2, chainCodeLengths);
+    ib1 = chainCodeLength2Index((cc_lengths(b1(1:(end - 1))) + ...
+        cc_lengths(b1(2:end))) / 2, cc_lengths);
     ib2 = zeros(length(ib1), 1);
     for i = 1:length(ib2)
         ib2(i) = circNearestPoints(contour(ib1(i),:), b2(i + 1), b2(i), ...
@@ -278,20 +390,20 @@ else % headI > tailI
     t2 = tailI + 1;
     
     % Compute the midbody indices for side 2.
-    m1s2 = chainCodeLength2Index((chainCodeLengths(headI) + ...
-        chainCodeLengths(tailI)) / 2, chainCodeLengths);
+    m1s2 = chainCodeLength2Index((cc_lengths(headI) + ...
+        cc_lengths(tailI)) / 2, cc_lengths);
     m1s1 = circOpposingNearestPoints(m1s2, contour, headI, tailI, ...
-        searchEdgeSize, chainCodeLengths);
+        searchEdgeSize, cc_lengths);
     
     % Compute the midbody indices for side 1.
-    m2s1 = (chainCodeLengths(headI) + chainCodeLengths(tailI) + ...
-        chainCodeLengths(end)) / 2;
-    if m2s1 > chainCodeLengths(end)
-        m2s1 = m2s1 - chainCodeLengths(end);
+    m2s1 = (cc_lengths(headI) + cc_lengths(tailI) + ...
+        cc_lengths(end)) / 2;
+    if m2s1 > cc_lengths(end)
+        m2s1 = m2s1 - cc_lengths(end);
     end
-    m2s1 = chainCodeLength2Index(m2s1, chainCodeLengths);
+    m2s1 = chainCodeLength2Index(m2s1, cc_lengths);
     m2s2 = circOpposingNearestPoints(m2s1, contour, headI, tailI, ...
-        searchEdgeSize, chainCodeLengths);
+        searchEdgeSize, cc_lengths);
     
     % The closest points are the true midbody indices.
     if sum((contour(m1s1,:) - contour(m1s2,:)) .^ 2) <= ...
@@ -314,7 +426,7 @@ else % headI > tailI
     bendI2 = bendI <= headI & bendI >= tailI;
     b2 = bendI(bendI2);
     oppB2 = circOpposingNearestPoints(b2, contour, headI, tailI, ...
-        searchEdgeSize, chainCodeLengths);
+        searchEdgeSize, cc_lengths);
     
     % Remove any bend indices too close to the head and/or tail.
     headB2 = betweenPoints(oppB2, sHeadI, eHeadI);
@@ -331,7 +443,7 @@ else % headI > tailI
     
     % Minimize the width at the bend.
     b2 = circOpposingNearestPoints(oppB2, contour, headI, tailI, ...
-        searchEdgeSize, chainCodeLengths);
+        searchEdgeSize, cc_lengths);
     
     % Remove any bend indices too close to the head and/or tail.
     headB2 = betweenPoints(b2, sHeadI, eHeadI);
@@ -349,7 +461,7 @@ else % headI > tailI
     % Compute the bend indices for side 1.
     b1 = bendI(~bendI2);
     oppB1 = circOpposingNearestPoints(b1, contour, headI, tailI, ...
-        searchEdgeSize, chainCodeLengths);
+        searchEdgeSize, cc_lengths);
     
     % Remove any bend indices too close to the head and/or tail.
     headB1 = betweenPoints(oppB1, sHeadI, eHeadI);
@@ -366,7 +478,7 @@ else % headI > tailI
     
     % Minimize the width at the bend.
     b1 = circOpposingNearestPoints(oppB1, contour, headI, tailI, ...
-        searchEdgeSize, chainCodeLengths);
+        searchEdgeSize, cc_lengths);
     
     % Remove any bend indices too close to the head and/or tail.
     headB1 = betweenPoints(b1, sHeadI, eHeadI);
@@ -389,8 +501,8 @@ else % headI > tailI
     mI = find(bO == 1);
     
     % Compute the inter-bend indices.
-    ib2 = chainCodeLength2Index((chainCodeLengths(b2(1:(end - 1))) + ...
-        chainCodeLengths(b2(2:end))) / 2, chainCodeLengths);
+    ib2 = chainCodeLength2Index((cc_lengths(b2(1:(end - 1))) + ...
+        cc_lengths(b2(2:end))) / 2, cc_lengths);
     ib1 = zeros(length(ib2), 1);
     for i = 1:length(ib2)
         ib1(i) = circNearestPoints(contour(ib2(i),:), b1(i), b1(i + 1), ...
@@ -398,91 +510,6 @@ else % headI > tailI
     end
 end
 
-% Skeletonize the worm from its midbody to its head.
-mhSkeleton = zeros(size(contour, 1), 2);
-mhWidths = zeros(size(contour, 1), 1);
-i = mI;
-j = 1;
-while i > 1
-    
-    % Skeletonize the segment from the bend to the interbend.
-    [segment widths] = skeletonize(b1(i), ib1(i - 1), -1, ...
-        b2(i), ib2(i - 1), 1, contour, contour, false);
-    nextJ = j + size(segment, 1) - 1;
-    mhSkeleton(j:nextJ,:) = segment;
-    mhWidths(j:nextJ) = widths;
-    j = nextJ + 1;
-    i = i - 1;
-    
-    % Skeletonize the segment from the next bend back to the interbend.
-    [segment widths] = skeletonize(b1(i), ib1(i), 1, ...
-        b2(i), ib2(i), -1, contour, contour, false);
-    nextJ = j + size(segment, 1) - 1;
-    mhSkeleton(j:nextJ,:) = flipud(segment);
-    mhWidths(j:nextJ) = flipud(widths);
-    j = nextJ + 1;
-end
-
-% Skeletonize the segment from the last bend to the head.
-[segment widths] = skeletonize(b1(i), h1, -1, b2(i), h2, 1, ...
-    contour, contour, false);
-nextJ = j + size(segment, 1) - 1;
-mhSkeleton(j:nextJ,:) = segment;
-mhWidths(j:nextJ) = widths;
-
-% Clean up.
-mhSkeleton((nextJ + 1):end,:) = [];
-mhWidths((nextJ + 1):end) = [];
-
-% Skeletonize the worm from its midbody to its tail.
-mtSkeleton = zeros(size(contour, 1), 2);
-mtWidths = zeros(size(contour, 1), 1);
-i = mI;
-j = 1;
-while i < length(b1)
-    
-    % Skeletonize the segment from the bend to the interbend.
-    [segment widths] = skeletonize(b1(i), ib1(i), 1, ...
-        b2(i), ib2(i), -1, contour, contour, false);
-    nextJ = j + size(segment, 1) - 1;
-    mtSkeleton(j:nextJ,:) = segment;
-    mtWidths(j:nextJ) = widths;
-    j = nextJ + 1;
-    i = i + 1;
-
-    % Skeletonize the segment from the next bend back to the interbend.
-    [segment widths] = skeletonize(b1(i), ib1(i - 1), -1, ...
-        b2(i), ib2(i - 1), 1, contour, contour, false);
-    nextJ = j + size(segment, 1) - 1;
-    mtSkeleton(j:nextJ,:) = flipud(segment);
-    mtWidths(j:nextJ) = flipud(widths);
-    j = nextJ + 1;
-end
-
-% Skeletonize the segment from the last bend to the tail.
-[segment widths] = skeletonize(b1(i), t1, 1, b2(i), t2, -1, ...
-    contour, contour, false);
-nextJ = j + size(segment, 1) - 1;
-mtSkeleton(j:nextJ,:) = segment;
-mtWidths(j:nextJ) = widths;
-
-% Clean up.
-mtSkeleton((nextJ + 1):end,:) = [];
-mtWidths((nextJ + 1):end) = [];
-
-% % Skeletonize the worm from its midbody to its head and tail.
-% [mhSkeleton mhWidths] = skeletonize(m1, h1, -1, m2, h2, 1, ...
-%     contour, contour, false);
-% [mtSkeleton mtWidths] = skeletonize(m1, t1, 1, m2, t2, -1, ...
-%     contour, contour, false);
-
-% Reconstruct the skeleton.
-skeleton = [contour(headI,:); flipud(mhSkeleton); mtSkeleton; contour(tailI,:)];
-cWidths = [0; flipud(mhWidths); mtWidths; 0];
-
-% Clean up the rough skeleton.
-skeleton = round(skeleton);
-[skeleton cWidths] = cleanSkeleton(skeleton, cWidths, wormSegSize);
 end
 
 % Find pointsI between startI and endI, inclusive.

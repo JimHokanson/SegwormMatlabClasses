@@ -1,13 +1,19 @@
 function nearI = circNearestPoints(points, minI, maxI, x)
-%CIRCNEARESTPOINTS For each point, find the nearest corresponding point
-%   within an interval of circularly-connected search points.
+%circNearestPoints  For each point, find the nearest corresponding point
+%   within an interval of circularly-connected search points (based on
+%   distance - i.e. x,y location)
 %
-%   NEARI = CIRCNEARESTPOINTS(POINTS, MINI, MAXI, X)
+%   nearI = circNearestPoints(points, minI, maxI, x)
+%
+%   This looks for the closest x-y point on the opposite
+%   side within a given range.
+%
+%
 %
 %   Inputs:
-%       points - the point coordinates from which the distance is measured
-%       minI   - the minimum indices of the intervals
-%       maxI   - the maximum indices of the intervals
+%       points - [n x 2] the point coordinates from which the distance is measured
+%       minI   - [n x 2] the minimum indices of the intervals
+%       maxI   - [n x 2] the maximum indices of the intervals
 %       x      - the circularly-connected, point coordinates on which the
 %                search intervals lie
 %
@@ -21,7 +27,7 @@ function nearI = circNearestPoints(points, minI, maxI, x)
 % notices on any copies of the Software.
 
 % Are the points 2 dimensional?
-if ndims(points) ~=2 || (size(points, 1) ~= 2 && size(points, 2) ~= 2)
+if ~ismatrix(points) || (size(points, 1) ~= 2 && size(points, 2) ~= 2)
     error('circNearestPoints:PointsNot2D', ...
         'The matrix of points must be 2 dimensional');
 end
@@ -44,30 +50,32 @@ if size(x, 2) ~= 2
     x = x';
 end
 
-% Pre-allocate memory.
-nearI(1:size(points, 1)) = NaN;
+n_points = size(points,1);
+nearI    = NaN(n_points,1);
 
 % Search for the nearest points.
-for i = 1:size(points, 1)
+for iPoint = 1:n_points
+    x1 = points(iPoint,:);
     
-    % The interval is continuous.
-    if minI(i) <= maxI(i)
-        [~, nearI(i)] = min((points(i,1) - x(minI(i):maxI(i),1)).^ 2 + ...
-            (points(i,2) - x(minI(i):maxI(i),2)) .^ 2);
-        nearI(i) = nearI(i) + minI(i) - 1;
+    if minI(iPoint) <= maxI(iPoint)
+        % The interval is continuous.
+        x2 = x(minI(iPoint):maxI(iPoint),:);
+        [~, temp] = min(pdist2(x1,x2));
         
-    % The interval wraps.
+        nearI(iPoint) = temp + minI(iPoint) - 1;
     else
-        [mag1, nearI1] = min((points(i,1) - x(minI(i):end,1)) .^ 2 + ...
-            (points(i,2) - x(minI(i):end,2)) .^ 2);
-        [mag2, nearI2] = min((points(i,1) - x(1:maxI(i),1)) .^ 2 + ...
-            (points(i,2) - x(1:maxI(i),2)) .^ 2);
+        % The interval wraps.
+        x2 = x(minI(iPoint):end,:);
+        x3 = x(1:maxI(iPoint),:);
+        
+        [mag1, nearI1] = min(pdist2(x1,x2));
+        [mag2, nearI2] = min(pdist2(x1,x3));
         
         % Which point is nearest?
         if mag1 <= mag2
-            nearI(i) = nearI1 + minI(i) - 1;
+            nearI(iPoint) = nearI1 + minI(iPoint) - 1;
         else
-            nearI(i) = nearI2;
+            nearI(iPoint) = nearI2;
         end
     end
 end

@@ -1,4 +1,4 @@
-classdef skeleton < handle
+classdef skeleton < sl.obj.handle_light
     %
     %   Class:
     %   seg_worm.worm.skeleton

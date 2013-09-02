@@ -84,6 +84,8 @@ function worm = worm2struct(frame, ...
 %                   the bounds enclose the head as
 %                   [hsBounds(1), hrcBounds(1:2), hsBounds(2), hlcBounds(1:2)]
 %       hPixels   - the worm head's circularly continuous contour pixels
+%
+%
 %       hArea     - the worm head's pixel area
 %       hCDF      - the worm head's pixel-intensity, cumulative distribution
 %                   function at 2.5%, 25%, 50%, 75%, and 97.5%

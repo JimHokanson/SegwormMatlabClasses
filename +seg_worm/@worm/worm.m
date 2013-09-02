@@ -1,13 +1,15 @@
-classdef worm < handle
+classdef worm < sl.obj.handle_light
     %
     %   Class:
     %   seg_worm.worm
     
     properties
         frame_number   %(frame)
+        original_image
         
         contour
         skeleton
+        
         head
         tail
         left_side
@@ -16,6 +18,14 @@ classdef worm < handle
     end
     
     methods
+        function obj = worm(img, frame_number, isNormalized, verbose, varargin)
+            
+           %TODO: Create error object here, pass into intialization object 
+            
+           obj.original_image = img;
+           obj.frame_number   = frame_number;
+           obj.intialize(img, frame_number, isNormalized, verbose, varargin{:}) 
+        end
     end
     
 end
