@@ -4,13 +4,13 @@ classdef head_tail < sl.obj.handle_light
     %   seg_worm.worm.head_tail
     
     properties (Constant)
-       CDF_EVAL_LEVELS = [2.5 25 50 75 97.5]
+        CDF_EVAL_LEVELS = [2.5 25 50 75 97.5]
     end
     
     properties (Abstract)
         type
     end
-
+    
     
     properties (Hidden)
         parent
@@ -36,7 +36,7 @@ classdef head_tail < sl.obj.handle_light
         %   Should I change this so that 1
         %   is inner and 2 is outer????
         %
-        %   This would effect the left_right 
+        %   This would effect the left_right
         %   bound assignment
         
         %TODO: Hold onto color or mask???
@@ -96,24 +96,24 @@ classdef head_tail < sl.obj.handle_light
         end
         function initStats(obj)
             
-           p = obj.contour_pixels;
-           minY = min(p(:,1));
-           maxY = max(p(:,1));
-           minX = min(p(:,2));
-           maxX = max(p(:,2));
-           
-           original_image = obj.parent.original_image;
-                      
-           subImg     = original_image(minY:maxY, minX:maxX);
-           pixels     = obj.contour_pixels;
-           adjustedContour = [pixels(:,1) - minY + 1, pixels(:,2) - minX + 1];
-           
-           [mask,~] = seg_worm.cv.inPolyMask(adjustedContour, [], size(subImg));
-
-           colors            = single(subImg(mask));
-           obj.pixel_area    = length(colors);
-           obj.pixel_cdf     = prctile(colors,obj.CDF_EVAL_LEVELS);
-           obj.pixel_std_dev = std(colors);
+            p = obj.contour_pixels;
+            minY = min(p(:,1));
+            maxY = max(p(:,1));
+            minX = min(p(:,2));
+            maxX = max(p(:,2));
+            
+            original_image = obj.parent.original_image;
+            
+            subImg     = original_image(minY:maxY, minX:maxX);
+            pixels     = obj.contour_pixels;
+            adjustedContour = [pixels(:,1) - minY + 1, pixels(:,2) - minX + 1];
+            
+            [mask,~] = seg_worm.cv.inPolyMask(adjustedContour, [], size(subImg));
+            
+            colors            = single(subImg(mask));
+            obj.pixel_area    = length(colors);
+            obj.pixel_cdf     = prctile(colors,obj.CDF_EVAL_LEVELS);
+            obj.pixel_std_dev = std(colors);
         end
     end
 end

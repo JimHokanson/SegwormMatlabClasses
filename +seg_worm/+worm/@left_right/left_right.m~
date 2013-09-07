@@ -2,24 +2,19 @@ classdef left_right < sl.obj.handle_light
     %
     %   Class:
     %   seg_worm.worm.left_right
-    %
-    %   TODO: Inherit from a shared class
-    %   with head_tail 
-    %
-    %   body_side?
-    %
-    %   Then move shared code to parent
     
     properties
        parent
        contour
        skeleton
     end
-        
+    
+    [sides,lcBounds,rcBounds,sBounds]
+    
     properties
         contour_pixels
-%         left_contour_bounds
-%         right_contour_bounds
+        left_contour_bounds
+        right_contour_bounds
         skeleton_bounds %[2 x 1]
         %NOTE: This varies from head to tail
         %
@@ -95,44 +90,22 @@ classdef left_right < sl.obj.handle_light
                 inner_skeleton_bound_head, ...
                 inner_skeleton_bound_tail, ...
                 sPixels, headI, tailI, cPixels, ...
-                IS_SPLIT, sCCLengths, cCCLengths);  %#ok<ASGLU>
+                IS_SPLIT, sCCLengths, cCCLengths); 
             
             
-            left.initBoundsAndContour(sides{LEFT_SIDE},sBounds);
-            right.initBoundsAndContour(sides{RIGHT_SIDE},sBounds);
+            left.initBoundsAndContour(sides{
         
         end
     end
     methods
-        function initBoundsAndContour(obj,c_pixels,s_bounds)
-            obj.contour_pixels  = c_pixels;
-            obj.skeleton_bounds = s_bounds;
+        function initBoundsAndContour(obj,c_pixels,c_bounds,s_bounds)
+            
+
         end
         function initRefs(obj,parent)
             obj.parent   = parent;
             obj.contour  = parent.contour;
             obj.skeleton = parent.skeleton;
-        end
-        function initStats(obj)
-            
-            p = obj.contour_pixels;
-            minY = min(p(:,1));
-            maxY = max(p(:,1));
-            minX = min(p(:,2));
-            maxX = max(p(:,2));
-            
-            original_image = obj.parent.original_image;
-            
-            subImg     = original_image(minY:maxY, minX:maxX);
-            pixels     = obj.contour_pixels;
-            adjustedContour = [pixels(:,1) - minY + 1, pixels(:,2) - minX + 1];
-            
-            [mask,~] = seg_worm.cv.inPolyMask(adjustedContour, [], size(subImg));
-            
-            colors            = single(subImg(mask));
-            obj.pixel_area    = length(colors);
-            obj.pixel_cdf     = prctile(colors,obj.CDF_EVAL_LEVELS);
-            obj.pixel_std_dev = std(colors);
         end
     end
     
