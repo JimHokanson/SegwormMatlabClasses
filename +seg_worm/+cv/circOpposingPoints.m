@@ -152,8 +152,8 @@ points2 = helper__oldCode(pointsI, startI, endI, vLength, cc_lengths);
 % disp(oPointsI')
 % disp(points2')
 
-if sum(abs(oPointsI - points2)) > 2
-    keyboard
+if any(abs(oPointsI - points2) > 1)
+    error('Mismatch between old code and new code')
 end
 
 end

@@ -1,4 +1,4 @@
-classdef left_right < sl.obj.handle_light
+classdef left_right < seg_worm.worm.body_side
     %
     %   Class:
     %   seg_worm.worm.left_right
@@ -10,40 +10,6 @@ classdef left_right < sl.obj.handle_light
     %
     %   Then move shared code to parent
     
-    properties
-       parent
-       contour
-       skeleton
-    end
-        
-    properties
-        contour_pixels
-%         left_contour_bounds
-%         right_contour_bounds
-        skeleton_bounds %[2 x 1]
-        %NOTE: This varies from head to tail
-        %
-        %   Should I change this so that 1
-        %   is inner and 2 is outer????
-        %
-        %   This would effect the left_right 
-        %   bound assignment
-        
-        %TODO: Hold onto color or mask???
-        
-        pixel_area
-        pixel_cdf %Colors at each percentile
-        %NOTE: Ideally we have a lot of dark values, 0
-        %255 is the worst ...
-        %This data is not currently being used ...
-        
-        %TODO: Make constant
-        pixel_std_dev 
-    end
-    
-    properties (Abstract)
-       type
-    end
     properties (Hidden)
        is_right 
     end
@@ -52,7 +18,6 @@ classdef left_right < sl.obj.handle_light
             value = strcmp(obj.type,'right');
         end
     end
-    
     
     methods (Static)
         function [left,right] = createSides(parent)
@@ -64,6 +29,8 @@ classdef left_right < sl.obj.handle_light
            right.initRefs(parent);
            %left.initBounds(right);
         
+           %Should be a function ....
+           %---------------------------------------------------------------
            head = parent.head;
            tail = parent.tail;
            %tsBounds and hsBounds
@@ -100,39 +67,17 @@ classdef left_right < sl.obj.handle_light
             
             left.initBoundsAndContour(sides{LEFT_SIDE},sBounds);
             right.initBoundsAndContour(sides{RIGHT_SIDE},sBounds);
-        
+            %--------------------------------------------------------------
+            
+            left.initStats();
+            right.initStats();
+            
         end
     end
     methods
         function initBoundsAndContour(obj,c_pixels,s_bounds)
             obj.contour_pixels  = c_pixels;
             obj.skeleton_bounds = s_bounds;
-        end
-        function initRefs(obj,parent)
-            obj.parent   = parent;
-            obj.contour  = parent.contour;
-            obj.skeleton = parent.skeleton;
-        end
-        function initStats(obj)
-            
-            p = obj.contour_pixels;
-            minY = min(p(:,1));
-            maxY = max(p(:,1));
-            minX = min(p(:,2));
-            maxX = max(p(:,2));
-            
-            original_image = obj.parent.original_image;
-            
-            subImg     = original_image(minY:maxY, minX:maxX);
-            pixels     = obj.contour_pixels;
-            adjustedContour = [pixels(:,1) - minY + 1, pixels(:,2) - minX + 1];
-            
-            [mask,~] = seg_worm.cv.inPolyMask(adjustedContour, [], size(subImg));
-            
-            colors            = single(subImg(mask));
-            obj.pixel_area    = length(colors);
-            obj.pixel_cdf     = prctile(colors,obj.CDF_EVAL_LEVELS);
-            obj.pixel_std_dev = std(colors);
         end
     end
     

@@ -1,5 +1,5 @@
-function pointsI = circOpposingNearestPoints(points_I_in, x, startI, endI, ...
-    searchLength, cc_lengths)
+function pointsI = circOpposingNearestPoints(...
+    points_I_in, x, startI, endI, searchLength, cc_lengths)
 %circOpposingNearestPoints Find the nearest equivalent point indices on the
 %   opposing side (within a search window) of a circular vector.
 %
@@ -7,8 +7,24 @@ function pointsI = circOpposingNearestPoints(points_I_in, x, startI, endI, ...
 %                   pointsI, X, startI, endI, searchLength, *cc_lengths)
 %
 %   ???? - it is not clear how this would work close to the head and tail
-%   ...
+%   for example:
+%         y x x
+%     x x  
+%   o <- other point   
+%  h
+%    x 
+%      x  m <- my point, Note that 'o' is closer to my point, rather
 %
+%
+%   Frame 262 might be a good example of this ...
+%
+%   NOTE: In general with loops it might be better to apply
+%   a local tangent operator and limit the scope to be a certain
+%   angle within this local tangent ...
+%
+%
+%   than the more traditional y so the widths might be a bit weird towards
+%   near the head and tail
 %
 %   Inputs:
 %       pointsI          - the point indices to find on the opposing side
@@ -59,8 +75,9 @@ end
 % Compute the opposing points.
 oPointsI = seg_worm.cv.circOpposingPoints(pointsI, startI, endI, size(x,1), cc_lengths);
 
-%This is temporary, for debugging purposes
-final_old = helper_oldCode(x,pointsI,oPointsI,startI,endI,searchLength, cc_lengths);
+%This is temporary, for debugging purposes ...
+%final_old = helper_oldCode(x,pointsI,oPointsI,startI,endI,searchLength, cc_lengths);
+
 
 %The goal is for each opposite index to get a range of distances to search
 %so that we can get the opposite location that is closest based on x-y, not
@@ -72,36 +89,62 @@ oPointsI(~on_a_side_mask) = [];
 
 n_side_points = length(oPointsI);
 
+%These variables are used to specify the range of each point
+%over which we will look for the closest point
+%
+%The indices need to be adjusted so that they don't end up on the same
+%side as the point we are trying to find the opposite of
+%
+%i.e. If we want to find a point opposite of a point on side 1, the
+%solution can not involve a point on side 1
 minOPointsI = NaN(n_side_points,1);
 maxOPointsI = NaN(n_side_points,1);
 
 [distances,indices,~,x_locations] = seg_worm.util.getLinearDistances(cc_lengths);
+%orig_start_index - where the first set of data exists in distances in
+%indices
+%
+%   NOTE: distances consists of a wrap to the left, the original, and a
+%   wrap to the right. Put another way, it contains the worm wrapped 3
+%   times with the distances all relative to the first index in the middle
+
+%NOTE: Side 1 is defined as being between the start and the end
+%Side 2 is defined as being before the start and after the end
 
 side1_mask = oPointsI > startI & oPointsI < endI;
 side2_mask = oPointsI < startI | oPointsI > endI;
 
+%Find points whose opposites are on side 1
+%--------------------------------------------------------------------------
 if any(side1_mask)
-    target_1_indices = indices;
-    %We apply a fix so that if we are outside the valid
-    %index range on either side, we get bumped to the boundary
-    %
-    %??? - change for equal as well????
-    %I think so, since normally we bump to extremes
-    %
-    %   2 2 2 s 1 1 1 1 1 e 2 2 2
-    %     L         R
-    %   We move the left bound to:
-    %           L
-    %
-    target_1_indices(indices >= endI)   = endI-1;
-    target_1_indices(indices <= startI) = startI + 1;
+    %   2 2 2 2 S 1 1 1 1 1 E 2 2 
+    %             L x x x R  
     
+    target_1_indices = indices;
+
+    side2_mask_or_SE = indices <= startI | indices >= endI;
+    %For each of these points, we want to change our final index
+    left_value_1  = startI + 1;
+    right_value_1 = endI - 1;
+    
+    target_1_indices(side2_mask_or_SE) = NaN;
+        
     [minOPointsI(side1_mask),maxOPointsI(side1_mask)] = ...
         helper__updateMinMax(distances,x_locations,target_1_indices,oPointsI,side1_mask,searchLength);
     
+    
+    minOPointsI(isnan(minOPointsI)) = left_value_1;
+    maxOPointsI(isnan(maxOPointsI)) = right_value_1;
+    
 end
 
+%Find points whose opposites are on side 2
+%--------------------------------------------------------------------------
 if any(side2_mask)    
+    %
+    %   2 2 2 2 S 1 1 1 1 1 E 2 2 
+    %   x x x R               L x
+    %
     if startI == 1
         right_value_2 = length(cc_lengths);
     else
@@ -114,33 +157,37 @@ if any(side2_mask)
         left_value_2 = endI + 1;
     end
         
-    %Anything that is a side 1 index, move to the bounds
-    %This one is a bit tricky to know which index is closer to our index
-    %
-    %   This bit of code determines that, and we assign
-    %   the edge values, right_value_2 and left_value_2 accordingly
-    x_start = x_locations(startI);
-    x_end   = x_locations(endI);
-    x_half  = x_start + 0.5*(x_end - x_start);
-    [~,half_I] = min(abs(x_locations - x_half));
+%     %Anything that is a side 1 index, move to the bounds
+%     %This one is a bit tricky to know which index is closer to our index
+%     %
+%     %   This bit of code determines that, and we assign
+%     %   the edge values, right_value_2 and left_value_2 accordingly
+%     x_start    = x_locations(startI);
+%     x_end      = x_locations(endI);
+%     x_half     = x_start + 0.5*(x_end - x_start);
+%     [~,half_I] = min(abs(x_locations - x_half));
     
-    side1_mask_or_SE = indices >= startI & indices < endI;
+    side1_mask_or_SE = indices >= startI & indices <= endI;
     
     target_2_indices = indices;
-    target_2_indices(side1_mask_or_SE & indices >= half_I) = right_value_2;
-    target_2_indices(side1_mask_or_SE & indices < half_I)  = left_value_2;
+    target_2_indices(side1_mask_or_SE) = NaN;
+    
+%     target_2_indices(side1_mask_or_SE & indices >= half_I) = right_value_2;
+%     target_2_indices(side1_mask_or_SE & indices < half_I)  = left_value_2;
     
     [minOPointsI(side2_mask),maxOPointsI(side2_mask)] = ...
         helper__updateMinMax(distances,x_locations,target_2_indices,oPointsI,side2_mask,searchLength);
     
+    minOPointsI(isnan(minOPointsI)) = left_value_2;
+    maxOPointsI(isnan(maxOPointsI)) = right_value_2;
     
 end
 
 pointsI(on_a_side_mask) = seg_worm.cv.circNearestPoints(x(pointsI(on_a_side_mask),:), minOPointsI, maxOPointsI, x);
 
-if ~isequal(pointsI,final_old)
-   error('Mismatch between my implementation and old code version') 
-end
+% if ~isequal(pointsI,final_old)
+%    error('Mismatch between my implementation and old code version') 
+% end
 
 end
 

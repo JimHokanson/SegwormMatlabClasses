@@ -14,6 +14,8 @@ function indices = chainCodeLength2Index(lengths, cc_lengths)
 %
 %   ??? Is this for the cc_lengths or the skeleton cc_lengths?
 %
+%   The code currently assumes circular chain code lengths
+%
 %   Output:
 %       indices - the indices for the elements closest to the desired lengths
 %
@@ -44,11 +46,12 @@ indices(indices == 0) = length(cc_lengths);
 indices(indices == length(cc_lengths)+1) = 1;
 
 %NOTE: Eventually this should be removed ...
-indices2 = helper__oldCode(lengths, cc_lengths);
+%indices2 = helper__oldCode(lengths, cc_lengths);
 
-if ~isequal(indices,indices2)
-   error('mismatch for indices values') 
-end
+% if any(abs(indices - indices2)) > 1
+% %if ~isequal(indices,indices2)
+%    error('mismatch for indices values') 
+% end
 
 end
 

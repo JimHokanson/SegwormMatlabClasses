@@ -25,6 +25,10 @@ function [peaks,indices] = peaksCircDist(x, dist,use_max,value_cutoff,chain_code
 %   See also:
 %   CIRCCOMPUTECHAINCODELENGTHS
 
+
+%The general algorithm is to start at the largest (or smallest if using
+%min) and to progressively work down the scale
+
 if ~exist('chain_code_lengths','var') || isempty(chain_code_lengths)
     % Use the array indices for length.
     chain_code_lengths = 1:length(x);
@@ -74,8 +78,11 @@ x_cutoff_right = x_locations + dist;
 n_distances = length(distances);
 %round for both of these instead????
 %It probably doesn't matter ...
-start_I     = ceil(interp1(distances,1:n_distances,x_cutoff_left));
-end_I       = floor(interp1(distances,1:n_distances,x_cutoff_right));
+
+%For every point, we find the indices over which it must be the maximum (or
+%minimum). This is based on distances, not indices
+start_I = ceil(interp1(distances,1:n_distances,x_cutoff_left));
+end_I   = floor(interp1(distances,1:n_distances,x_cutoff_right));
 
 if use_max
    minMaxFH = @max;
@@ -91,8 +98,11 @@ taken_mask   = false(1,n_x); %Indicates that the index is close to or is
 for iElem = 1:n_sort
     cur_index = I(iElem);
     if ~taken_mask(cur_index)
-       %NOTE: Even if this isn't the local max, it is greater
-       %than anything that is by it, so it prevents anything
+       %NOTE: Even if a point isn't the local max, it is greater
+       %than anything that is by it that is currently not taken
+       %(because of sorting), so it prevents these points
+       %from undergoing the expensive search of determining
+       %whether they are the min or max within their 
        %else from being used, so we might as well mark those indices
        %within it's distance as taken as well
        temp_indices             = indices(start_I(cur_index):end_I(cur_index));

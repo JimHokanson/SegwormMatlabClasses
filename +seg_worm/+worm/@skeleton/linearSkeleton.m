@@ -340,8 +340,7 @@ cc_lengths(tailI)) / 2, cc_lengths);
     oppB2(crossed) = [];
     
     % Minimize the width at the bend.
-    b2 = circOpposingNearestPoints(oppB2, contour, headI, tailI, ...
-        searchEdgeSize, cc_lengths);
+    b2 = circOpposingNearestPoints(oppB2, contour, headI, tailI, searchEdgeSize, cc_lengths);
     
     % Remove any bend indices too close to the head and/or tail.
     headB2 = betweenPoints(b2, sHeadI, eHeadI);

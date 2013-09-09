@@ -4,16 +4,17 @@ classdef worm < sl.obj.handle_light
     %   seg_worm.worm
     
     properties
+        error_handler  %seg_worm.parse_error
         frame_number   %(frame)
-        original_image
+        original_image 
         
-        contour
-        skeleton
+        contour  %seg_worm.worm.contour
+        skeleton %seg_worm.worm.skeleton
         
-        head
-        tail
-        left_side
-        right_side
+        head %seg_worm.worm.head
+        tail %seg_worm.worm.tail
+        left_side  %seg_worm.worm.left
+        right_side %seg_worm.worm.right
 
     end
     
@@ -21,10 +22,12 @@ classdef worm < sl.obj.handle_light
         function obj = worm(img, frame_number, isNormalized, verbose, varargin)
             
            %TODO: Create error object here, pass into intialization object 
-            
+           obj.error_handler  = seg_worm.parse_error(img,frame_number,verbose); 
            obj.original_image = img;
            obj.frame_number   = frame_number;
-           obj.intialize(img, frame_number, isNormalized, verbose, varargin{:}) 
+           
+           %seg_worm.worm.initialize
+           obj.intialize(img, frame_number, isNormalized, varargin{:}) 
         end
     end
     

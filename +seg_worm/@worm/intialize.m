@@ -3,12 +3,7 @@ function [worm, errNum, errMsg] = ...
 %SEGWORM Segment the worm in an image and organize the information in a
 %   structure.
 %
-%   WORM = SEGWORM(IMG, FRAME, ISNORMALIZED, VERBOSE)
-%
-%   WORM = SEGWORM(IMG, FRAME, ISNORMALIZED, VERBOSE, NUMERODE, NUMDILATE)
-%
-%   WORM = SEGWORM(IMG, FRAME, ISNORMALIZED, VERBOSE, NUMERODE, NUMDILATE,
-%                  SAMPLES, ISINTERP)
+%   WORM = SEGWORM(IMG, FRAME, ISNORMALIZED, VERBOSE, *NUMERODE, *NUMDILATE, *SAMPLES, *ISINTERP)
 %
 %   Inputs:
 %       img          - the image to segment
@@ -95,16 +90,8 @@ function [worm, errNum, errMsg] = ...
 
 import seg_worm.cv.*
 
-
-% The worm is roughly divided into 24 segments of musculature (i.e., hinges
-% that represent degrees of freedom) on each side. Therefore, 48 segments
-% around a 2-D contour.
-% Note: "In C. elegans the 95 rhomboid-shaped body wall muscle cells are
-% arranged as staggered pairs in four longitudinal bundles located in four
-% quadrants. Three of these bundles (DL, DR, VR) contain 24 cells each,
-% whereas VL bundle contains 23 cells." - www.wormatlas.org
-S_WORM_SEGS = 24;
-
+%INPUT HANDLING
+%--------------------------------------------------------------------------
 % Are we eroding and/or dilating the worm?
 num_erode  = [];
 num_dilate = [];
@@ -118,144 +105,72 @@ end
 if ~exist('isNormalized','var') || isempty(isNormalized)
     isNormalized = true;
 end
+%--------------------------------------------------------------------------
+error_handler = obj.error_handler;
 
-contour_obj = seg_worm.worm.contour(img,frame_number,verbose,num_erode,num_dilate,isNormalized);
-if contour_obj.parse_error
-   keyboard 
-end
+contour_obj = seg_worm.worm.contour(obj,img,num_erode,num_dilate,isNormalized);
+if error_handler.error_found, return; end
 
 obj.contour = contour_obj;
 
 skeleton_obj = seg_worm.worm.skeleton(contour_obj);
 obj.skeleton = skeleton_obj;
 
-
-%Temporary, move to using the variables eventually
-sCCLengths = skeleton_obj.cc_lengths;
-cCCLengths = contour_obj.cc_lengths;
-cPixels    = contour_obj.pixels;
-sPixels    = skeleton_obj.pixels;
-headI      = contour_obj.head_I;
-tailI      = contour_obj.tail_I;
-
 obj.head = seg_worm.worm.head(obj);
 obj.tail = seg_worm.worm.tail(obj);
 
+error_handler.checkHeadTailArea(obj);
+if error_handler.error_found, return; end
+
 [obj.left_side,obj.right_side] = seg_worm.worm.left_right.createSides(obj);
 
-%JAH NOTE: I'm at this point although
-%I need to change the error handler slightly and 
-%I might also want to implement the head and tail confidence measure
-%- see head_tail class
-
-keyboard
+error_handler.headTailSmallOrBodyLarge(obj);
+if error_handler.error_found, return; end
 
 
-% Compute the contour's local low-frequency curvature minima.
-%[lfCMinP, lfCMinI] = minPeaksCircDist(lfCAngles, lfAngleEdgeLength, cCCLengths);
-
+%Some temporary plotting I am messing around with ...
 %{
 cplot = seg_worm.video.pixel_list_image;
+cplot.addList('skeleton',[1 1 1],obj.skeleton.pixels);
+cplot.addList('main_contour',[0 0 1],obj.contour.pixels);
+plot(cplot)
+
+cplot = seg_worm.video.pixel_list_image;
 cplot.addList('main_contour',[1 1 1],contour_obj.pixels);
-cplot.addList('head',[1 0 0],head);
-cplot.addList('tail',[0 1 0],tail);
+cplot.addList('head',[1 0 0],obj.head.contour_pixels);
+cplot.addList('tail',[0 1 0],obj.tail.contour_pixels);
+plot(cplot)
 %}
 
-%JAH NOTE: I just threw this function together
-%to try and encapsulate things. It is likely that it is missing
-%a lot of properties
-helper__checkWormCoiled(contour_obj);
+obj.checkIfWormIsCoiled();
+if error_handler.error_found, return; end
 
 
-
-
-
-% Measure the skeleton angles (curvature).
-lfAngleEdgeLength = sCCLengths(end) * 2 / S_WORM_SEGS;
-sAngles           = curvature(sPixels, lfAngleEdgeLength, sCCLengths);
-
-
-
-
-
-
-% Are the head and tail too small (or the body too large)?
-% Note: earlier, the head and tail were each chosen to be 4/24 = 1/6
-% the body length of the worm. The head and tail are roughly shaped
-% like rounded triangles with a convex taper. And, the width at their
-% ends is nearly the width at the center of the worm. Imagine they were
-% 2 triangles that, when combined, formed a rectangle similar to the
-% midsection of the worm. The area of this rectangle would be greater
-% than a 1/6 length portion from the midsection of the worm (the
-% maximum area per length in a worm is located at its midsection). The
-% combined area of the right and left sides is 4/6 of the worm.
-% Therefore, the combined area of the head and tail must be greater
-% than (1/6) / (4/6) = 1/4 the combined area of the left and right
-% sides.
-if 4 * (hArea + tArea) < lArea + rArea
-    errNum = 111;
-    errMsg = ['The worm head and tail are less than 1/4 the size ' ...
-        'of its remaining body. Therefore, the worm is ' ...
-        'significantly obscured and cannot be segmented.'];
-    
-    % Defer organizing the available worm information.
-    if verbose
-        warning('segWorm:SmallHeadTail', ['Frame %d: ' errMsg], frame_number);
-        vWorm = 0;
-    else
-        return;
-    end
-end
-
-% How much confidence do we have in our vulva orientation?
-% Note: generally, the vulval side contains less white pixels (a lower
-% 50% and 75% CDF for color) and more gray pixels (a lower variance and
-% 25% to 75% interquartile range) than the opposing side. We give each
-% probability equal weight, then compare. Also, in the absence of
-% information, we assume the vulva is on the left side (and use a trick
-% to avoid reciprocals in our equations).
-isVulvaClockwiseFromHead = 0; % default orientation
-vConfidenceScale = 1048576; % 2^20
-vConfidence = (rCDF(3) * rCDF(4) * rStdev * (rCDF(4) - rCDF(2))) ...
-    / vConfidenceScale;
-nvConfidence = (lCDF(3) * lCDF(4) * lStdev * (lCDF(4) - lCDF(2))) ...
-    / vConfidenceScale;
-
-
-
-keyboard
-
-vWorm = [];
 % Organize the available worm information.
-if isempty(vWorm)
-    worm = worm2struct(frame_number, cPixels, [], [], [], lfCAngles, ...
-        headI, tailI, cCCLengths, sPixels, [], [], [], [], ...
-        sAngles, sLength, sCCLengths, cWidths, ...
-        hlcBounds, hrcBounds, hsBounds, head, hArea, hCDF, hStdev, ...
-        tlcBounds, trcBounds, tsBounds, tail, tArea, tCDF, tStdev, ...
-        lcBounds, sBounds, lSide, lArea, lCDF, lStdev, ...
-        rcBounds, sBounds, rSide, rArea, rCDF, rStdev, ...
-        isHeadTailFlipped, hConfidence, tConfidence, ...
-        isVulvaClockwiseFromHead, vConfidence, nvConfidence);
-else
-    vWorm = worm2struct(frame_number, cPixels, [], [], [], lfCAngles, ...
-        headI, tailI, cCCLengths, sPixels, [], [], [], [], ...
-        sAngles, sLength, sCCLengths, cWidths, ...
-        hlcBounds, hrcBounds, hsBounds, head, hArea, hCDF, hStdev, ...
-        tlcBounds, trcBounds, tsBounds, tail, tArea, tCDF, tStdev, ...
-        lcBounds, sBounds, lSide, lArea, lCDF, lStdev, ...
-        rcBounds, sBounds, rSide, rArea, rCDF, rStdev, ...
-        isHeadTailFlipped, hConfidence, tConfidence, ...
-        isVulvaClockwiseFromHead, vConfidence, nvConfidence);
-end
+%{
+worm = worm2struct(frame_number, cPixels, [], [], [], lfCAngles, ...
+headI, tailI, cCCLengths, sPixels, [], [], [], [], ...
+sAngles, sLength, sCCLengths, cWidths, ...
+hlcBounds, hrcBounds, hsBounds, head, hArea, hCDF, hStdev, ...
+tlcBounds, trcBounds, tsBounds, tail, tArea, tCDF, tStdev, ...
+lcBounds, sBounds, lSide, lArea, lCDF, lStdev, ...
+rcBounds, sBounds, rSide, rArea, rCDF, rStdev, ...
+isHeadTailFlipped, hConfidence, tConfidence, ...
+isVulvaClockwiseFromHead, vConfidence, nvConfidence);
+%}
 
 
 
 %=================================================================================
 
 
+end
 
-
+function helper__unknownCode(obj) %#ok<INUSD,DEFNU>
+%
+%
+%   This looks like temporary code that was trying to resolve an inner
+%   contour but that was never finished.
 
 % Get the inner contour, if it exists.
 if ~verbose && isempty(worm)
@@ -393,166 +308,6 @@ if ~verbose && isempty(worm)
                 tailI = tailI + size(contour, 1) - headI + 1;
             end
             headI = 1;
-        end
-    end
-end
-
-
-end
-
-function helper__checkWormCoiled(obj)
-
-
-keyboard
-
-% Is the worm coiled?
-% If there are no large concavities, the worm is not coiled.
-lfCBendI = lfCMinI(lfCMinP < -30);
-if ~isempty(lfCBendI)
-    
-    % Find concavities near the head. If there are any concavities
-    % near the tail, the head may be portruding from a coil; in
-    % which case, the width at the end of the head may be
-    % inaccurate.
-    if hlcBounds(1) < hrcBounds(2)
-        hBendI = lfCBendI(lfCBendI > hlcBounds(1) & lfCBendI < hrcBounds(2));
-    else
-        hBendI = lfCBendI(lfCBendI > hlcBounds(1) | lfCBendI < hrcBounds(2));
-    end
-    
-    cWidths = skeleton_obj.c_widths;
-    
-    % Does the worm more than double its width from the head?
-    % Note: if the worm coils, its width will grow to more than
-    % double that at the end of the head.
-    maxWidth = max(cWidths);
-    if isempty(hBendI)
-        if maxWidth / cWidths(hsBounds(2)) > 2
-            errNum = 107;
-            errMsg = ['The worm more than doubles its width ' ...
-                'from end of its head. Therefore, the worm is ' ...
-                'coiled, laid an egg, and/or is significantly ' ...
-                'obscured and cannot be segmented.'];
-            
-            % Organize the available worm information.
-            if verbose
-                warning('segWorm:DoubleHeadWidth', ...
-                    ['Frame %d: ' errMsg], frame_number);
-                vWorm = worm2struct(frame_number, cPixels, [], [], [], ...
-                    lfCAngles, headI, tailI, cCCLengths, [], [], ...
-                    [], [], [], [], [], [], [], [], [], [], [], [], ...
-                    [], [], [], [], [], [], [], [], [], [], [], [], ...
-                    [], [], [], [], [], [], [], [], [], 0, [], [], ...
-                    0, [], []);
-            else
-                return;
-            end
-        end
-    end
-    
-    % Find concavities near the tail. If there are any concavities near
-    % the tail, the tail may be portruding from a coil; in which case,
-    % the width at the end of the tail may be inaccurate.
-    if trcBounds(1) < tlcBounds(2)
-        tBendI = lfCBendI(lfCBendI > trcBounds(1) & lfCBendI < tlcBounds(2));
-    else
-        tBendI = lfCBendI(lfCBendI > trcBounds(1) | lfCBendI < tlcBounds(2));
-    end
-    
-    % Does the worm more than double its width from the tail?
-    % If the worm coils, its width will grow to more than double
-    % that at the end of the tail.
-    if isempty(tBendI)
-        if maxWidth / cWidths(tsBounds(1)) > 2
-            errNum = 108;
-            errMsg = ['The worm more than doubles its width ' ...
-                'from end of its tail. Therefore, the worm is ' ...
-                'coiled, laid an egg, and/or is significantly ' ...
-                'obscured and cannot be segmented.'];
-            
-            % Organize the available worm information.
-            if verbose
-                warning('segWorm:DoubleTailWidth', ...
-                    ['Frame %d: ' errMsg], frame_number);
-                vWorm = worm2struct(frame_number, cPixels, [], [], [], ...
-                    lfCAngles, headI, tailI, cCCLengths, [], [], ...
-                    [], [], [], [], [], [], [], [], [], [], [], [], ...
-                    [], [], [], [], [], [], [], [], [], [], [], [], ...
-                    [], [], [], [], [], [], [], [], [], 0, [], [], ...
-                    0, [], []);
-            else
-                return;
-            end
-        end
-    end
-    
-    lfCAngles = contour_obj.lf_angles;
-    
-    % Use the most accurate estimate of head/tail width to
-    % determine whether the width of the body is more than double
-    % that at the end of the head/tail; in which case; the worm is
-    % coiled.
-    if ~(isempty(hBendI) && isempty(tBendI))
-        
-        % Find the distances of bends near the head.
-        hBendDist = abs(headI - hBendI);
-        hBendDist = min(hBendDist, abs(hBendDist - length(lfCAngles)));
-        
-        % Find the distances of bends near the tail.
-        tBendDist = abs(tailI - tBendI);
-        tBendDist = min(tBendDist, abs(tBendDist - length(lfCAngles)));
-        
-        % The bend near the head is furthest and, therefore, the
-        % width at the end of the head is our most accurate
-        % estimate of the worm's width.
-        if min(hBendDist) >= min(tBendDist)
-            if maxWidth / cWidths(hsBounds(2)) > 2
-                errNum = 107;
-                errMsg = ['The worm more than doubles its width ' ...
-                    'from end of its head. Therefore, the worm is ' ...
-                    'coiled, laid an egg, and/or is significantly ' ...
-                    'obscured and cannot be segmented.'];
-                
-                % Organize the available worm information.
-                if verbose
-                    warning('segWorm:DoubleHeadWidth', ...
-                        ['Frame %d: ' errMsg], frame_number);
-                    vWorm = worm2struct(frame_number, cPixels, [], [], [], ...
-                        lfCAngles, headI, tailI, cCCLengths, [], ...
-                        [], [], [], [], [], [], [], [], [], [], [], ...
-                        [], [], [], [], [], [], [], [], [], [], [], ...
-                        [], [], [], [], [], [], [], [], [], [], [], ...
-                        [], 0, [], [], 0, [], []);
-                else
-                    return;
-                end
-            end
-            
-            % The bend near the tail is furthest and, therefore, the
-            % width at the end of the tail is our most accurate
-            % estimate of the worm's width.
-        else
-            if maxWidth / cWidths(tsBounds(1)) > 2
-                errNum = 108;
-                errMsg = ['The worm more than doubles its width ' ...
-                    'from end of its tail. Therefore, the worm is ' ...
-                    'coiled, laid an egg, and/or is significantly ' ...
-                    'obscured and cannot be segmented.'];
-                
-                % Organize the available worm information.
-                if verbose
-                    warning('segWorm:DoubleTailWidth', ...
-                        ['Frame %d: ' errMsg], frame_number);
-                    vWorm = worm2struct(frame_number, cPixels, [], [], [], ...
-                        lfCAngles, headI, tailI, cCCLengths, [], ...
-                        [], [], [], [], [], [], [], [], [], [], [], ...
-                        [], [], [], [], [], [], [], [], [], [], [], ...
-                        [], [], [], [], [], [], [], [], [], [], [], ...
-                        [], 0, [], [], 0, [], []);
-                else
-                    return;
-                end
-            end
         end
     end
 end

@@ -19,15 +19,20 @@ classdef contour < sl.obj.handle_light
     end
     
     %Error properties =====================================================
-    properties
-        err %seg_worm.parse_error
+    properties (Hidden)
+        parent
     end
+    
     properties (Dependent)
+        error_handler %seg_worm.parse_error
         parse_error
     end
     methods
+        function value = get.error_handler(obj)
+            value = obj.parent.error_handler;
+        end
         function value = get.parse_error(obj)
-            value = obj.err.error_found;
+            value = obj.error_handler.error_found;
         end
     end
     
@@ -41,7 +46,9 @@ classdef contour < sl.obj.handle_light
         final_image %
         %set: .initializeFirstPassContour()
         
-        pixels
+        pixels %[n x 2], I,J location pairs of each contour location
+        %Each row entry corresponds to a pixel that is next to the previous
+        %pixel.
         %Modified/Set in:
         %.initializeFirstPassContour()
         %.cleanContour()
@@ -56,11 +63,15 @@ classdef contour < sl.obj.handle_light
         %with the previous value of pixels
     end
     properties (Dependent)
-       avg_segment_length 
+        n_pixels
+        avg_segment_length
     end
     methods
+        function value = get.n_pixels(obj)
+           value = size(obj.pixels,1); 
+        end
         function value = get.avg_segment_length(obj)
-           value = obj.cc_lengths(end)/obj.N_SEGS;
+            value = obj.cc_lengths(end)/obj.N_SEGS;
         end
         function set.pixels(obj,value)
             if ~isempty(obj.pixels)
@@ -80,16 +91,18 @@ classdef contour < sl.obj.handle_light
     end
     
     properties
+        d3 = '----  Angle Peak (ap) Info  ----'
         lf_ap_min
         lf_ap_min_I
         lf_ap_max
         lf_ap_max_I
+        
         hf_ap_min
         hf_ap_min_I %smoothed
         hf_ap_max
         hf_ap_max_I
     end
-        
+    
     properties
         head_I  %(cHeadI)  the contour index for the worm's head
         tail_I  %(cTailI)  the contour index for the worm's tail
@@ -105,58 +118,22 @@ classdef contour < sl.obj.handle_light
         % end of the outer contour points
     end
     
-    methods
-% % % %         function width = getAverageSegmentWidth(obj,is_hf)
-% % % %             %
-% % % %             %    Use this for computing angles and peak distances
-% % % %             %
-% % % %             width = obj.cc_lengths(end)/obj.N_SEGS;
-% % % %             if ~is_hf
-% % % %                 width = 2*width;
-% % % %             end
-% % % %         end
-% % %         function width = getAverageSegmentIndexWidth(obj,is_hf,is_clean)
-% % %             %
-% % %             %
-% % %             %    Used for filtering
-% % %             %
-% % %             %
-% % %             %    NOTE: The filtering itself is a bit confusing because it
-% % %             %    seems biased based on the spatial locations of each point.
-% % %             
-% % %             if is_clean
-% % %                 n_points = size(obj.cleaned_pixels,1)/obj.N_SEGS;
-% % %             else
-% % %                 n_points = size(obj.rough_pixels,1)/obj.N_SEGS;
-% % %             end
-% % %             
-% % %             width = n_points;
-% % %             
-% % %             if ~is_hf
-% % %                 width = 2*width;
-% % %             end
-% % %         end
-
-    end
-    
     %Initialization methods  ==============================================
     methods
-        function obj = contour(img,frame_number,verbose,num_erode,num_dilate,is_normalized)
+        function obj = contour(parent,img,num_erode,num_dilate,is_normalized)
             %For debugging allow no inputs
             if ~nargin
                 return
             end
             
+            obj.parent = parent;
             obj.input_image  = img;
-            obj.frame_number = frame_number;
-            
-            obj.err = seg_worm.parse_error(img,frame_number,verbose);
             
             obj.initializeFirstPassContour(num_erode,num_dilate,is_normalized)
             if obj.parse_error, return; end
             
             obj.cleanWorm();
-            obj.err.contourTooSmall(obj.pixels,obj.N_SEGS,img);
+            obj.error_handler.contourTooSmall(obj.pixels,obj.N_SEGS,img);
             if obj.parse_error, return; end
             
             obj.computeAngleInfo();
@@ -179,7 +156,7 @@ classdef contour < sl.obj.handle_light
             %   FULL PATH:
             %   seg_worm.worm.contour.initializeFirstPassContour
             
-            pe  = obj.err;
+            pe  = obj.error_handler;
             img = obj.input_image;
             
             % Convert the image to grayscale.
@@ -248,7 +225,7 @@ classdef contour < sl.obj.handle_light
             % frequency) since the worm's cuticle constrains its mobility and practical
             % degrees of freedom. JAH NOTE: What spatial resolution would
             % not be appropriate?
-
+            
             
             
             
@@ -272,11 +249,11 @@ classdef contour < sl.obj.handle_light
             filter_width  = ceil(avg_worm_segment_length/2);
             obj.hf_angles = seg_worm.util.circConv(obj.hf_angles_raw ,[],filter_width);
             
-            FH = @seg_worm.util.peaksCircDist; 
+            FH = @seg_worm.util.peaksCircDist;
             [obj.lf_ap_max,obj.lf_ap_max_I] = FH(obj.lf_angles,lf_angle_edge_length,USE_MAX,MAX_CUTOFF,obj.cc_lengths);
             [obj.lf_ap_min,obj.lf_ap_min_I] = FH(obj.lf_angles,lf_angle_edge_length,USE_MIN,MIN_CUTOFF,obj.cc_lengths);
             [obj.hf_ap_max,obj.hf_ap_max_I] = FH(obj.hf_angles,hf_angle_edge_length,USE_MAX,MAX_CUTOFF,obj.cc_lengths);
-            [obj.hf_ap_min,obj.hf_ap_min_I] = FH(obj.hf_angles,hf_angle_edge_length,USE_MIN,MIN_CUTOFF,obj.cc_lengths);            
+            [obj.hf_ap_min,obj.hf_ap_min_I] = FH(obj.hf_angles,hf_angle_edge_length,USE_MIN,MIN_CUTOFF,obj.cc_lengths);
             
         end
         function computeCCLengths(obj)
@@ -287,19 +264,19 @@ classdef contour < sl.obj.handle_light
             
             keyboard
             
-
-                pixels_local = obj.pixels;
-                cMinY   = min(pixels_local(:,1));
-                cMaxY   = max(pixels_local(:,1));
-                cMinX   = min(pixels_local(:,2));
-                cMaxX   = max(pixels_local(:,2));
-                cHeight = cMaxY - cMinY + 1;
-                cWidth  = cMaxX - cMinX + 1;
-                cImg    = zeros(cHeight, cWidth);
-                cImg(sub2ind(size(cImg), ...
-                    pixels_local(:,1) - cMinY + 1, ...
-                    pixels_local(:,2) - cMinX + 1)) = 255;
-                imshow(cImg)
+            
+            pixels_local = obj.pixels;
+            cMinY   = min(pixels_local(:,1));
+            cMaxY   = max(pixels_local(:,1));
+            cMinX   = min(pixels_local(:,2));
+            cMaxX   = max(pixels_local(:,2));
+            cHeight = cMaxY - cMinY + 1;
+            cWidth  = cMaxX - cMinX + 1;
+            cImg    = zeros(cHeight, cWidth);
+            cImg(sub2ind(size(cImg), ...
+                pixels_local(:,1) - cMinY + 1, ...
+                pixels_local(:,2) - cMinX + 1)) = 255;
+            imshow(cImg)
         end
     end
     

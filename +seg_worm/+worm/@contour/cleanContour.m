@@ -1,4 +1,4 @@
-function [cContour] = cleanContour(contour)
+function [cContour] = cleanContour(obj,contour)
 %cleanContour Clean an 8-connected, circularly-connected contour by
 %removing any duplicate points and interpolating any missing points.
 %
@@ -19,6 +19,12 @@ function [cContour] = cleanContour(contour)
 % You will not remove any copyright or other notices from the Software; 
 % you must reproduce all copyright notices and other proprietary 
 % notices on any copies of the Software.
+
+
+%Who calls this ?????
+%--------------------------------------
+
+
 
 % Construct the cleaned contour.
 cContour = zeros(size(contour));
@@ -53,8 +59,7 @@ for i = 1:(length(contour) - 1)
 end
 
 % Add the last point
-if (cContour(1,1) ~= contour(end,1)) || ...
-        (cContour(1,2) ~= contour(end,2))
+if (cContour(1,1) ~= contour(end,1)) || (cContour(1,2) ~= contour(end,2))
     cContour(j,:) = contour(end,:);
     j = j + 1;
 end

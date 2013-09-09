@@ -34,23 +34,15 @@ function cleanWorm(obj)
 % you must reproduce all copyright notices and other proprietary
 % notices on any copies of the Software.
 
-
-% Compute the contour's curvature on a small scale.
-%
-%NOTE: I was hoping that at some point this section could be built more
-%into the methods of the class, rather than being a large part of this
-%method
-%
-%Unlike other parts, this section uses the length of the pixel array, not
-%the chain lengths to compute the width. I don't think this is critical
-%and might eventually move this
+%The following code might be better off if we just did a call to
+%computeAngles()
 %--------------------------------------------------------------------------
 pixels_local  = obj.pixels;
 worm_seg_size = size(pixels_local,1)/obj.N_SEGS;
 
 worm_seg_size = round(worm_seg_size);
 
-angles  = seg_worm.cv.circCurvature(pixels_local, worm_seg_size);
+angles        = seg_worm.cv.circCurvature(pixels_local, worm_seg_size);
 
 % On a small scale, noise causes contour imperfections that shift an angle
 % from its correct location. Therefore, blurring angles by averaging them
@@ -74,6 +66,12 @@ mAngles     = seg_worm.util.circConv(angles,[],blur_length);
 maxI = maxI(:);
 minI = minI(:);
 %--------------------------------------------------------------------------
+%END OF CODE THAT MIGHT BE REPLACED WITH METHODS CALL
+%--------------------------------------------------------------------------
+
+
+
+
 
 NEAR_SIZE = 2*worm_seg_size; %Used for saying the peaks are too close ...
 
@@ -86,8 +84,9 @@ if length(maxI) > 1
     % concavity?
     %nearScale = .3; % a nearby location on the contour (relative to its size)
     if any(maxD <= NEAR_SIZE) || ~isempty(minI)
-        keyboard
-        pixels_local = helper__fixInvaginations(maxI,pixels_local);
+        %keyboard
+        %Frame 174 of video I was given
+        pixels_local = helper__fixInvaginations(obj,maxI,pixels_local,NEAR_SIZE);
     end
 end
 
@@ -184,7 +183,7 @@ end
 
 %Fix multiple sharp convexities that are nearby in distance and separated
 %by a sharp concavity
-function contour = helper__fixInvaginations(maxI,contour)
+function contour = helper__fixInvaginations(obj,maxI,contour,NEAR_SIZE)
 %
 %   JAH NOTE: I didn't look at this code all that closely
 %
@@ -202,13 +201,17 @@ function contour = helper__fixInvaginations(maxI,contour)
 % Note 2: the connections are organized as the vector triplet:
 % [startContourIndex endContourIndex isWrapping]
 % Contour points between startContourIndex and endContourIndex are removed.
+
+%??? - does this mean invaginations exist if this code is called?
+%Where is there a yes or no
+
 conns  = zeros(length(maxI), 4); % the connections (pre-allocate memory)
 connsI = 1; % the current index for connections
 for i = 1:(length(maxI) - 1);
     
     % Are there any sharp convexities nearby?
     for j = (i + 1):length(maxI)
-        if sqrt(sum((contour(maxI(i),:) - contour(maxI(j),:)) .^ 2)) <= nearSize
+        if sqrt(sum((contour(maxI(i),:) - contour(maxI(j),:)) .^ 2)) <= NEAR_SIZE
             
             % Which side is shorter?
             % Side1 is continuous and goes from start (iI) to end (jI)
@@ -225,7 +228,7 @@ for i = 1:(length(maxI) - 1);
             if dSide1 < dSide2 % && dSide1 / cLength < nearScale
                 
                 % Is the convexity nearby on the contour.
-                if dSide1 <= nearSize
+                if dSide1 <= NEAR_SIZE
                     conns(connsI,:) = [iI jI 0 dSide1];
                     connsI = connsI + 1;
                     
@@ -245,7 +248,7 @@ for i = 1:(length(maxI) - 1);
             else %if dSide2 / cLength < nearScale
                 
                 % Is the convexity nearby on the contour.
-                if dSide2 <= nearSize
+                if dSide2 <= NEAR_SIZE
                     conns(connsI,:) = [jI iI 1 dSide2];
                     connsI = connsI + 1;
                     
@@ -487,21 +490,32 @@ if ~isempty(conns)
             
             % Connect the wrapping contour split.
         else
-            minI = conns(i,2);
-            maxI = conns(i,1);
-            minP = contour(minI,:);
-            maxP = contour(maxI,:);
+            minI   = conns(i,2);
+            maxI   = conns(i,1);
+            minP   = contour(minI,:);
+            maxP   = contour(maxI,:);
             points = minI + size(contour, 1) - maxI + 1;
             interPoints = [];
             interPoints(:,1) = linspace(maxP(1), minP(1), points);
             interPoints(:,2) = linspace(maxP(2), minP(2), points);
             contour(maxI:end,:) = round(interPoints(1:(end - minI),:));
-            contour(1:minI,:) = round(interPoints((end - minI + 1):end,:));
+            contour(1:minI,:)  = round(interPoints((end - minI + 1):end,:));
         end
     end
     
     % Clean up the contour.
-    contour = cleanContour(contour);
+    %temp_pixels = obj.pixels;
+    obj.pixels = obj.cleanContour(obj.pixels);
+    %final_pixels = obj.pixels;
+    
+%     cplot = seg_worm.video.pixel_list_image;
+%     cplot.addList('original',[0 0 1],temp_pixels)
+%     cplot.addList('final',[0 1 0],final_pixels)
+%     cplot.plot();
+%     keyboard
+    
+    %contour = obj.pixels();
+    %contour = cleanContour(contour);
 end
 
 

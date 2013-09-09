@@ -4,10 +4,15 @@ classdef parse_error < handle
     %   seg_worm.parse_error
     
     properties
-        error_found
-        error_number
-        error_message
-        original_image
+        error_found   = false
+        error_number  = 0
+        error_message = ''
+        
+        %TODO: We might want to make this a link to the
+        %seg_worm.worm object to reduce memory usage, especially
+        %if we are going to clear it later when hold onto all of the worms
+        %...
+        original_image 
         frame_number
         verbose
     end
@@ -54,13 +59,12 @@ classdef parse_error < handle
         end
         function contourTooSmall(obj,contour,C_WORM_SEGS,img)
             % The contour is too small.
-            errNum = 0;
-            errMsg = '';
             if size(contour, 1) < C_WORM_SEGS
-                errNum = 103;
-                errMsg = 'The worm contour is too small.';
+                obj.error_found   = true;
+                obj.error_number = 103;
+                obj.error_message = 'The worm contour is too small.';
                 warnID = 'segWorm:ContourTooSmall';
-                helper__showOrigAndNewVerbose(obj,warnID,errMsg,img);
+                helper__showOrigAndNewVerbose(obj,warnID,obj.error_message,img);
             end
         end
         function insufficientHTOptions(obj,n_lf_HT_I,n_hf_HT_I)
@@ -113,9 +117,12 @@ classdef parse_error < handle
         end
     end
     
-    %Head/Tail ============================================================
+    %Head/Tail/Left/Right ============================================================
     methods
-        function checkHeadTailArea(obj,hArea,tArea)
+        function checkHeadTailArea(obj,worm_obj)
+            
+            hArea = worm_obj.head.pixel_area;
+            tArea = worm_obj.tail.pixel_area;
             
             % Is the tail too small (or the head too large)?
             % Note: the area of the head and tail should be roughly the same size.
@@ -146,7 +153,84 @@ classdef parse_error < handle
                 end
             end
         end
+        function headTailSmallOrBodyLarge(obj,worm_obj)
+            
+            hArea = worm_obj.head.pixel_area;
+            tArea = worm_obj.tail.pixel_area;
+            lArea = worm_obj.left_side.pixel_area;
+            rArea = worm_obj.right_side.pixel_area;
+            
+            % Are the head and tail too small (or the body too large)?
+            % Note: earlier, the head and tail were each chosen to be 4/24 = 1/6
+            % the body length of the worm. The head and tail are roughly shaped
+            % like rounded triangles with a convex taper. And, the width at their
+            % ends is nearly the width at the center of the worm. Imagine they were
+            % 2 triangles that, when combined, formed a rectangle similar to the
+            % midsection of the worm. The area of this rectangle would be greater
+            % than a 1/6 length portion from the midsection of the worm (the
+            % maximum area per length in a worm is located at its midsection). The
+            % combined area of the right and left sides is 4/6 of the worm.
+            % Therefore, the combined area of the head and tail must be greater
+            % than (1/6) / (4/6) = 1/4 the combined area of the left and right
+            % sides.
+            if 4 * (hArea + tArea) < lArea + rArea
+                obj.error_found  = true;
+                obj.error_number = 111;
+                obj.error_message = ['The worm head and tail are less than 1/4 the size ' ...
+                    'of its remaining body. Therefore, the worm is ' ...
+                    'significantly obscured and cannot be segmented.'];
+                
+                % Defer organizing the available worm information.
+                if obj.verbose
+                    warning('segWorm:SmallHeadTail', ['Frame %d: ' obj.error_message], obj.frame_number);
+                end
+            end
+            
+        end
     end
+    %Coiled Checks  =======================================================
+    methods
+        function wormTooWideBasedOnHeadWidth(obj,hBendI,max_c_width,innermost_head_contour_width)
+            % Does the worm more than double its width from the head?
+% Note: if the worm coils, its width will grow to more than
+% double that at the end of the head.
+            if isempty(hBendI) && max_c_width > 2*innermost_head_contour_width
+                obj.error_found  = true;
+                obj.error_number = 107;
+                obj.error_message = ['The worm more than doubles its width ' ...
+                    'from end of its head. Therefore, the worm is ' ...
+                    'coiled, laid an egg, and/or is significantly ' ...
+                    'obscured and cannot be segmented.'];
+                
+                % Organize the available worm information.
+                if obj.verbose
+                    warning('segWorm:DoubleHeadWidth', ...
+                        ['Frame %d: ' obj.error_message], obj.frame_number);
+                end
+            end
+        end
+        function wormTooWideBasedOnTailWidth(obj,tBendI,max_c_width,innermost_tail_contour_width)
+            % Does the worm more than double its width from the tail?
+% If the worm coils, its width will grow to more than double
+% that at the end of the tail.
+            if isempty(tBendI) && max_c_width > 2*innermost_tail_contour_width
+                obj.error_found  = true;
+                obj.error_number = 108;
+                obj.error_message = ['The worm more than doubles its width ' ...
+                    'from end of its tail. Therefore, the worm is ' ...
+                    'coiled, laid an egg, and/or is significantly ' ...
+                    'obscured and cannot be segmented.'];
+                
+                % Organize the available worm information.
+                if obj.verbose
+                    warning('segWorm:DoubleTailWidth', ...
+                        ['Frame %d: ' obj.error_message], obj.frame_number);
+                end
+            end
+ 
+        end
+    end
+    
 end
 
 function helper__showOrigAndNewVerbose(obj,warnID,errMsg,img)

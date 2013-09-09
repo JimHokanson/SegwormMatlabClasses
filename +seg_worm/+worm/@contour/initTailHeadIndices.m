@@ -18,7 +18,7 @@ lf_HT_max_peaks = obj.lf_ap_max(mask_lf);
 %ERRORS
 %--------------------------------------------------------------------------
 % Are there too many possible head/tail points?
-obj.err.insufficientHTOptions(n_lf_HT_I,n_hf_HT_I);
+obj.error_handler.insufficientHTOptions(n_lf_HT_I,n_hf_HT_I);
 if obj.parse_error, return; end
 
 %--------------------------------------------------------------------------
@@ -35,7 +35,7 @@ end
 obj.head_I = head_I;
 obj.tail_I = tail_I;
 
-obj.err.lopsidedSides(obj);
+obj.error_handler.lopsidedSides(obj);
 if obj.parse_error, return; end
 
 % Orient the contour and angles at the maximum curvature (the head or tail).
@@ -161,7 +161,7 @@ obj.computeAngleInfo();
 tail_I_local = obj.tail_I;
 tail_I_local = tail_I_local - head_I_local + 1;
 if tail_I_local < 1
-   tail_I_local = tail_I_local + size(contour_obj, 1);
+   tail_I_local = tail_I_local + obj.n_pixels;
 end
 obj.head_I = 1;
 obj.tail_I = tail_I_local;

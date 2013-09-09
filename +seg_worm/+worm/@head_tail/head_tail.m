@@ -1,21 +1,11 @@
-classdef head_tail < sl.obj.handle_light
+classdef head_tail < seg_worm.worm.body_side
     %
     %   Class:
     %   seg_worm.worm.head_tail
     
-    properties (Constant)
-        CDF_EVAL_LEVELS = [2.5 25 50 75 97.5]
-    end
-    
-    properties (Abstract)
-        type
-    end
-    
-    
+
+        
     properties (Hidden)
-        parent
-        contour  %seg_worm.worm.contour
-        skeleton %seg_worm.worm.skeleton
         is_head %We'll use this, for now we'll assume
         %that the opposite of head is tail. I liked the
         %type display better but wanted the logical for processing
@@ -27,36 +17,25 @@ classdef head_tail < sl.obj.handle_light
     end
     
     properties
-        contour_pixels %Specific to head or tail
-        left_contour_bounds
-        right_contour_bounds
-        skeleton_bounds %[2 x 1]
-        %NOTE: This varies from head to tail
-        %
-        %   Should I change this so that 1
-        %   is inner and 2 is outer????
-        %
-        %   This would effect the left_right
-        %   bound assignment
-        
-        %TODO: Hold onto color or mask???
-        
-        pixel_area
-        pixel_cdf %Colors at each percentile
-        %NOTE: Ideally we have a lot of dark values, 0
-        %255 is the worst ...
-        %This data is not currently being used ...
-        
-        %TODO: Make constant
-        pixel_std_dev
+        %Side 1 & Side 2 would be more accurate
+        %We don't know which is left or right (I think, or do we???)
+        %TODO: Check if we do ...
+        left_contour_bounds  %[2 x 1], the first value always
+        %seems to be less than the second value ....
+        right_contour_bounds %[2 x 1]
+        inner_skeleton_bound_I
+    end
+    properties (Dependent)
+       innermost_contour_width 
     end
     
     methods
+        function value = get.innermost_contour_width(obj)
+           value = obj.parent.skeleton.c_widths(obj.inner_skeleton_bound_I);
+        end
         function obj = head_tail(parent)
             
-            obj.parent   = parent;
-            obj.contour  = parent.contour;
-            obj.skeleton = parent.skeleton;
+            obj.initRefs(parent);
             obj.initializeBounds();
             obj.initStats();
         end
@@ -92,7 +71,14 @@ classdef head_tail < sl.obj.handle_light
             
             [obj.contour_pixels,obj.left_contour_bounds,...
                 obj.right_contour_bounds,obj.skeleton_bounds] = ...
-                worm2poly(startSI,endSI,s.pixels,c.head_I,c.tail_I,c.pixels,s.cc_lengths,c.cc_lengths);
+                worm2poly(startSI,endSI,s.pixels,c.head_I,c.tail_I,c.pixels,false,s.cc_lengths,c.cc_lengths);
+            
+            if obj.is_head
+                obj.inner_skeleton_bound_I = obj.skeleton_bounds(2);
+            else
+                obj.inner_skeleton_bound_I = obj.skeleton_bounds(1);
+            end
+            
         end
         function initStats(obj)
             
