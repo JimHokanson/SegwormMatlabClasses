@@ -1,10 +1,16 @@
 classdef pixel_list_image < handle
-    %8(
+    %
     %   Class:
     %   seg_worm.video.pixel_list_image
     %
     %   Goal is to have a set of lists
-    %   for an image
+    %   for an image which can be toggled.
+    %
+    %   Current Status:
+    %   This currently helps with plotting results but I have yet to
+    %   enable the turning off and on of layers by mouse-click
+    %
+    %
     
     properties
        default_color = [0 0 0]

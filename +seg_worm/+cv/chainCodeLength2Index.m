@@ -3,7 +3,7 @@ function indices = chainCodeLength2Index(lengths, cc_lengths)
 %   represents the numerically-closest element to the desired length in
 %   an ascending array of chain code lengths.
 %
-%   INDICES = seg_worm.cv.chainCodeLength2Index(lengths, cc_lengths)
+%   indices = seg_worm.cv.chainCodeLength2Index(lengths, cc_lengths)
 %
 %   Inputs:
 %       lengths    - the lengths to translate into indices
@@ -29,6 +29,8 @@ function indices = chainCodeLength2Index(lengths, cc_lengths)
 % you must reproduce all copyright notices and other proprietary 
 % notices on any copies of the Software.
 
+persistent cc_input p_F
+
 % Check the lengths.
 % Note: circular chain-code lengths are minimally bounded at 0 and
 % maximally bounded at the first + last lengths.
@@ -39,19 +41,20 @@ elseif any(lengths > cc_lengths(end))
         'The lengths cannot be greater than %g',cc_lengths(end));
 end
 
-indices = round(interp1(cc_lengths,(1:length(cc_lengths))',lengths,'linear','extrap'));
+if isequal(cc_input,cc_lengths)
+    F = p_F;
+else
+    F = griddedInterpolant(cc_lengths,1:length(cc_lengths),'linear');
+    p_F = F;
+    cc_input = cc_lengths;
+end
+
+indices = round(F(lengths));
 
 %This assumes a circular chain code length ...
 indices(indices == 0) = length(cc_lengths);
 indices(indices == length(cc_lengths)+1) = 1;
 
-%NOTE: Eventually this should be removed ...
-%indices2 = helper__oldCode(lengths, cc_lengths);
-
-% if any(abs(indices - indices2)) > 1
-% %if ~isequal(indices,indices2)
-%    error('mismatch for indices values') 
-% end
 
 end
 

@@ -18,6 +18,18 @@ function [distances,indices,start_index,x_locations] = getLinearDistances(chain_
 %   seg_worm.cv.circCurvatures
 %   seg_worm.util.peaksCircDist
 
+persistent cc_input d_out i_out s_out x_out
+
+if isequal(chain_code_lengths,cc_input)
+   distances   = d_out;
+   indices     = i_out;
+   start_index = s_out;
+   x_locations = x_out;
+   return
+end
+
+cc_input = chain_code_lengths;
+
 if iscolumn(chain_code_lengths)
     chain_code_lengths = chain_code_lengths';
     transpose_output = true;
@@ -26,7 +38,11 @@ else
 end
 
 %[-30,-29,-27,-24,-20,-15]
-reverse_distance = fliplr(cumsum([-1*chain_code_lengths(1) diff(chain_code_lengths(end:-1:1))]));
+temp = cumsum([-1*chain_code_lengths(1) diff(chain_code_lengths(end:-1:1))]);
+
+reverse_distance = temp(end:-1:1);
+
+
 
 %[0,1,3,6,10,15]
 normal_data = [0 chain_code_lengths(2:end)-chain_code_lengths(1)];
@@ -39,7 +55,7 @@ distances = [reverse_distance normal_data extended_data];
 
 n_points = length(chain_code_lengths);
 
-indices = repmat(1:n_points,1,3);
+indices = [1:n_points 1:n_points 1:n_points];
 
 start_index = n_points + 1;
 
@@ -50,6 +66,12 @@ if transpose_output
    distances = distances';
    x_locations = x_locations';
 end
+
+    d_out = distances;
+    i_out = indices;
+    s_out = start_index;
+    x_out = x_locations;
+
 
 end
 

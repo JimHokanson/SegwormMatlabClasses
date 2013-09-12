@@ -1,17 +1,18 @@
 function [peaks,indices] = peaksCircDist(x, dist,use_max,value_cutoff,chain_code_lengths)
-%MAXPEAKSCIRCDIST Find the maximum peaks in a circular vector. The peaks
+%peaksCircDist  Find the maximum peaks in a circular vector. The peaks
 %are separated by, at least, the given distance.
 %
 %   [peaks,indices] = seg_worm.util.peaksCircDist(x, dist, *chain_code_lengths)
 %
-%       I think this algorithm grabs the best peaks, starting with the
-%       first, then grabbing the 2nd (if we can), then the 3rd, etc ...
+%   This algorithm grabs the best peaks, starting with the first, then
+%   grabbing the 2nd (if we can), then the 3rd, etc ...
 %
-%       Importantly, a peak is not grabbed if it is not the max or min over
-%       the window in which it is operating
+%   Importantly, a peak is not grabbed if it is not the max or min over the
+%   window in which it is operating
 %
 %   Inputs:
-%       x                - the vector of values
+%       x                - the vector of values, I think these are
+%                       generally angles
 %       dist             - the minimum distance between peaks
 %       chain_code_lengths - the chain-code length at each index;
 %                          if empty, the array indices are used instead
@@ -25,7 +26,6 @@ function [peaks,indices] = peaksCircDist(x, dist,use_max,value_cutoff,chain_code
 %   See also:
 %   CIRCCOMPUTECHAINCODELENGTHS
 
-
 %The general algorithm is to start at the largest (or smallest if using
 %min) and to progressively work down the scale
 
@@ -34,83 +34,54 @@ if ~exist('chain_code_lengths','var') || isempty(chain_code_lengths)
     chain_code_lengths = 1:length(x);
 end
 
-if use_max
-    I1 = find(x > value_cutoff);
-    [~,I2] = sort(-1*x(I1));
-    I = I1(I2);
-else
-    I1     = find(x < value_cutoff);
-    [~,I2] = sort(x(I1));
-    I = I1(I2);
-end
-
 if size(x,1) > 1
-    x = x';
+    x  = x';
     is_transposed = true;
 else
     is_transposed = false;
 end
 
-
-%Let's say we have the following distances, all relative to the first index
-%-10 -3 -2 0 1 3 5 10 15 30 etc <- this is computed from x, see getLinearDistances
-%          s
-%          1 2 3 4 5  6  7 <- indices of the regular worm
-%
-%   Let's say our data length is 50 (length(x) => 50), then the following 
-%   are indices on the front pad
-%48  49 50 (corresponding to -10 -3 -2)
-%
-%   So, for example, if go +/- 6 on the first sampple, this would take us from
-%   49 to 4 (distances -3 to 5). Using the indices output of 
-%   getLinearDistances() we can grab 49,50,1,2,3,4 really easily. When
-%   choosing index 1, we thus say we can no longer grab these other
-%   indices.
-%
-%   NOTE: The distances are padded on both sides, not just the front
-
-
-[distances,indices,~,x_locations] = seg_worm.util.getLinearDistances(chain_code_lengths);
-
-x_cutoff_left  = x_locations - dist;
-x_cutoff_right = x_locations + dist; 
-
-n_distances = length(distances);
-%round for both of these instead????
-%It probably doesn't matter ...
-
-%For every point, we find the indices over which it must be the maximum (or
-%minimum). This is based on distances, not indices
-start_I = ceil(interp1(distances,1:n_distances,x_cutoff_left));
-end_I   = floor(interp1(distances,1:n_distances,x_cutoff_right));
-
-if use_max
-   minMaxFH = @max;
+%xt - "x for testing" in some places in the code below
+%it will be quicker (and/or easier) to assume that we want the largest
+%value. By negating the data we can look for maxima (which will tell us
+%where the minima are)
+if ~use_max
+    xt = -1*x;
 else
-   minMaxFH = @min;
+    xt = x;
 end
 
-n_sort = length(I);
-n_x    = length(x);
-is_peak_mask = false(1,n_x); 
-taken_mask   = false(1,n_x); %Indicates that the index is close to or is 
+[start_I,end_I,indices] = helper__getExtentsAndIndices(chain_code_lengths,dist);
+
+could_be_a_peak = helper__initCouldBeAPeak(min(end_I - start_I),xt);
+
+if use_max
+    I1 = find(x > value_cutoff & could_be_a_peak);
+    [~,I2] = sort(-1*x(I1));
+    I = I1(I2);
+else
+    I1     = find(x < value_cutoff & could_be_a_peak);
+    [~,I2] = sort(x(I1));
+    I = I1(I2);
+end
+
+is_peak_mask   = false(size(x));
 %a peak and thus can not be used as a peak
+n_sort = length(I);
 for iElem = 1:n_sort
     cur_index = I(iElem);
-    if ~taken_mask(cur_index)
-       %NOTE: Even if a point isn't the local max, it is greater
-       %than anything that is by it that is currently not taken
-       %(because of sorting), so it prevents these points
-       %from undergoing the expensive search of determining
-       %whether they are the min or max within their 
-       %else from being used, so we might as well mark those indices
-       %within it's distance as taken as well
-       temp_indices             = indices(start_I(cur_index):end_I(cur_index));
-       taken_mask(temp_indices) = true;
-       
-       %We need to ensure that within it's window of operatin that the
-       %currently chosen value is a max or a min
-       is_peak_mask(cur_index)  = minMaxFH(x(temp_indices)) == x(cur_index);
+    if could_be_a_peak(cur_index)
+        %NOTE: Even if a point isn't the local max, it is greater
+        %than anything that is by it that is currently not taken
+        %(because of sorting), so it prevents these points
+        %from undergoing the expensive search of determining
+        %whether they are the min or max within their
+        %else from being used, so we might as well mark those indices
+        %within it's distance as taken as well
+        temp_indices = indices(start_I(cur_index):end_I(cur_index));
+        could_be_a_peak(temp_indices) = false;
+        
+        is_peak_mask(cur_index) = max(xt(temp_indices)) == xt(cur_index);
     end
 end
 
@@ -118,16 +89,87 @@ indices = find(is_peak_mask);
 peaks   = x(indices);
 
 if is_transposed
-   indices = indices';
-   peaks = peaks';
+    indices = indices';
+    peaks = peaks';
 end
 
-%This is only for max
-%[peaks2,indices2] = helper__oldCodeMax(x, dist, chain_code_lengths,2*dist+1);
+%OLD DEBUGGING CODE
+% [peaks2,indices2] = helper__oldCodeMax(x, dist, chain_code_lengths,2*dist+1);
 
 end
 
-function [peaks,indices] = helper__oldCodeMax(x, dist, chain_code_lengths,winSize) %#ok<DEFNU>
+function could_be_a_peak = helper__initCouldBeAPeak(min_dist,xt)
+%We'll start with the extreme-most value and progress
+%In the loop this allows us to set the could_be_a_peak to any
+%of the neighbors as false because the value came first and is an extreme
+
+%NOTE: We could make a loop of this ...
+%We'll assume that we at least want to test the neighbor
+%Corresponds to a min_dist of 3 (sort of, could be skewed)
+%
+%                   > right                   > left
+%
+could_be_a_peak = xt > [xt(2:end) xt(1)] & xt > [xt(end) xt(1:end-1)];
+
+%This seems to be beneficial
+if min_dist > 5
+   %                                     > 2 to the right            > 2 to the left
+   could_be_a_peak = could_be_a_peak & xt > [xt(3:end) xt(1:2)] & xt > [xt(end-1:end) xt(1:end-2)]; 
+end
+
+
+% %Doesn't pay off after the first few tests ...
+% next_min    = 5;
+% next_offset = 2;
+% while next_min <= min_dist
+%    could_be_a_peak = could_be_a_peak & xt > [xt(next_offset+1:end) xt(1:next_offset)] & xt > [xt(end-next_offset+1:end) xt(1:end-next_offset)]; 
+%    next_offset = next_offset + 1;
+%    next_min    = next_min + 2;
+% end
+%
+
+% if min_dist > 7
+%    %                                     > 3 to the right            > 3 to the left
+%    could_be_a_peak = could_be_a_peak & xt > [xt(4:end) xt(1:3)] & xt > [xt(end-2:end) xt(1:end-3)]; 
+% end
+end
+function [start_I,end_I,indices] = helper__getExtentsAndIndices(chain_code_lengths,dist)
+
+persistent cc_input dist_input p_start p_end p_indices
+
+if isequal(chain_code_lengths,cc_input) && isequal(dist,dist_input)
+    indices = p_indices;
+    start_I = p_start;
+    end_I   = p_end;
+else
+    
+    [distances,indices,~,x_locations] = seg_worm.util.getLinearDistances(chain_code_lengths);
+    
+    x_cutoff_left  = x_locations - dist;
+    x_cutoff_right = x_locations + dist;
+    
+    n_distances = length(distances);
+    %round for both of these instead????
+    %It probably doesn't matter ...
+    
+    %For every point, we find the indices over which it must be the maximum (or
+    %minimum). This is based on distances, not indices
+    F = griddedInterpolant(distances,1:n_distances);
+    
+    start_I = ceil(F(x_cutoff_left));
+    end_I   = floor(F(x_cutoff_right));
+    
+    cc_input   = chain_code_lengths;
+    dist_input = dist;
+    p_start    = start_I;
+    p_end      = end_I;
+    p_indices  = indices;
+    
+end
+
+end
+
+function [peaks,indices] = helper__oldCodeMax(x, dist, chain_code_lengths,winSize)
 % Initialize the peaks and indices.
 wins    = ceil(length(x) / winSize);
 peaks   = zeros(wins, 1); % pre-allocate memory

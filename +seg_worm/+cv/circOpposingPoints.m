@@ -15,16 +15,8 @@ function oPointsI = circOpposingPoints(pointsI, startI, endI, vLength, cc_length
 %
 %   The tricky part is that the start and end could be at any index, and
 %   that the lengths may not be equal on both sides. This bases nearness
-%   on the cumulative side length, not on physical location, i.e x-y. That
+%   on the cumulative side length, NOT on physical location, i.e x-y. That
 %   is accomplished in circOpposingNearestPoints.
-%
-%   
-%
-%
-%   ??? What are start and end???
-%   - head and tail????
-%   
-%
 %
 %   Inputs:
 %       pointsI          - the point indices to find on the opposing side
@@ -84,11 +76,11 @@ end
 
 %circOpposingPoints(pointsI, startI, endI, vLength, cc_lengths)
 
-%0 1 3 5
+%0 1 3 5  <- 'x' location
 %5 6 8 13 <- cc_lengths 
 
 side1_length = cc_lengths(endI) - cc_lengths(startI);
-side2_length = cc_lengths(end)  - side1_length;
+side2_length = cc_lengths(end)  - side1_length; %The remainder
 
 on_side1_mask = pointsI > startI & pointsI < endI;
 on_side2_mask = pointsI < startI | pointsI > endI;
@@ -110,15 +102,21 @@ side2_indices_fixed = endI:(endI+length(normalized_x2)-1);
 normalized_x1 = (normalized_x1 - normalized_x1(1))./side1_length;
 normalized_x2 = (normalized_x2 - normalized_x2(1))./side2_length;
 
-normalized_x2 = 1-normalized_x2;
-
 %NOTE: I think #2 needs to be flipped ...
+%This make it so that we mirror instead of doing a 180% match
+normalized_x2 = 1-normalized_x2;
 
 %The merger is done so that we can easily
 %line up the requested points with their normalized lengths
 %This is easy for side 1, but is tricky for side 2 points
 %that may have moved from the front of the original series
 %to the end of the normalized series ...
+%
+%In other words, when we extracted points from 2 for normalization
+%the concatentation could have taken two separate chunks and put them
+%together. Our variable pointsI only works relative to the original
+%vector, not the partial vectors, so we need to merge everything back
+%together again to make filling oPointsI easier.
 normalized_x_merged = zeros(size(cc_lengths));
 normalized_x_merged(side1_indices) = normalized_x1;
 normalized_x_merged(side2_indices) = normalized_x2;
@@ -128,33 +126,41 @@ oPointsI = pointsI;
 %Perform interpolation to map one side to the other
 %--------------------------------------------------------------------------
 %Side 1 to 2
-side1_points_x = normalized_x_merged(pointsI(on_side1_mask));
+if any(on_side1_mask)
+    side1_points_x = normalized_x_merged(pointsI(on_side1_mask));
 
-temp = round(interp1(normalized_x2,side2_indices_fixed,side1_points_x));
+    %:/ all of this needs to be sorted, so we'll negate both sides ...
+    F1 = griddedInterpolant(-1*normalized_x2,side2_indices_fixed,'linear');
+    temp = round(F1(-1*side1_points_x));
 
-%Move any wrapped points back to the correct index 
-n_cc_lengths = length(cc_lengths);
+    %Move any wrapped points back to the correct index 
+    n_cc_lengths = length(cc_lengths);
+    mask         = temp > n_cc_lengths;
+    temp(mask)   = temp(mask) - n_cc_lengths;
 
-mask       = temp > n_cc_lengths;
-temp(mask) = temp(mask) - n_cc_lengths;
-
-oPointsI(on_side1_mask) = temp;
+    oPointsI(on_side1_mask) = temp;
+end
 
 %Side 2 to 1
-oPointsI(on_side2_mask) = round(interp1(normalized_x1,side1_indices,...
-    normalized_x_merged(pointsI(on_side2_mask))));
-
-points2 = helper__oldCode(pointsI, startI, endI, vLength, cc_lengths);
-%--------------------------------------------------------------------------
-
-%For debugging
-%----------------------------------
-% disp(oPointsI')
-% disp(points2')
-
-if any(abs(oPointsI - points2) > 1)
-    error('Mismatch between old code and new code')
+if any(on_side2_mask)
+    side2_points_x = normalized_x_merged(pointsI(on_side2_mask));
+    F2 = griddedInterpolant(normalized_x1,side1_indices,'linear');
+    oPointsI(on_side2_mask) = round(F2(side2_points_x));
 end
+
+% % % %DEBUGGGING
+% % % %--------------------------------------------------------------------------
+% % points2 = helper__oldCode(pointsI, startI, endI, vLength, cc_lengths);
+% % % %--------------------------------------------------------------------------
+% % % %
+% % % %For debugging
+% % % %----------------------------------
+% % % % disp(oPointsI')
+% % % % disp(points2')
+% % % % 
+% % if any(abs(oPointsI - points2) > 1)
+% %     error('Mismatch between old code and new code')
+% % end
 
 end
 

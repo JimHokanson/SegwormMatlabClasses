@@ -48,22 +48,29 @@ if n_points < win_size || ...
     return
 end
 
-%angles = helper__oldCode(points,edge_length,chain_code_lengths);
+%anglesOld = helper__oldCode(points,edge_length,chain_code_lengths);
 
 if isempty(chain_code_lengths)
     chain_code_lengths = 1:n_points;
 end
 
-[distances,indices,start_index] = seg_worm.util.getLinearDistances(chain_code_lengths);
+[distances,indices,~,distance_center] = seg_worm.util.getLinearDistances(chain_code_lengths);
 
-distance_center = distances(start_index:start_index + n_points - 1);
 distance_left   = distance_center - edge_length;
 distance_right  = distance_center + edge_length;
 
-p1x = interp1(distances,points(indices,1),distance_left);
-p1y = interp1(distances,points(indices,2),distance_left);
-p2x = interp1(distances,points(indices,1),distance_right);
-p2y = interp1(distances,points(indices,2),distance_right);
+F1 = griddedInterpolant(distances,points(indices,1),'linear');
+F2 = griddedInterpolant(distances,points(indices,2),'linear');
+
+p1x = F1(distance_left);
+p1y = F2(distance_left);
+p2x = F1(distance_right);
+p2y = F2(distance_right);
+
+%p1x = interp1(distances,points(indices,1),distance_left);
+%p1y = interp1(distances,points(indices,2),distance_left);
+%p2x = interp1(distances,points(indices,1),distance_right);
+%p2y = interp1(distances,points(indices,2),distance_right);
 
 v1x = p1x(:) - points(:,1);
 v1y = p1y(:) - points(:,2);
@@ -89,7 +96,7 @@ if is_transposed
 end
 end
 
-function angles = helper__oldCode(points,edgeLength,chainCodeLengths)
+function angles = helper__oldCode(points,edgeLength,chainCodeLengths) %#ok<DEFNU>
 
 
 % Pre-allocate memory.

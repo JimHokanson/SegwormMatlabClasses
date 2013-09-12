@@ -262,9 +262,6 @@ classdef contour < sl.obj.handle_light
         function plot(obj)
             %TODO: Add a third image which shows the subtraction
             
-            keyboard
-            
-            
             pixels_local = obj.pixels;
             cMinY   = min(pixels_local(:,1));
             cMaxY   = max(pixels_local(:,1));

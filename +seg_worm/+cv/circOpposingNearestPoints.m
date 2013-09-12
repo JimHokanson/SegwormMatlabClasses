@@ -6,6 +6,9 @@ function pointsI = circOpposingNearestPoints(...
 %   pointsI = circOpposingNearestPoints(...
 %                   pointsI, X, startI, endI, searchLength, *cc_lengths)
 %
+%
+%   POTENTIAL PROBLEM
+%   -----------------------------------------------------------------------
 %   ???? - it is not clear how this would work close to the head and tail
 %   for example:
 %         y x x
@@ -21,10 +24,7 @@ function pointsI = circOpposingNearestPoints(...
 %   NOTE: In general with loops it might be better to apply
 %   a local tangent operator and limit the scope to be a certain
 %   angle within this local tangent ...
-%
-%
-%   than the more traditional y so the widths might be a bit weird towards
-%   near the head and tail
+%   -----------------------------------------------------------------------
 %
 %   Inputs:
 %       pointsI          - the point indices to find on the opposing side
@@ -74,11 +74,16 @@ end
 
 % Compute the opposing points.
 oPointsI = seg_worm.cv.circOpposingPoints(pointsI, startI, endI, size(x,1), cc_lengths);
+%These are indices that get us in the neighborhood of where we want to be
+%
+%Now we need to find the closest spatially, not based on a cumlative length
+
 
 %This is temporary, for debugging purposes ...
 %final_old = helper_oldCode(x,pointsI,oPointsI,startI,endI,searchLength, cc_lengths);
 
-
+%GET THE RANGE
+%--------------------------------------------------------------------------
 %The goal is for each opposite index to get a range of distances to search
 %so that we can get the opposite location that is closest based on x-y, not
 %based on the cumulative length of the side (what the above function does)
@@ -156,24 +161,11 @@ if any(side2_mask)
     else
         left_value_2 = endI + 1;
     end
-        
-%     %Anything that is a side 1 index, move to the bounds
-%     %This one is a bit tricky to know which index is closer to our index
-%     %
-%     %   This bit of code determines that, and we assign
-%     %   the edge values, right_value_2 and left_value_2 accordingly
-%     x_start    = x_locations(startI);
-%     x_end      = x_locations(endI);
-%     x_half     = x_start + 0.5*(x_end - x_start);
-%     [~,half_I] = min(abs(x_locations - x_half));
-    
+            
     side1_mask_or_SE = indices >= startI & indices <= endI;
     
     target_2_indices = indices;
     target_2_indices(side1_mask_or_SE) = NaN;
-    
-%     target_2_indices(side1_mask_or_SE & indices >= half_I) = right_value_2;
-%     target_2_indices(side1_mask_or_SE & indices < half_I)  = left_value_2;
     
     [minOPointsI(side2_mask),maxOPointsI(side2_mask)] = ...
         helper__updateMinMax(distances,x_locations,target_2_indices,oPointsI,side2_mask,searchLength);
@@ -183,6 +175,7 @@ if any(side2_mask)
     
 end
 
+%Once we have then we call another function to get our answer ...
 pointsI(on_a_side_mask) = seg_worm.cv.circNearestPoints(x(pointsI(on_a_side_mask),:), minOPointsI, maxOPointsI, x);
 
 % if ~isequal(pointsI,final_old)
