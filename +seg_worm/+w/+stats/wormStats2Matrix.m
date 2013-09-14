@@ -1,9 +1,9 @@
-function wormStats2Matrix(filename, wormFiles, varargin)
+function wormStats2Matrix(filename, wormFiles, isVerbose)
 %WORMSTATS2MATRIX Construct and save a worms x features matrix.
 %
 %   WORM2STATSINFO(FILENAME, WORMFILES)
 %
-%   WORM2STATSINFO(FILENAME, WORMFILES, ISVERBOSE)
+%   WORM2STATSINFO(FILENAME, WORMFILES, *ISVERBOSE)
 %
 %   Inputs:
 %       filename - the file name for the worm statistics information;
@@ -105,9 +105,9 @@ function wormStats2Matrix(filename, wormFiles, varargin)
 % notices on any copies of the Software.
 
 % Are we displaying the progress?
-isVerbose = false;
-if ~isempty(varargin)
-    isVerbose = varargin{1};
+
+if ~exist('isVerbose','var') || isempty(isVerbose)
+    isVerbose = false;
 end
 
 % Delete the file if it already exists.
@@ -126,29 +126,29 @@ dataInfo = wormStatsInfo();
 % Construct the feature matrix.
 worm = [];
 control = [];
-worm.info.strain = cell(length(wormFiles), 1);
-worm.info.genotype = cell(length(wormFiles), 1);
-worm.info.gene = cell(length(wormFiles), 1);
-worm.info.allele = cell(length(wormFiles), 1);
-worm.stats.mean = nan(length(wormFiles), length(dataInfo));
-worm.stats.stdDev = nan(length(wormFiles), length(dataInfo));
-worm.stats.samples = nan(length(wormFiles), length(dataInfo));
-worm.stats.pNormal = nan(length(wormFiles), length(dataInfo));
+worm.info.strain        = cell(length(wormFiles), 1);
+worm.info.genotype      = cell(length(wormFiles), 1);
+worm.info.gene          = cell(length(wormFiles), 1);
+worm.info.allele        = cell(length(wormFiles), 1);
+worm.stats.mean         = nan(length(wormFiles), length(dataInfo));
+worm.stats.stdDev       = nan(length(wormFiles), length(dataInfo));
+worm.stats.samples      = nan(length(wormFiles), length(dataInfo));
+worm.stats.pNormal      = nan(length(wormFiles), length(dataInfo));
 worm.stats.qNormal.strain = nan(length(wormFiles), length(dataInfo));
-worm.stats.qNormal.all = nan(length(wormFiles), length(dataInfo));
-worm.stats.zScore = nan(length(wormFiles), length(dataInfo));
-control.stats.mean = nan(length(wormFiles), length(dataInfo));
-control.stats.stdDev = nan(length(wormFiles), length(dataInfo));
-control.stats.samples = nan(length(wormFiles), length(dataInfo));
-control.stats.pNormal = nan(length(wormFiles), length(dataInfo));
+worm.stats.qNormal.all    = nan(length(wormFiles), length(dataInfo));
+worm.stats.zScore         = nan(length(wormFiles), length(dataInfo));
+control.stats.mean        = nan(length(wormFiles), length(dataInfo));
+control.stats.stdDev      = nan(length(wormFiles), length(dataInfo));
+control.stats.samples     = nan(length(wormFiles), length(dataInfo));
+control.stats.pNormal     = nan(length(wormFiles), length(dataInfo));
 control.stats.qNormal.strain = nan(length(wormFiles), length(dataInfo));
 control.stats.qNormal.all = nan(length(wormFiles), length(dataInfo));
-worm.sig.pTValue = nan(length(wormFiles), length(dataInfo));
-worm.sig.pWValue = nan(length(wormFiles), length(dataInfo));
-worm.sig.qTValue.strain = nan(length(wormFiles), length(dataInfo));
-worm.sig.qTValue.all = nan(length(wormFiles), length(dataInfo));
-worm.sig.qWValue.strain = nan(length(wormFiles), length(dataInfo));
-worm.sig.qWValue.all = nan(length(wormFiles), length(dataInfo));
+worm.sig.pTValue          = nan(length(wormFiles), length(dataInfo));
+worm.sig.pWValue          = nan(length(wormFiles), length(dataInfo));
+worm.sig.qTValue.strain   = nan(length(wormFiles), length(dataInfo));
+worm.sig.qTValue.all      = nan(length(wormFiles), length(dataInfo));
+worm.sig.qWValue.strain   = nan(length(wormFiles), length(dataInfo));
+worm.sig.qWValue.all      = nan(length(wormFiles), length(dataInfo));
 %worm.sig.power = nan(length(wormFiles), length(dataInfo));
 for i = 1:length(wormFiles)
     
@@ -158,44 +158,43 @@ for i = 1:length(wormFiles)
     end
     
     % Load the data.
-    data = load(wormFiles{i}, 'wormInfo', 'wormData', 'controlData', ...
-        'significance');
+    data = load(wormFiles{i}, 'wormInfo', 'wormData', 'controlData', 'significance');
     
     % Label the worm.
-    worm.info.strain{i} = worm2StrainLabel(data.wormInfo);
-    worm.info.genotype{i} = worm2GenotypeLabel(data.wormInfo);
-    worm.info.gene{i} = worm2GeneLabel(data.wormInfo);
-    worm.info.allele{i} = worm2AlleleLabel(data.wormInfo);
+    worm.info.strain{i}     = worm2StrainLabel(data.wormInfo);
+    worm.info.genotype{i}   = worm2GenotypeLabel(data.wormInfo);
+    worm.info.gene{i}       = worm2GeneLabel(data.wormInfo);
+    worm.info.allele{i}     = worm2AlleleLabel(data.wormInfo);
     if ~isempty([data.wormData.zScore])
         worm.stats.zScore(i,:) = [data.wormData.zScore];
     end
     
     % Store the worm feature statistics.
-    worm.stats.mean(i,:) = [data.wormData.mean];
-    worm.stats.stdDev(i,:) = [data.wormData.stdDev];
+    worm.stats.mean(i,:)    = [data.wormData.mean];
+    worm.stats.stdDev(i,:)  = [data.wormData.stdDev];
     worm.stats.samples(i,:) = [data.wormData.samples];
     worm.stats.pNormal(i,:) = [data.wormData.pNormal];
     worm.stats.qNormal.strain(i,:) = [data.wormData.qNormal];
     
     % Store the control feature statistics.
     if isfield(data, 'controlData')
-        control.stats.mean(i,:) = [data.controlData.mean];
-        control.stats.stdDev(i,:) = [data.controlData.stdDev];
-        control.stats.samples(i,:) = [data.controlData.samples];
-        control.stats.pNormal(i,:) = [data.controlData.pNormal];
+        control.stats.mean(i,:)     = [data.controlData.mean];
+        control.stats.stdDev(i,:)   = [data.controlData.stdDev];
+        control.stats.samples(i,:)  = [data.controlData.samples];
+        control.stats.pNormal(i,:)  = [data.controlData.pNormal];
 
         % Compute the FDR for the strain's feature normality p-values.
         pNormal = [worm.stats.pNormal(i,:); control.stats.pNormal(i,:)];
         qNormal = nan(size(pNormal));
-        qNormal(~isnan(pNormal)) = mafdr(pNormal(~isnan(pNormal)));
-        worm.stats.qNormal.strain(i,:) = qNormal(1,:);
+        qNormal(~isnan(pNormal))          = mafdr(pNormal(~isnan(pNormal)));
+        worm.stats.qNormal.strain(i,:)    = qNormal(1,:);
         control.stats.qNormal.strain(i,:) = qNormal(2,:);
     end
     
     % Store the worm feature significance.
     if isfield(data, 'significance')
-        worm.sig.pTValue(i,:) = [data.significance.features.pTValue];
-        worm.sig.pWValue(i,:) = [data.significance.features.pWValue];
+        worm.sig.pTValue(i,:)        = [data.significance.features.pTValue];
+        worm.sig.pWValue(i,:)        = [data.significance.features.pWValue];
         worm.sig.qTValue.strain(i,:) = [data.significance.features.qTValue];
         worm.sig.qWValue.strain(i,:) = [data.significance.features.qWValue];
 %         worm.sig.power(i,:) = [data.significance.features.power];
@@ -203,19 +202,17 @@ for i = 1:length(wormFiles)
 end
 
 % Compute the FDR for all feature normality p-values.
-pNormal = [worm.stats.pNormal; control.stats.pNormal];
-qNormal = nan(size(pNormal));
-qNormal(~isnan(pNormal)) = mafdr(pNormal(~isnan(pNormal)));
-worm.stats.qNormal.all = qNormal(1:size(worm.stats.pNormal, 1),:);
-control.stats.qNormal.all = qNormal((size(worm.stats.pNormal, 1) + 1):end,:);
+pNormal                     = [worm.stats.pNormal; control.stats.pNormal];
+qNormal                     = nan(size(pNormal));
+qNormal(~isnan(pNormal))    = mafdr(pNormal(~isnan(pNormal)));
+worm.stats.qNormal.all      = qNormal(1:size(worm.stats.pNormal, 1),:);
+control.stats.qNormal.all   = qNormal((size(worm.stats.pNormal, 1) + 1):end,:);
 
 % Compute the FDR for all feature significance p-values.
 worm.sig.qTValue.all = nan(size(worm.sig.pTValue));
-worm.sig.qTValue.all(~isnan(worm.sig.pTValue)) = ...
-    mafdr(worm.sig.pTValue(~isnan(worm.sig.pTValue)));
+worm.sig.qTValue.all(~isnan(worm.sig.pTValue)) = mafdr(worm.sig.pTValue(~isnan(worm.sig.pTValue)));
 worm.sig.qWValue.all = nan(size(worm.sig.pWValue));
-worm.sig.qWValue.all(~isnan(worm.sig.pWValue)) = ...
-    mafdr(worm.sig.pWValue(~isnan(worm.sig.pWValue)));
+worm.sig.qWValue.all(~isnan(worm.sig.pWValue)) = mafdr(worm.sig.pWValue(~isnan(worm.sig.pWValue)));
 
 % Save the features matrix.
 save(filename, 'dataInfo', 'worm', 'control', '-v7.3');

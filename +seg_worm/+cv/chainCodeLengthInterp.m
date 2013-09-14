@@ -1,12 +1,7 @@
-function [interpData indices] = chainCodeLengthInterp(data, lengths, ...
-    chainCodeLengths, varargin)
-%INTERPDATA Interpolate data values at the requested chain-code lengths.
+function [interpData,indices] = chainCodeLengthInterp(data, lengths, cc_lengths, indices)
+%interpData  Interpolate data values at the requested chain-code lengths.
 %
-%   [INTERPDATA INDICES] = CHAINCODELENGTHINTERP(DATA, LENGTHS,
-%       CHAINCODELENGTHS)
-%
-%   [INTERPDATA INDICES] = CHAINCODELENGTHINTERP(DATA, LENGTHS,
-%       CHAINCODELENGTHS, INDICES)
+%   [interpData,indices] = seg_worm.cv.chainCodeLengthInterp(data, lengths, cc_lengths, *indices)
 %
 %   Inputs:
 %       data             - the original data values
@@ -23,7 +18,9 @@ function [interpData indices] = chainCodeLengthInterp(data, lengths, ...
 %       indices          - the indices for the elements closest to the
 %                          desired lengths
 %
-% See also COMPUTECHAINCODELENGTHS, CHAINCODELENGTH2INDEX
+%   See also:
+%   COMPUTECHAINCODELENGTHS
+%   seg_worm.cv.chainCodeLength2Index
 %
 %
 % © Medical Research Council 2012
@@ -31,8 +28,10 @@ function [interpData indices] = chainCodeLengthInterp(data, lengths, ...
 % you must reproduce all copyright notices and other proprietary 
 % notices on any copies of the Software.
 
+%Yikes - not sure what types of inputs this function is meant to work with
+
 % Is the data 2 dimensional?
-if ndims(data) > 2 || (size(data, 1) > 2 && size(data, 2) > 2)
+if ~ismatrix(data) || (size(data, 1) > 2 && size(data, 2) > 2)
     error('chainCodeLengthInterp:dataSize', ...
         'The input data must be, at most, 2 dimensional')
 end
@@ -45,26 +44,33 @@ if size(data, 2) > 2
 end
 
 % Are there indices for the lengths?
-if length(varargin) == 1
-    indices = varargin{1};
-else
-    indices = chainCodeLength2Index(lengths, chainCodeLengths);
+if ~exist('indices','var') || isempty(indices)
+    indices = seg_worm.cv.chainCodeLength2Index(lengths, cc_lengths);
 end
 
+interpData = helper__oldCode(data, lengths, cc_lengths, indices);
+
+% Transpose the interpolated data.
+if isTransposed
+    interpData = interpData';
+end
+end
+
+function interpData = helper__oldCode(data, lengths, cc_lengths, indices)
 % Interpolate the in-between data.
 sqrt2 = sqrt(2);
 interpData = data(indices,:);
 for i = 1:numel(lengths)
     
     % Compute the difference between the indexed and requested length.
-    if indices(i) == 1 && lengths(i) > chainCodeLengths(end)
-        dLength = chainCodeLengths(1) - lengths(i) + ...
-            chainCodeLengths(end);
-    elseif indices(i) == length(chainCodeLengths) && ...
-            lengths(i) < chainCodeLengths(1)
+    if indices(i) == 1 && lengths(i) > cc_lengths(end)
+        dLength = cc_lengths(1) - lengths(i) + ...
+            cc_lengths(end);
+    elseif indices(i) == length(cc_lengths) && ...
+            lengths(i) < cc_lengths(1)
         dLength = -lengths(i);
     else
-        dLength = chainCodeLengths(indices(i)) - lengths(i);
+        dLength = cc_lengths(indices(i)) - lengths(i);
     end
     
     % The requested length is between the previous and current index.
@@ -73,8 +79,8 @@ for i = 1:numel(lengths)
         if nextI < 1
             
             % Is the data circularly connected?
-            if chainCodeLengths(1) > 0
-                nextI = nextI + length(chainCodeLengths);
+            if cc_lengths(1) > 0
+                nextI = nextI + length(cc_lengths);
             else
                 dLength = 0;
             end
@@ -83,11 +89,11 @@ for i = 1:numel(lengths)
     % The requested length is between the current and next index.
     elseif dLength < 0
         nextI = indices(i) + 1;
-        if nextI > length(chainCodeLengths)
+        if nextI > length(cc_lengths)
         
             % Is the data circularly connected?
-            if chainCodeLengths(1) > 0
-                nextI = nextI - length(chainCodeLengths);
+            if cc_lengths(1) > 0
+                nextI = nextI - length(cc_lengths);
             else
                 dLength = 0;
             end
@@ -103,7 +109,7 @@ for i = 1:numel(lengths)
             
             % Interpolate the data by adding the previous and next data
             % values weighted by their distance from the requested length.
-            dNextLength = abs(chainCodeLengths(nextI) - lengths(i));
+            dNextLength = abs(cc_lengths(nextI) - lengths(i));
             interpData(i) = (dNextLength * data(indices(i)) + ...
                 dLength * data(nextI)) / (dLength + dNextLength);
             
@@ -167,8 +173,4 @@ for i = 1:numel(lengths)
     end
 end
 
-% Transpose the interpolated data.
-if isTransposed
-    interpData = interpData';
-end
 end

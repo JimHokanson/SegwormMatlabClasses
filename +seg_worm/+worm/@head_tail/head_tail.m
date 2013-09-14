@@ -71,7 +71,7 @@ classdef head_tail < seg_worm.worm.body_side
             
             [obj.contour_pixels,obj.left_contour_bounds,...
                 obj.right_contour_bounds,obj.skeleton_bounds] = ...
-                worm2poly(startSI,endSI,s.pixels,c.head_I,c.tail_I,c.pixels,false,s.cc_lengths,c.cc_lengths);
+                seg_worm.worm.worm2poly(startSI,endSI,s.pixels,c.head_I,c.tail_I,c.pixels,false,s.cc_lengths,c.cc_lengths);
             
             if obj.is_head
                 obj.inner_skeleton_bound_I = obj.skeleton_bounds(2);

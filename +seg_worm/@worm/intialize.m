@@ -1,9 +1,12 @@
-function [worm, errNum, errMsg] = ...
-    intialize(obj,img, frame_number, isNormalized, verbose, varargin)
+function intialize(obj,img,isNormalized, varargin)
 %SEGWORM Segment the worm in an image and organize the information in a
 %   structure.
 %
-%   WORM = SEGWORM(IMG, FRAME, ISNORMALIZED, VERBOSE, *NUMERODE, *NUMDILATE, *SAMPLES, *ISINTERP)
+%   WORM = SEGWORM(IMG, FRAME, ISNORMALIZED, VERBOSE, 
+%
+%   These have been lost in translation. Build an options object which
+%   exposes these values ...
+%   *NUMERODE, *NUMDILATE, *SAMPLES, *ISINTERP)
 %
 %   Inputs:
 %       img          - the image to segment

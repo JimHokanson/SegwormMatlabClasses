@@ -95,15 +95,15 @@ negStr = '.statistics.data.mean.neg';
 
 % What features do we have?
 fieldName = {};
-name = {};
-type = [];
-isMain = [];
-isAbs = [];
-isPos = [];
-isNeg = [];
-isSign = [];
-isMotion = [];
-isEvent = [];
+name      = {};
+type      = [];
+isMain    = [];
+isAbs     = [];
+isPos     = [];
+isNeg     = [];
+isSign    = [];
+isMotion  = [];
+isEvent   = [];
 totalFeatures = 0;
 for i = 1:length(dataInfo)
     

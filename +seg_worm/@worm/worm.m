@@ -3,8 +3,18 @@ classdef worm < sl.obj.handle_light
     %   Class:
     %   seg_worm.worm
     
+    properties (Dependent)
+       parse_error 
+    end
+    methods
+        function value = get.parse_error(obj)
+           value =  obj.error_handler.error_found;
+        end
+    end
+    
     properties
         error_handler  %seg_worm.parse_error
+        orientation_handler
         frame_number   %(frame)
         original_image 
         
@@ -16,18 +26,31 @@ classdef worm < sl.obj.handle_light
         left_side  %seg_worm.worm.left
         right_side %seg_worm.worm.right
 
+        manipulations = struct('code',{},'desc',{},'details',{})
     end
     
     methods
         function obj = worm(img, frame_number, isNormalized, verbose, varargin)
             
            %TODO: Create error object here, pass into intialization object 
-           obj.error_handler  = seg_worm.parse_error(img,frame_number,verbose); 
-           obj.original_image = img;
-           obj.frame_number   = frame_number;
+           obj.error_handler       = seg_worm.parse_error(img,frame_number,verbose);
            
+           obj.original_image      = img;
+           obj.frame_number        = frame_number;
+           
+           %Initialization
+           %---------------------------------------------------------------
            %seg_worm.worm.initialize
-           obj.intialize(img, frame_number, isNormalized, varargin{:}) 
+           obj.intialize(img, isNormalized, varargin{:}) 
+
+           obj.orientation_handler = seg_worm.worm.orientation(obj);
+        end
+        function addManipulation(obj,code,description,details)
+            %
+            %   This can be used to document code manipulations ...
+            %
+           obj.manipulations = [obj.manipulations ...
+               struct('code',code,'desc',description,'details',details)]; 
         end
     end
     
