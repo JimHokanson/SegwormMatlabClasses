@@ -1,6 +1,6 @@
-function [headOrthoConfidence tailOrthoConfidence ...
-    headParaConfidence tailParaConfidence ...
-    headMagConfidence tailMagConfidence] = ...
+function [headOrthoConfidence, tailOrthoConfidence, ...
+    headParaConfidence, tailParaConfidence, ...
+    headMagConfidence, tailMagConfidence] = ...
     headTailMovementConfidence(worm1, worm2, varargin)
 %HEADTAILMOVEMENTCONFIDENCE How much confidence do we have in the head and
 %   tail assignment based on their movement in successive frames?
@@ -10,7 +10,7 @@ function [headOrthoConfidence tailOrthoConfidence ...
 %   [HEADORTHOCONFIDENCE TAILORTHOCONFIDENCE
 %    HEADPARACONFIDENCE TAILPARACONFIDENCE
 %    HEADMAGCONFIDENCE TAILMAGCONFIDENCE] =
-%       HEADTAILMOVEMENTCONFIDENCE(WORM1, WORM2)
+%       seg_worm.worm.orientation.headTailMovementConfidence(WORM1, WORM2)
 %
 %   Inputs:
 %       worm1 - the worm from the first frame
@@ -44,7 +44,11 @@ function [headOrthoConfidence tailOrthoConfidence ...
 %                             movement magnitude in these successive
 %                             frames? 
 %
-%   See also SEGWORM, ORIENTWORM, ORIENTWORMATCENTROID, ORIENTWORMPOSTCOIL
+%   See also:
+%   SEGWORM
+%   ORIENTWORM
+%   ORIENTWORMATCENTROID
+%   ORIENTWORMPOSTCOIL
 %
 %
 % © Medical Research Council 2012
@@ -61,12 +65,12 @@ end
 
 % Find 3 points on worm 1's head and tail.
 % Note: the point indices decrease distally from their respective ends.
-skeleton1 = worm1.skeleton;
-pixels1 = skeleton1.pixels;
+skeleton1  = worm1.skeleton;
+pixels1    = skeleton1.pixels;
 ccLengths1 = skeleton1.chainCodeLengths;
-head1 = worm1.head;
-tail1 = worm1.tail;
-hBounds1 = head1.bounds.skeleton;
+head1      = worm1.head;
+tail1      = worm1.tail;
+hBounds1      = head1.bounds.skeleton;
 hPixels1(3,:) = pixels1(hBounds1(1),:);
 hPixels1(2,:) = chainCodeLengthInterp(pixels1, ...
     (ccLengths1(hBounds1(1)) + ccLengths1(hBounds1(2))) / 2, ccLengths1);
@@ -90,60 +94,63 @@ otAngle = atan2(otVector(1), otVector(2));
 
 % Find 3 points on worm 2's head and tail.
 % Note: the point indices decrease distally from their respective ends.
-skeleton2 = worm2.skeleton;
-pixels2 = skeleton2.pixels;
+skeleton2  = worm2.skeleton;
+pixels2    = skeleton2.pixels;
 ccLengths2 = skeleton2.chainCodeLengths;
-head2 = worm2.head;
-tail2 = worm2.tail;
-hBounds2 = head2.bounds.skeleton;
+head2      = worm2.head;
+tail2      = worm2.tail;
+hBounds2   = head2.bounds.skeleton;
 hPixels2(3,:) = pixels2(hBounds2(1),:);
 hPixels2(2,:) = chainCodeLengthInterp(pixels2, ...
     (ccLengths2(hBounds2(1)) + ccLengths2(hBounds2(2))) / 2, ccLengths2);
 hPixels2(1,:) = pixels2(hBounds2(2),:);
-tBounds2 = tail2.bounds.skeleton;
+tBounds2      = tail2.bounds.skeleton;
 tPixels2(3,:) = pixels2(tBounds2(2),:);
 tPixels2(2,:) = chainCodeLengthInterp(pixels2, ...
     (ccLengths2(tBounds2(1)) + ccLengths2(tBounds2(2))) / 2, ccLengths2);
 tPixels2(1,:) = pixels2(tBounds2(1),:);
 if worm2.orientation.head.isFlipped
-    tmp = hPixels2;
+    tmp      = hPixels2;
     hPixels2 = tPixels2;
     tPixels2 = tmp;
 end
 
 % Compute the differential.
 dhVectors = hPixels2 - hPixels1;
-dhAngles = atan2(dhVectors(:,1), dhVectors(:,2));
+dhAngles  = atan2(dhVectors(:,1), dhVectors(:,2));
 dtVectors = tPixels2 - tPixels1;
-dtAngles = atan2(dtVectors(:,1), dtVectors(:,2));
+dtAngles  = atan2(dtVectors(:,1), dtVectors(:,2));
 
 % Compute worm 2's directions relative to worm 1.
 hAngles = dhAngles - ohAngle;
-wrap = hAngles > pi;
+wrap    = hAngles > pi;
 hAngles(wrap) = hAngles(wrap) - 2 * pi;
-wrap = hAngles < -pi;
+wrap    = hAngles < -pi;
 hAngles(wrap) = hAngles(wrap) + 2 * pi;
 tAngles = dtAngles - otAngle;
-wrap = tAngles > pi;
+wrap    = tAngles > pi;
 tAngles(wrap) = tAngles(wrap) - 2 * pi;
-wrap = tAngles < -pi;
+wrap    = tAngles < -pi;
 tAngles(wrap) = tAngles(wrap) + 2 * pi;
 
 % Compute the parallel and orthogonal vector components.
-dhMags = sqrt(sum(dhVectors .^ 2, 2));
+dhMags   = sqrt(sum(dhVectors .^ 2, 2));
 dhOrthos = dhMags .* sin(hAngles);
-dhParas = dhMags .* cos(abs(hAngles));
-dtMags = sqrt(sum(dtVectors .^ 2, 2));
+dhParas  = dhMags .* cos(abs(hAngles));
+dtMags   = sqrt(sum(dtVectors .^ 2, 2));
 dtOrthos = dtMags .* sin(tAngles);
-dtParas = dtMags .* cos(abs(tAngles));
+dtParas  = dtMags .* cos(abs(tAngles));
 
 % Compute the head vs. tail confidence.
 headOrthoConfidence = abs(mean(dhOrthos));
 tailOrthoConfidence = abs(mean(dtOrthos));
-headParaConfidence = mean(dhParas);
-tailParaConfidence = mean(dtParas);
-headMagConfidence = mean(dhMags);
-tailMagConfidence = mean(dtMags);
+headParaConfidence  = mean(dhParas);
+tailParaConfidence  = mean(dtParas);
+headMagConfidence   = mean(dhMags);
+tailMagConfidence   = mean(dtMags);
+end
+
+%{
 
 % Show the worms.
 if verbose
@@ -312,4 +319,6 @@ if verbose
     quiver(tPixels1(:,2), tPixels1(:,1), ...
          dtOrthoPixels(:,2), dtOrthoPixels(:,1), 0, 'k');
 end
-end
+
+
+%}

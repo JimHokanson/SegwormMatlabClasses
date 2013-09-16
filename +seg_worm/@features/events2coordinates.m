@@ -1,7 +1,7 @@
 function coordinates = events2coordinates(skeleton, points, frames)
 %EVENT2COORDINATES Convert events to their coordinate locations.
 %
-%   COORDINATES = EVENT2COORDINATES(SKELETON, POINTS, EVENTS)
+%   coordinates = events2coordinates(skeleton, points, frames)
 %
 %   Inputs:
 %       skeleton - the worm skeleton matrix (points x coordinates x frames)

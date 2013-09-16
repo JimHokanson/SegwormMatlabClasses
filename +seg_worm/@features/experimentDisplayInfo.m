@@ -21,13 +21,13 @@ function info = experimentDisplayInfo()
 %% Organize the experiment information.
 
 % Organize the worm information.
-info.experiment.worm.strain.name = 'Worm (Strain)';
-info.experiment.worm.genotype.name = 'Worm (Genotype)';
-info.experiment.worm.gene.name = 'Worm Genotype (Genes)';
-info.experiment.worm.allele.name = 'Worm Genotype (Alleles)';
-info.experiment.worm.chromosome.name = 'Worm Genotype (Chromosomes)';
-info.experiment.worm.sex.name = 'Worm (Sex Chromosomes)';
-info.experiment.worm.age.name = 'Worm (Age)';
+info.experiment.worm.strain.name      = 'Worm (Strain)';
+info.experiment.worm.genotype.name    = 'Worm (Genotype)';
+info.experiment.worm.gene.name        = 'Worm Genotype (Genes)';
+info.experiment.worm.allele.name      = 'Worm Genotype (Alleles)';
+info.experiment.worm.chromosome.name  = 'Worm Genotype (Chromosomes)';
+info.experiment.worm.sex.name         = 'Worm (Sex Chromosomes)';
+info.experiment.worm.age.name         = 'Worm (Age)';
 info.experiment.worm.habituation.name =  'Worm (Habituation Time)';
 info.experiment.worm.ventralSide.name = ...
     'Worm (Ventral Side, Orientation From Head)';

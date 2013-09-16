@@ -1,9 +1,9 @@
-function orientToRefWorm(cur_orientation, ref_worm, verbose)
+function orientToRefWorm(cur_orientation, ref_worm)
 %
 %
 %   PREVIOUS_NAME: 'orientWorm'
 %
-%   seg_worm.worm.orientation.orientToPreviousWorm(obj, previous_worm, samples, *verbose)
+%   seg_worm.worm.orientation.orientToPreviousWorm(obj, previous_worm)
 %   
 %
 %   Orient worm2 to match worm1's orientation (by setting
@@ -34,10 +34,6 @@ function orientToRefWorm(cur_orientation, ref_worm, verbose)
 %   Input:
 %       worm1   - the reference worm
 %       worm2   - the worm to orient relative to the reference
-%       samples - the fractional sample locations along the skeleton
-%
-%
-%       verbose - verbose mode shows the worms in a figure
 %
 %   Output:
 %       worm2             - the oriented worm (with
@@ -49,8 +45,11 @@ function orientToRefWorm(cur_orientation, ref_worm, verbose)
 %       flippedConfidence - the confidence measurement for the flipped
 %                           (opposite) orientation
 %
-% See also SEGWORM, ORIENTWORMATCENTROID, ORIENTWORMPOSTCOIL,
-% HEADTAILMOVEMENTCONFIDENCE
+% See also: 
+%   SEGWORM, 
+%   seg_worm.worm.orientation.orientWormAtCentroid
+%   seg_worm.worm.orientation.orientWormPostCoil
+%   seg_worm.worm.orientation.headTailMovementConfidence
 %
 %
 % © Medical Research Council 2012
@@ -62,75 +61,17 @@ function orientToRefWorm(cur_orientation, ref_worm, verbose)
 %and tail are flipped, or should we actually flip the head and tail data
 %...
 
-
-% Are we in verbose mode?
-if ~exist('verbose','var') || isempty(verbose)
-   verbose = false; 
-end
-
 ref_orientation = ref_worm.orientation_handler;
 
 p1 = ohelper__getPointsAlongSkeleton(ref_orientation,cur_orientation.ORIENTATION_PCT);
 p2 = ohelper__getPointsAlongSkeleton(cur_orientation,cur_orientation.ORIENTATION_PCT);
 
-cur_ht_flipped = cur_orientation.isWormCellHeadFlipped;
-ref_ht_flipped = ref_orientation.isWormCellHeadFlipped;
-
-%CURRENT STATUS:
-%- check out seg_worm.cv.chainCodeLengthInterp
-%- working on code below - most of which is redundant - needs to be a
-%function ...
-
-keyboard
-
-% Compute the distance between worm 1 and 2 in both orientations.
-% Note: the skeleton samples are interpolated and, therefore, distances
-% less than 1 are likely to be, in reality, either 1 or 0. We set these to
-% 0 to avoid computing extreme confidences.
-proximity1 = sqrt(sum((p1 - p2) .^ 2, 2));
-proximity1(proximity1 < 1) = 0;
-proximity2 = sqrt(sum((p1 - flipud(p2)) .^ 2, 2));
-proximity2(proximity2 < 1) = 0;
-
-% Compute the indicators for both orientations.
-indicators1 = sum(proximity1 < proximity2);
-indicators2 = sum(proximity1 > proximity2);
-
-% Compute the confidence for both orientations.
-% Note: to avoid dividing by 0, when the magnitude's distance denominator
-% is 0 we substitute the numerator's distance instead of the ratio.
-magnitudes1     = proximity2 ./ proximity1;
-zeroConfidence  = (proximity1 < 1);
-magnitudes1(zeroConfidence) = proximity2(zeroConfidence);
-confidence1     = mean(magnitudes1);
-magnitudes2     = proximity1 ./ proximity2;
-zeroConfidence  = (proximity2 < 1);
-magnitudes2(zeroConfidence) = proximity1(zeroConfidence);
-confidence2     = mean(magnitudes2);
-
-% Retain the head-to-tail orientation.
-if indicators1 > indicators2 || (indicators1 == indicators2 && confidence1 >= confidence2)
-    confidence = confidence1;
-    flippedConfidence = confidence2;
-    if (verbose)
-        isFlipped = false;
-    end
-
-% Flip the head-to-tail orientation.
-else
-    worm2 = flipWormHead(worm2);
-    confidence = confidence2;
-    flippedConfidence = confidence1;
-    if (verbose)
-        isFlipped = true;
-    end
-end
+cur_orientation.ohelper__flipWormToMatchRef(p1,p2);
 
 % Flip the vulval side.
-if worm2.orientation.vulva.isClockwiseFromHead ~= worm1.orientation.vulva.isClockwiseFromHead
-    worm2 = flipWormVulva(worm2);
+if cur_orientation.vulva_clockwise_from_head ~= ref_orientation.vulva_clockwise_from_head
+   cur_orientation.flipWormVulva();
 end
-
 
 end
 

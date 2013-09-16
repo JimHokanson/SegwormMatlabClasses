@@ -4,6 +4,9 @@ function [vulvaContours nonVulvaContours skeletons angles inOutTouches ...
     rotation, verbose)
 %NORMWORMS Normalize the worms' information to a standard, compact set.
 %
+%   seg_worm.w.util.normWorms
+%
+%
 %   [VULVACONTOURS NONVULVACONTOURS SKELETONS ANGLES TOUCHINOUTS LENGTHS
 %      WIDTHS HEADAREAS TAILAREAS VULVAAREAS NONVULVAAREAS ISNORMED] =
 %      NORMWORMS(WORMS, SAMPLES, MOVES, ORIGINS, PIXEL2MICRONSCALE,

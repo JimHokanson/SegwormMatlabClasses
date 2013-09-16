@@ -1,17 +1,32 @@
-function [interpData,indices] = chainCodeLengthInterp(data, lengths, cc_lengths, indices)
+function interpData = chainCodeLengthInterp(data, lengths, cc_lengths, indices)
 %interpData  Interpolate data values at the requested chain-code lengths.
 %
-%   [interpData,indices] = seg_worm.cv.chainCodeLengthInterp(data, lengths, cc_lengths, *indices)
+%   interpData = seg_worm.cv.chainCodeLengthInterp(data, lengths, cc_lengths, *indices)
+%
+%
+%   One of the uses of this method is to get x-y data for determining
+%   whether or not the worm is flipped relative to the previous worm. In
+%   this case x-y values are obtained at certain percentages along the
+%   worm.
+%
+%   EDITS:
+%   - removed 2nd output, it doesn't look like it was being used ...
+%
 %
 %   Inputs:
 %       data             - the original data values
+%                          [n x 1] or [n x 2]                        
+%
 %       lengths          - the lengths at which to interpolate data values
+%
 %       chainCodeLengths - an ascending array of chain code lengths
 %                          Note: the chain code lengths must increase at
 %                          every successive index
+%
+%                        ????? - what is the purpose of this ?????
 %       indices          - the indices for the elements closest to the
 %                          desired lengths; if empty, the indices are
-%                          computed using chainCodeLength2Index
+%                          computed using seg_worm.cv.chainCodeLength2Index
 %
 %   Outputs:
 %       interpData       - the interpolated data values
@@ -31,7 +46,7 @@ function [interpData,indices] = chainCodeLengthInterp(data, lengths, cc_lengths,
 %Yikes - not sure what types of inputs this function is meant to work with
 
 % Is the data 2 dimensional?
-if ~ismatrix(data) || (size(data, 1) > 2 && size(data, 2) > 2)
+if ~ismatrix(data) || all(size(data) > 2)
     error('chainCodeLengthInterp:dataSize', ...
         'The input data must be, at most, 2 dimensional')
 end
@@ -43,12 +58,32 @@ if size(data, 2) > 2
     isTransposed = true;
 end
 
+%NOTE: This seems to only be for old code ...
 % Are there indices for the lengths?
 if ~exist('indices','var') || isempty(indices)
     indices = seg_worm.cv.chainCodeLength2Index(lengths, cc_lengths);
+else
+    fprintf(2,'Not sure why this is happening\n');
+    keyboard
 end
 
-interpData = helper__oldCode(data, lengths, cc_lengths, indices);
+%data, lengths, cc_lengths
+Fx = griddedInterpolant(cc_lengths,data(:,1));
+
+is_2d = size(data,2) == 2;
+
+if is_2d
+    Fy = griddedInterpolant(cc_lengths,data(:,2));
+    interpData = [Fx(lengths(:)) Fy(lengths(:))];
+else
+    interpData = Fx(lengths(:));
+end
+
+interpDataOld = helper__oldCode(data, lengths, cc_lengths, indices);
+
+if sum(abs(interpData - interpDataOld)) > 0.0000001
+   keyboard 
+end
 
 % Transpose the interpolated data.
 if isTransposed
@@ -58,7 +93,7 @@ end
 
 function interpData = helper__oldCode(data, lengths, cc_lengths, indices)
 % Interpolate the in-between data.
-sqrt2 = sqrt(2);
+sqrt2      = sqrt(2);
 interpData = data(indices,:);
 for i = 1:numel(lengths)
     
@@ -158,16 +193,13 @@ for i = 1:numel(lengths)
             %   interpData = offData .* sign(dData) + data(prevI,:)
             dData = data(nextI,:) - data(indices(i),:);
             if any(dData == 0)
-                interpData(i,:) = dLength .* sign(dData) + ...
-                    data(indices(i),:);
+                interpData(i,:) = dLength .* sign(dData) + data(indices(i),:);
             elseif all(abs(dData) == 1)
-                interpData(i,:) = (dLength / sqrt2) .* dData + ...
-                    data(indices(i),:);
+                interpData(i,:) = (dLength / sqrt2) .* dData + data(indices(i),:);
             else
                 offData1 = dLength / sqrt(1 + (dData(2) / dData(1)) ^ 2);
                 offData2 = dLength / sqrt(1 + (dData(1) / dData(2)) ^ 2);
-                interpData(i,:) = [offData1 offData2] .* sign(dData) + ...
-                    data(indices(i),:);
+                interpData(i,:) = [offData1 offData2] .* sign(dData) + data(indices(i),:);
             end
         end
     end

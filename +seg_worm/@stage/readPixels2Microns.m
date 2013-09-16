@@ -1,4 +1,4 @@
-function [pixel2MicronScale, rotation] = readPixels2Microns(infoFile)
+function readPixels2Microns(obj)
 %READPIXELS2MICRONS Read the experiment information file and compute the
 %   scale for converting pixels to microns as well as the rotation matrix.
 %
@@ -20,9 +20,9 @@ function [pixel2MicronScale, rotation] = readPixels2Microns(infoFile)
 % notices on any copies of the Software.
 
 % Open the information file.
-if ~exist(infoFile, 'file')
-    error('findStageMovement:BadInfoFile', ['Cannot open ' infoFile]);
-end
+% if ~exist(infoFile, 'file')
+%     error('findStageMovement:BadInfoFile', ['Cannot open ' infoFile]);
+% end
 xml = xmlread(infoFile);
 
 % Read the steps/microns.
@@ -42,7 +42,7 @@ pixelsY = str2double(xmlReadTag(xml, ...
 pixel2MicronX     = pixelsX / micronsX;
 pixel2MicronY     = pixelsY / micronsY;
 normScale         = sqrt((pixel2MicronX ^ 2 + pixel2MicronY ^ 2) / 2);
-pixel2MicronScale =  normScale * [sign(pixel2MicronX) sign(pixel2MicronY)];
+obj.pixel_2_micron_scale =  normScale * [sign(pixel2MicronX) sign(pixel2MicronY)];
 
 % Compute the rotation matrix.
 %rotation = 1;
@@ -52,7 +52,7 @@ if angle > 0
 else
     angle = pi / 4 + angle;
 end
-cosAngle = cos(angle);
-sinAngle = sin(angle);
-rotation = [cosAngle, -sinAngle; sinAngle, cosAngle];
+cosAngle     = cos(angle);
+sinAngle     = sin(angle);
+obj.rotation = [cosAngle, -sinAngle; sinAngle, cosAngle];
 end

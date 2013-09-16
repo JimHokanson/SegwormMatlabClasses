@@ -1,5 +1,10 @@
 %???? - Not sure what this file does ...
 
+%JAH NOTES
+%---------------------------------------------
+%1) Works on the features.mat files ...
+
+
 % Initialize our variables.
 %
 %
@@ -78,9 +83,9 @@ for i = fliplr(1:length(testDir))
     
 
     % Initialize the requisite data.
-    speed = speeds.midbody;
+    speed       = speeds.midbody;
     totalFrames = length(speed);
-    lastFrame = totalFrames - 1;
+    lastFrame   = totalFrames - 1;
     
     % Compute the distance. This avoids both segmentation noise and having to
     % re-interpolate the distance when frames are missing.
@@ -89,11 +94,11 @@ for i = fliplr(1:length(testDir))
 
 
     %% Find the forward motion.
-    wormSpeedThr = meanWormLength * 0.05; % 5 percent of its length
-    wormDistanceThr = meanWormLength * 0.05; % 5 percent of its length
+    wormSpeedThr       = meanWormLength * 0.05; % 5 percent of its length
+    wormDistanceThr    = meanWormLength * 0.05; % 5 percent of its length
     wormEventFramesThr = 1.5 * fps;
     wormEventMinInterFramesThr = 0.25 * fps;
-    minForwardSpeed = wormSpeedThr;
+    minForwardSpeed    = wormSpeedThr;
     minForwardDistance = wormDistanceThr;
     forwardFrames = findEvent(speed, minForwardSpeed, [], true, ...
         wormEventFramesThr, [], false, ...

@@ -1,9 +1,8 @@
-function pixels = microns2Pixels(origin, microns, pixel2MicronScale, ...
-    rotation)
-%PIXELS2MICRONS Convert real-world micron locations to onscreen pixel
+function pixels = microns2Pixels(obj,origin, microns)
+%microns2Pixels  Convert real-world micron locations to onscreen pixel
 %   coordinates.
 %
-%   PIXELS = MICRONS2PIXELS(ORIGIN, MICRONS, PIXEL2MICRONSCALE, ROTATION)
+%   pixels = microns2Pixels(origin, microns, pixel2MicronScale, rotation)
 %
 %   Inputs:
 %       origin            - the real-world micron origin (stage location)
@@ -16,13 +15,19 @@ function pixels = microns2Pixels(origin, microns, pixel2MicronScale, ...
 %   Output:
 %       pixels - the onscreen pixel coordinates
 %
-% See also READPIXELS2MICRONS, PIXELS2MICRONS
+%   See also:
+%   normWorm  %Caller
+%   READPIXELS2MICRONS
+%   PIXELS2MICRONS
 %
 %
 % © Medical Research Council 2012
 % You will not remove any copyright or other notices from the Software; 
 % you must reproduce all copyright notices and other proprietary 
 % notices on any copies of the Software.
+
+pixel2MicronScale = obj.pixel_2_micron_scale;
+rotation          = obj.rotation;
 
 % Convert the micron locations to pixels coordinates.
 pixels(:,1) = (origin(1) - microns(:,1)) / pixel2MicronScale(1);

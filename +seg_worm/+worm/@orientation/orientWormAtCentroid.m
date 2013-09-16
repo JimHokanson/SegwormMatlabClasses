@@ -73,7 +73,7 @@ if worm1.orientation.head.isFlipped
 else
     s1 = skeleton1.length * samples;
 end
-[p1, s1I] = chainCodeLengthInterp(skeleton1.pixels, s1, skeleton1.chainCodeLengths);
+p1 = chainCodeLengthInterp(skeleton1.pixels, s1, skeleton1.chainCodeLengths);
 
 % Sample worm 2.
 skeleton2 = worm2.skeleton;
@@ -85,7 +85,7 @@ if worm2.orientation.head.isFlipped
 else
     s2 = skeleton2.length * samples;
 end
-[p2, s2I] = chainCodeLengthInterp(skeleton2.pixels, s2, skeleton2.chainCodeLengths);
+p2 = chainCodeLengthInterp(skeleton2.pixels, s2, skeleton2.chainCodeLengths);
 
 % Compute the translation between worms using their centroids.
 c1 = mean(skeleton1.pixels);

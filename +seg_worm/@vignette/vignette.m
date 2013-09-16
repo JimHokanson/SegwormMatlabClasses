@@ -22,21 +22,45 @@ classdef vignette < handle
         end
     end
     
-    methods
-        function obj = vignette(vignette_file_path,height,width)
-            
-            
-            obj.file_path = vignette_file_path;
-            %???? Why is the vignette signed????
+    methods (Static)
+        function obj_or_empty = create(file_manager,video_reader)
             %
-            %???? Why int32 to int8
+            %   vignette = seg_worm.vignette.create(file_manager,video_reader)
             %
-            %For some reason the data is written as a 4 byte value
-            %when only occuping 1 byte
-            temp = single(sl.io.fileRead(vignette_file_path,'int32=>int8','endian','b'));
-            
-            obj.mask_data = reshape(temp,height,width)';
+           v_file_path = file_manager.vignette_data_file;
+           if exist(v_file_path,'file')
+               obj_or_empty = seg_worm.vignette.create(v_file_path,video_reader);
+           else
+               obj_or_empty = [];
+           end
         end
+    end
+    
+    methods (Access = private)
+        function obj = vignette(file_path,video_reader)
+            %
+            %   vignette = seg_worm.vignette.create(file_path,video_reader)
+            %
+            obj.file_path      = file_path;
+
+            
+            if obj.file_available
+                height = video_reader.height;
+                width  = video_reader.width;
+
+                %???? Why is the vignette signed????
+                %
+                %???? Why int32 to int8
+                %
+                %For some reason the data is written as a 4 byte value
+                %when only occuping 1 byte
+                temp = single(sl.io.fileRead(obj.file_path ,'int32=>int8','endian','b'));
+
+                obj.mask_data = reshape(temp,height,width)';
+            end
+        end
+    end
+    methods
         function fixed_data = apply(obj,frame_data)
             fixed_data = uint8(single(frame_data) - obj.mask_data);
             

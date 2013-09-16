@@ -1,4 +1,4 @@
-function [isUsed wormX tickX nameX labelX] = wormInfo2Date(info, filt)
+function [isUsed,wormX,tickX,nameX,labelX] = wormInfo2Date(info, filt)
 %WORMINFO2DATE Convert worm information to the date the experiment was
 %performed.
 %
@@ -38,7 +38,7 @@ function [isUsed wormX tickX nameX labelX] = wormInfo2Date(info, filt)
 % notices on any copies of the Software.
 
 % Filter the worms.
-[isUsed data] = filterWormInfo(info, filt);
+[isUsed,data] = filterWormInfo(info, filt);
 
 % Compute the x-axis values.
 wormX(1,:) = [data(isUsed).date];

@@ -1,4 +1,4 @@
-          function [diffData startFrame endFrame fps useSamples] = ...
+function [diffData, startFrame, endFrame, fps, useSamples] = ...
     multiScaleWorm(wormFile, startFrame, endFrame, useSamples, ...
     useFrames, type, scales, isSparse, offMode, isNoisy, htDirMode, ...
     isAbsDir, varargin)
@@ -223,7 +223,10 @@
 %       useSamples - the data's worm sample indices
 %       fps        - the data's frames/seconds
 %
-%   See also SAVEWORMFRAMES, NORMWORMS, MULTISCALEDIFF
+%   See also:
+%   SAVEWORMFRAMES, 
+%   NORMWORMS, 
+%   MULTISCALEDIFF
 %
 %
 % © Medical Research Council 2012
@@ -277,8 +280,7 @@ end
 if ~isempty(blockFilePath)
     
     % Load the worm information.
-    load(wormFile, 'SAMPLES', 'myAviInfo', 'pixel2MicronScale', ...
-        'normBlockList');
+    load(wormFile, 'SAMPLES', 'myAviInfo', 'pixel2MicronScale', 'normBlockList');
     
     % Check the variables.
     varName = 'SAMPLES';

@@ -192,9 +192,9 @@ for i = 1:length(feature)
                 [field indexStr motionFields{j} statStr signFields{k}];
             newInfo.isMain = j == 1 && k == 1;
             newInfo.category = category;
-            newInfo.type = type;
-            newInfo.subType = motionTypes{j};
-            newInfo.sign = signTypes{k};
+            newInfo.type     = type;
+            newInfo.subType  = motionTypes{j};
+            newInfo.sign     = signTypes{k};
             
             % Add the new feature.
             info = cat(1, info, newInfo);
@@ -329,11 +329,11 @@ for i = 1:length(subFields)
         
     % Create the new feature.
     newInfo = [];
-    newInfo.name = subFeature.name;
-    newInfo.unit = subFeature.unit;
-    newInfo.title1 = feature.name;
-    newInfo.title2 = subFeature.shortName;
-    newInfo.title3 = '';
+    newInfo.name    = subFeature.name;
+    newInfo.unit    = subFeature.unit;
+    newInfo.title1  = feature.name;
+    newInfo.title2  = subFeature.shortName;
+    newInfo.title3  = '';
     newInfo.title1I = featureI;
     newInfo.title2I = i;
     newInfo.title3I = 1;

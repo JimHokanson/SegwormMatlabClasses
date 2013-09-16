@@ -1,7 +1,7 @@
-function [isUsed data] = filterWormInfo(info, filt)
+function [isUsed,data] = filterWormInfo(info, filt)
 %FILTERWORMINFO Filter worm information to meet specific criteria.
 %
-%   [ISUSED DATA] = FILTERWORMINFO(INFO, FILTER)
+%   [isUsed,data] = filterWormInfo(info, filt)
 %
 %   Inputs:
 %       info - the worm information
@@ -56,18 +56,18 @@ function [isUsed data] = filterWormInfo(info, filt)
 isUsed = true(length(info), 1);
 
 % Determine the filtering criteria.
-minFPS = NaN;
-minTime = NaN;
-maxTime = NaN;
-minSegTime = NaN;
-minRatio = NaN;
-minDate = NaN;
-maxDate = NaN;
-useHours = [];
-useDays = [];
-useWeeks = [];
-useMonths = [];
-useYears = [];
+minFPS      = NaN;
+minTime     = NaN;
+maxTime     = NaN;
+minSegTime  = NaN;
+minRatio    = NaN;
+minDate     = NaN;
+maxDate     = NaN;
+useHours    = [];
+useDays     = [];
+useWeeks    = [];
+useMonths   = [];
+useYears    = [];
 useTrackers = [];
 if ~isempty(filt) && isstruct(filt)
     

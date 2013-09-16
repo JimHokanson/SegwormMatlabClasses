@@ -328,7 +328,7 @@ end
 
 
 %% Compute the bend angles at the nose, head, midbody, and tail.
-function [bends state] = bendFunc(dataInfo, state)
+function [bends,state] = bendFunc(dataInfo, state)
 
 % No worm data.
 fps = dataInfo.fps;
@@ -383,7 +383,7 @@ neckSkeletons = data{4}(state.nose.neckI,:,:);
 
 % Extract the body data.
 headBends = mean(data{5}(state.body.headI,:), 1);
-midBends = mean(data{5}(state.body.midI,:), 1);
+midBends  = mean(data{5}(state.body.midI,:), 1);
 tailBends = mean(data{5}(state.body.tailI,:), 1);
 
 % Interpolate the missing data.

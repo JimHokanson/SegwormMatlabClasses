@@ -16,7 +16,9 @@ function microns = pixels2Microns(origin, pixels, pixel2MicronScale, ...
 %   Output:
 %       microns - the real-world, micron locations
 %
-% See also READPIXELS2MICRONS, MICRONS2PIXELS
+%   See also: 
+%   READPIXELS2MICRONS
+%   MICRONS2PIXELS
 %
 %
 % © Medical Research Council 2012

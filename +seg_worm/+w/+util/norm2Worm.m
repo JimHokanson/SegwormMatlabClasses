@@ -9,6 +9,11 @@ function worm = norm2Worm(frame, vulvaContour, nonVulvaContour, ...
 %                    HEADAREA, TAILAREA, VULVAAREA, NONVULVAAREA,
 %                    ORIGIN, PIXEL2MICRONSCALE, ROTATION, WORM)
 %
+%
+%       ???? Why would this code be called????
+%
+%
+%
 %   Inputs:
 %
 %       Note 1: all inputs must be oriented head to tail.
@@ -222,28 +227,26 @@ if isempty(worm)
                 nonVulvaContour(2:(end - 1),2) / m;
             
             % Compute the perpendicular points for the contour points.
-            pVulva(:,2) = (bVulva - b) / (m + 1 / m);
-            pVulva(:,1) = m * pVulva(:,2) + b;
+            pVulva(:,2)    = (bVulva - b) / (m + 1 / m);
+            pVulva(:,1)    = m * pVulva(:,2) + b;
             pNonVulva(:,2) = (bNonVulva - b) / (m + 1 / m);
             pNonVulva(:,1) = m * pNonVulva(:,2) + b;
             
             % Compute the perpendicular distances for the contour points
             % from the head-to-tail line.
-            dVulva = sum((vulvaContour(2:(end - 1),:) - pVulva) .^ 2, 2);
+            dVulva    = sum((vulvaContour(2:(end - 1),:) - pVulva) .^ 2, 2);
             dNonVulva = sum((nonVulvaContour(2:(end - 1),:) - ...
                 pNonVulva) .^ 2, 2);
             
             % Which contour side has the furthest point from the
             % head-to-tail line?
             dHTSign = sign(dHT);
-            [mVulva mVulvaI] = max(dVulva);
-            [mNonVulva mNonVulvaI] = max(dNonVulva);
+            [mVulva, mVulvaI] = max(dVulva);
+            [mNonVulva, mNonVulvaI] = max(dNonVulva);
             if mVulva > mNonVulva
-                dPSign = sign(vulvaContour(mVulvaI + 1,:) - ...
-                    pVulva(mVulvaI,:));
+                dPSign = sign(vulvaContour(mVulvaI + 1,:) - pVulva(mVulvaI,:));
             else
-                dPSign = sign(pNonVulva(mNonVulvaI,:) - ...
-                    nonVulvaContour(mNonVulvaI + 1,:));
+                dPSign = sign(pNonVulva(mNonVulvaI,:) - nonVulvaContour(mNonVulvaI + 1,:));
             end
             
             % The head-to-tail line runs northeast to southwest.
@@ -263,9 +266,9 @@ if isempty(worm)
 else % ~isempty(worm)
     isHeadFlipped = worm.orientation.head.isFlipped;
     isVulvaClockwiseFromHead = worm.orientation.vulva.isClockwiseFromHead;
-    hConfidence = worm.orientation.head.confidence.head;
-    tConfidence = worm.orientation.head.confidence.tail;
-    vConfidence = worm.orientation.vulva.confidence.vulva;
+    hConfidence  = worm.orientation.head.confidence.head;
+    tConfidence  = worm.orientation.head.confidence.tail;
+    vConfidence  = worm.orientation.vulva.confidence.vulva;
     nvConfidence = worm.orientation.vulva.confidence.nonVulva;
 end
 
@@ -516,12 +519,12 @@ end
 if samples == 1 % The samples are the midpoint.
     
     % Compute the head bounds.
-    hsBounds = [1; 1];
+    hsBounds  = [1; 1];
     hlcBounds = [2; 2];
     hrcBounds = [1; 1];
     
     % Compute the tail bounds.
-    tsBounds = [1; 1];
+    tsBounds  = [1; 1];
     tlcBounds = [2; 2];
     trcBounds = [1; 1];
     
@@ -536,12 +539,12 @@ if samples == 1 % The samples are the midpoint.
 elseif samples == 2 % The samples are the head and tail.
     
     % Compute the head bounds.
-    hsBounds = [1; 1];
+    hsBounds  = [1; 1];
     hlcBounds = [1; 1];
     hrcBounds = [1; 1];
     
     % Compute the tail bounds.
-    tsBounds = [2; 2];
+    tsBounds  = [2; 2];
     tlcBounds = [2; 2];
     trcBounds = [2; 2];
     
@@ -1063,7 +1066,7 @@ while startI ~= endI
     elseif nextI > size(points,1) % wrap
         nextI = 1;
     end
-    line = [line; drawLine(points(startI,:), points(nextI,:))];
+    line = [line; drawLine(points(startI,:), points(nextI,:))]; %#ok<AGROW>
     startI = nextI;
 end
 
