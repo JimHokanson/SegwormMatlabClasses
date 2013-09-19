@@ -21,6 +21,10 @@ classdef file_manager < handle
            %NOTE: There are different options, we might want to allow
            %selecting between this different options ...
            obj.diff_file = strrep(video_file_path, '.avi', '_video_diff_file.mat');
+           
+           obj.log_file  = strrep(video_file_path, '.avi', '.log.csv');
+           
+           obj.info_file = strrep(video_file_path, '.avi', '.info.xml');
         end
     end
     

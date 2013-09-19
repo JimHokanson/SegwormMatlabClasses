@@ -3,6 +3,9 @@ function info = wormDataInfo()
 %
 %   INFO = WORMDATAINFO()
 %
+%       This provides an enumeration of all the features.
+%
+%
 %   Output:
 %       info - information for computing the worm data; a structure where:
 %

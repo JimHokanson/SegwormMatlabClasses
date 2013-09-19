@@ -1,5 +1,5 @@
 function worm2StatsInfo(filename, wormFiles, varargin)
-%WORM2STATSINFO Compute worm statistics information and save it to a file.
+%WORM2STATSINFO  Compute worm statistics information and save it to a file.
 %
 %   WORM2STATSINFO(FILENAME, WORMFILES)
 %

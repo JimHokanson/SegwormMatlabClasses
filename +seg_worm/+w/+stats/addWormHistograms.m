@@ -1,14 +1,7 @@
 function addWormHistograms(filename, wormFiles, varargin)
 %ADDWORMHISTOGRAMS Combine worm histograms.
 %
-%   ADDWORMHISTOGRAMS(FILENAME, WORMFILES)
-%
-%   ADDWORMHISTOGRAMS(FILENAME, WORMFILES, CONTROLFILES)
-%
-%   ADDWORMHISTOGRAMS(FILENAME, WORMFILES, CONTROLFILES, ISOLDCONTROL)
-%
-%   ADDWORMHISTOGRAMS(FILENAME, WORMFILES, CONTROLFILES, ISOLDCONTROL,
-%                     VERBOSE)
+%   ADDWORMHISTOGRAMS(FILENAME, WORMFILES, *CONTROLFILES, *ISOLDCONTROL, *VERBOSE)
 %
 %   Inputs:
 %       filename     - the file name for the histograms;
@@ -27,8 +20,12 @@ function addWormHistograms(filename, wormFiles, varargin)
 %       isVerbose    - verbose mode display the progress;
 %                      the default is no (false)
 %
-% See also WORM2HISTOGRAM, HISTOGRAM, WORM2CSV, WORMDISPLAYINFO,
-%          WORMDATAINFO
+%   See also:
+%   WORM2HISTOGRAM
+%   HISTOGRAM
+%   WORM2CSV
+%   WORMDISPLAYINFO,
+%   WORMDATAINFO
 %
 %
 % © Medical Research Council 2012

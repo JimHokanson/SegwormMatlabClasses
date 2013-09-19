@@ -1,9 +1,9 @@
-function [peaks indices] = maxPeaksDistHeight(x, dist, height)
+function [peaks,indices] = maxPeaksDistHeight(x, dist, height)
 %MAXPEAKSDISTHEIGHT Find the maximum peaks in a vector. The peaks are
 %   separated by, at least, the given distance unless interrupted and are, at least, the given
 %   height.
 %
-%   [PEAKS INDICES] = MAXPEAKSDISTHEIGHT(X, DIST, HEIGHT)
+%   [peaks,indices] = seg_worm.util.maxPeaksDistHeight(x, dist, height)
 %
 %   Input:
 %       x      - the vector to search for maximum peaks
@@ -19,6 +19,10 @@ function [peaks indices] = maxPeaksDistHeight(x, dist, height)
 % You will not remove any copyright or other notices from the Software; 
 % you must reproduce all copyright notices and other proprietary 
 % notices on any copies of the Software.
+
+
+%JAH: Code not examined
+
 
 % Is the vector larger than the search window?
 winSize = 2 * dist + 1;

@@ -1,5 +1,10 @@
-function worm2histogram(filename, wormFiles, varargin)
+function worm2histogram2(filename, wormFiles, varargin)
 %WORM2HISTOGRAM Convert worm features to their histogram.
+%
+%
+%   ???What's the difference between this and the first version????
+%
+%
 %
 %   WORM2HISTOGRAM(FILENAME, WORMFILES)
 %
@@ -18,7 +23,10 @@ function worm2histogram(filename, wormFiles, varargin)
 %       controlFiles - the feature files to use for the control;
 %                      if empty, the worm has no control
 %
-% See also WORM2CSV, WORMDISPLAYINFO, HISTOGRAM
+%   See also:
+%   WORM2CSV
+%   WORMDISPLAYINFO
+%   HISTOGRAM
 %
 %
 % © Medical Research Council 2012

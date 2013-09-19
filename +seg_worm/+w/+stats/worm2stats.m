@@ -30,8 +30,8 @@ function worm2stats(filename, wormFiles, varargin)
 %
 %
 % © Medical Research Council 2012
-% You will not remove any copyright or other notices from the Software; 
-% you must reproduce all copyright notices and other proprietary 
+% You will not remove any copyright or other notices from the Software;
+% you must reproduce all copyright notices and other proprietary
 % notices on any copies of the Software.
 
 % Do we have a control?
@@ -134,7 +134,7 @@ if isOldControl
         end
     end
     
-% Initialize the new control names.
+    % Initialize the new control names.
 else
     controlNames = 'worm';
 end
@@ -149,7 +149,7 @@ end
 
 
 %% Load worm data from files.
-function data = loadWormFiles(filenames, wormName, field)
+function data = h__loadWormFiles(filenames, wormName, field)
 
 % Fix the data.
 if ~iscell(wormName)
@@ -160,21 +160,19 @@ end
 if length(wormName) > 1
     data = cell(length(wormName), 1);
     for i = 1:length(wormName)
-        data{i} = loadStructField(filenames{i}, wormName{i}, field);
+        data{i} = seg_worm.util.loadStructField(filenames{i}, wormName{i}, field);
     end
     
-% Load all worms using the same name.
+    % Load all worms using the same name.
 else
-    data = cellfun(@(x) loadStructField(x, wormName{1}, field), ...
-        filenames, 'UniformOutput', false);
+    data = cellfun(@(x) seg_worm.util.loadStructField(x, wormName{1}, field), filenames, 'un', 0);
 end
 end
 
 
 
 %% Save the worm statistics.
-function saveStatistics(filename, wormFiles, dataInfo, loadName, ...
-    saveName, isVerbose)
+function saveStatistics(filename, wormFiles, dataInfo, loadName, saveName, isVerbose)
 
 % Initialize the locomotion modes.
 motionNames = { ...
@@ -192,23 +190,23 @@ for i = 1:length(dataInfo)
         
         % Combine simple statistics.
         case 's'
-            data = addStatistics(wormFiles, loadName, field);
+            data = h__addStatistics(wormFiles, loadName, field);
             eval([saveName '.' field '=data;']);
             
-        % Combine motion statistics.
+            % Combine motion statistics.
         case 'm'
-            data = addMotionStatistics(wormFiles, loadName, field, ...
+            data = h__addMotionStatistics(wormFiles, loadName, field, ...
                 motionNames);
             eval([saveName '.' field '=data;']);
             
-        % Combine event statistics.
+            % Combine event statistics.
         case 'e'
             
             % Combine the event data statistics.
             subFields = dataInfo(i).subFields.summary;
             for j = 1:length(subFields);
                 subField = [field '.' subFields{j}];
-                data = addEventStatistics(wormFiles, loadName, subField);
+                data = h__addEventStatistics(wormFiles, loadName, subField);
                 eval([saveName '.' subField '=data;']);
             end
             
@@ -216,7 +214,7 @@ for i = 1:length(dataInfo)
             subFields = dataInfo(i).subFields.data;
             for j = 1:length(subFields);
                 subField = [field '.' subFields{j}];
-                data = addStatistics(wormFiles, loadName, subField);
+                data = h__addStatistics(wormFiles, loadName, subField);
                 eval([saveName '.' subField '=data;']);
             end
     end
@@ -229,19 +227,19 @@ end
 
 
 %% Combine statistics.
-function data = addStatistics(wormFiles, wormName, field)
-addData = loadWormFiles(wormFiles, wormName, field);
+function data = h__addStatistics(wormFiles, wormName, field)
+addData = h__loadWormFiles(wormFiles, wormName, field);
 data(length(addData{1})).statistics = [];
 for i = 1:length(addData{1})
     subData = cellfun(@(x) x(i).histogram, addData, 'UniformOutput', false);
-    data(i).statistics = addStatisticsData(subData);
+    data(i).statistics = h__addStatisticsData(subData);
 end
 end
 
 
 
 %% Combine motion statistics.
-function data = addMotionStatistics(wormFiles, wormName, field, motionNames)
+function data = h__addMotionStatistics(wormFiles, wormName, field, motionNames)
 
 % Initialize the data.
 data.statistics = [];
@@ -250,7 +248,7 @@ for i = 1:length(motionNames)
 end
 
 % Get the data.
-addData = loadWormFiles(wormFiles, wormName, field);
+addData = h__loadWormFiles(wormFiles, wormName, field);
 if isempty(addData)
     return;
 end
@@ -261,13 +259,13 @@ for i = 1:length(addData{1})
     
     % Combine the data statistics.
     subData = cellfun(@(x) x(i).histogram, addData, 'UniformOutput', false);
-    data(i).statistics = addStatisticsData(subData);
+    data(i).statistics = h__addStatisticsData(subData);
     
     % Combine the motion statistics.
     for j = 1:length(motionNames)
         subData = cellfun(@(x) x(i).(motionNames{j}).histogram, addData, ...
             'UniformOutput', false);
-        data(i).(motionNames{j}).statistics = addStatisticsData(subData);
+        data(i).(motionNames{j}).statistics = h__addStatisticsData(subData);
     end
 end
 end
@@ -275,7 +273,7 @@ end
 
 
 %% Combine statistics.
-function data = addStatisticsData(addData)
+function data = h__addStatisticsData(addData)
 
 % Is the data signed?
 data = [];
@@ -287,7 +285,7 @@ for i = 1:length(addData)
     if isempty(addData{i})
         numSets = numSets + 1;
         
-    % Sign the data.
+        % Sign the data.
     else
         % Add the sets.
         numSets = numSets + length(addData{i});
@@ -370,10 +368,10 @@ end
 
 
 %% Combine event data statistics.
-function data = addEventStatistics(wormFiles, wormName, field)
+function data = h__addEventStatistics(wormFiles, wormName, field)
 
 % Initialize the combined statistics.
-addData = loadWormFiles(wormFiles, wormName, field);
+addData = h__loadWormFiles(wormFiles, wormName, field);
 data = [];
 if isempty(addData)
     data.data = NaN;

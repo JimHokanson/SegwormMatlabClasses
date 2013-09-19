@@ -1,16 +1,15 @@
 function worm2histogram(filename, wormFiles, varargin)
-%WORM2HISTOGRAM Convert worm features to their histogram.
+%worm2histogram   Convert worm features to their histogram.
 %
-%   WORM2HISTOGRAM(FILENAME, WORMFILES)
+%   seg_worm.w.stats.worm2histogram
 %
-%   WORM2HISTOGRAM(FILENAME, WORMFILES, CONTROLFILES)
+%   WORM2HISTOGRAM(FILENAME, WORMFILES, *CONTROLFILES, *VERBOSE)
 %
-%   WORM2HISTOGRAM(FILENAME, WORMFILES, CONTROLFILES, VERBOSE)
-%
-%   WORM2HISTOGRAM(FILENAME, WORMFILES, CONTROLFILES, VERBOSE,
-%                  PROGFUNC, PROGSTATE)
+%   WORM2HISTOGRAM(FILENAME, WORMFILES, *CONTROLFILES, *VERBOSE, *PROGFUNC, *PROGSTATE)
 %
 %   Inputs:
+%
+%           ????? - is this going to be an output????
 %       filename     - the file name for the histograms;
 %                      the file includes:
 %
@@ -18,6 +17,8 @@ function worm2histogram(filename, wormFiles, varargin)
 %                      worm        = the worm histograms
 %                      controlInfo = the control information (if it exists)
 %                      worm        = the control histograms (if they exist)
+%
+%
 %
 %       wormFiles    - the feature files to use for the worm
 %       controlFiles - the feature files to use for the control;
@@ -36,8 +37,16 @@ function worm2histogram(filename, wormFiles, varargin)
 %          percent   = the progress percent (0 to 100%)
 %          msg       = a message on our progress (to display)
 %
-% See also ADDWORMHISTOGRAMS, HISTOGRAM, WORM2CSV, WORMDISPLAYINFO,
-%          WORMDATAINFO
+% See also:
+%   ADDWORMHISTOGRAMS, 
+%   HISTOGRAM, 
+%   WORM2CSV, 
+%   WORMDISPLAYINFO,
+%   WORMDATAINFO
+%
+%   See Also:
+%   seg_worm.features.wormDataInfo
+%   
 %
 %
 % © Medical Research Council 2012
@@ -133,7 +142,7 @@ end
 
 
 %% Load worm data from files.
-function data = loadWormFiles(filenames, field)
+function data = helper__loadWormFiles(filenames, field)
 data = cellfun(@(x) loadStructField(x, 'worm', field), filenames, ...
     'UniformOutput', false);
 end
@@ -145,7 +154,7 @@ function saveHistogram(filename, wormFiles, frames, histInfo, dataInfo, ...
     wormName, isVerbose, progFunc, progState, progCount, progSize)
 
 % Determine the locomotion modes.
-motionModes = loadWormFiles(wormFiles, 'locomotion.motion.mode');
+motionModes = helper__loadWormFiles(wormFiles, 'locomotion.motion.mode');
 motionNames = { ...
     'forward', ...
     'paused', ...
@@ -179,7 +188,7 @@ for i = 1:length(dataInfo)
         
         % Compute the simple histogram.
         case 's'
-            data = data2histogram(wormFiles, field, subFields, histInfo);
+            data = helper__data2histogram(wormFiles, field, subFields, histInfo);
             eval([wormName '.' field '=data;']);
             
         % Compute the motion histogram.
@@ -207,20 +216,20 @@ end
 
 
 %% Convert data to a histogram.
-function histData = data2histogram(wormFiles, field, subFields, histInfo)
+function histData = helper__data2histogram(wormFiles, field, subFields, histInfo)
 
 % Get the histogram information.
 resolution = [];
-isZeroBin = [];
-isSigned = [];
-info = getStructField(histInfo, field);
+isZeroBin  = [];
+isSigned   = [];
+info       = getStructField(histInfo, field);
 if isempty(info)
     warning('worm2histogram:NoInfo', ...
         ['There is no information for "' field '"']);
 else
     resolution = info.resolution;
-    isZeroBin = info.isZeroBin;
-    isSigned = info.isSigned;
+    isZeroBin  = info.isZeroBin;
+    isSigned   = info.isSigned;
 end
 
 % Get the data.
@@ -228,7 +237,7 @@ dataField = field;
 if ~isempty(subFields)
     dataField = [dataField '.' subFields{1}];
 end
-data = loadWormFiles(wormFiles, dataField);
+data = helper__loadWormFiles(wormFiles, dataField);
 
 % Check the data.
 for i = 1:length(data)
@@ -267,7 +276,7 @@ dataField = field;
 if ~isempty(subFields)
     dataField = [dataField '.' subFields{1}];
 end
-data = loadWormFiles(wormFiles, dataField);
+data = helper__loadWormFiles(wormFiles, dataField);
 
 % Check the data.
 for i = 1:length(data)
@@ -323,7 +332,7 @@ function histData = event2histograms(wormFiles, frames, field, ...
     statFields, histFields, signField, histInfo)
 
 % Get the data.
-data = loadWormFiles(wormFiles, field);
+data = helper__loadWormFiles(wormFiles, field);
 
 % Remove partial events.
 for i = 1:length(data)

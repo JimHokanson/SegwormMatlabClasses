@@ -54,7 +54,8 @@ function info = wormStatsInfo()
 %                         p = the positive data
 %                         n = the negative data
 %
-% See also WORM2STATSINFO, WORM2HISTOGRAM, ADDWORMHISTOGRAMS, WORM2STATS
+% See also:
+%   WORM2STATSINFO, WORM2HISTOGRAM, ADDWORMHISTOGRAMS, WORM2STATS
 %
 %
 % © Medical Research Council 2012

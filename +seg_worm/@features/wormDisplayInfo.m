@@ -3,6 +3,11 @@ function info = wormDisplayInfo()
 %
 %   INFO = WORMDISPLAYINFO()
 %
+%   This function looks like for most features it provides descriptions
+%   on how to display the feature ...
+%
+%
+%
 %   Output:
 %       info - information for displaying the worm data; a structure
 %              mirroring the worm features, where each heading has the

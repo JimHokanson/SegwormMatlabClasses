@@ -1,4 +1,4 @@
-function [mediaTimes,locations] = extractLogFileDetails(obj)
+function [mediaTimes,locations] = extractLogFileDetails(~,log_file_path)
 
 
 %1)Real Time        - 21/04/2010 17:19:21.093	
@@ -19,7 +19,7 @@ function [mediaTimes,locations] = extractLogFileDetails(obj)
 %---------------------------------------
 %1) a header line describing each column
 
-logFile = obj.log_file_path;
+logFile = log_file_path;
 
 % Open the log file.
 fid = fopen(logFile);

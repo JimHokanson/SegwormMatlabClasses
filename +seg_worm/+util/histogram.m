@@ -1,6 +1,9 @@
 function histData = histogram(data, varargin)
 %HISTOGRAM Compute the data's histogram.
 %
+%
+%   seg_worm.util.histogram
+%
 %   HISTDATA = HISTOGRAM(DATA)
 %
 %   HISTDATA = HISTOGRAM(DATA, RESOLUTIONS)

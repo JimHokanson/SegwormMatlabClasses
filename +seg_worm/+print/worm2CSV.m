@@ -3,8 +3,7 @@ function filenames = worm2CSV(filename, wormInfo, worm, wormName, varargin)
 %
 %   [FILENAME] = WORM2CSV(FILENAME, WORMINFO, WORM, WORMNAME)
 %
-%   [FILENAME] = WORM2CSV(FILENAME, WORMINFO, WORM, WORMNAME,
-%                         CONTROLINFO, CONTROL, CONTROLNAME)
+%   [FILENAME] = WORM2CSV(FILENAME, WORMINFO, WORM, WORMNAME, CONTROLINFO, CONTROL, CONTROLNAME)
 %
 %   Inputs:
 %       filename    - the CSV filename;

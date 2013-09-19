@@ -19,28 +19,11 @@ function readPixels2Microns(obj)
 % you must reproduce all copyright notices and other proprietary 
 % notices on any copies of the Software.
 
-% Open the information file.
-% if ~exist(infoFile, 'file')
-%     error('findStageMovement:BadInfoFile', ['Cannot open ' infoFile]);
-% end
-xml = xmlread(infoFile);
-
-% Read the steps/microns.
-micronsX = str2double(xmlReadTag(xml, ...
-    'configuration.info.stage.steps.equivalent.microns.x'));
-micronsY = str2double(xmlReadTag(xml, ...
-    'configuration.info.stage.steps.equivalent.microns.y'));
-
-% Read the steps/pixels.
-pixelsX = str2double(xmlReadTag(xml, ...
-    'configuration.info.stage.steps.equivalent.pixels.x'));
-pixelsY = str2double(xmlReadTag(xml, ...
-    'configuration.info.stage.steps.equivalent.pixels.y'));
-
+info = obj.info;
 % Compute the microns/pixels.
 %pixel2MicronScale = [pixelsX / micronsX, pixelsY / micronsY];
-pixel2MicronX     = pixelsX / micronsX;
-pixel2MicronY     = pixelsY / micronsY;
+pixel2MicronX     = info.pixels_X / info.microns_X;
+pixel2MicronY     = info.pixels_Y / info.microns_Y;
 normScale         = sqrt((pixel2MicronX ^ 2 + pixel2MicronY ^ 2) / 2);
 obj.pixel_2_micron_scale =  normScale * [sign(pixel2MicronX) sign(pixel2MicronY)];
 

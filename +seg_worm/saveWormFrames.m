@@ -1,4 +1,4 @@
-function failedFrames = saveWormFrames(worm_file_path, videoFile, frames, blockSize, varargin)
+function failedFrames = saveWormFrames(worm_file_path, video_file_path, frames, blockSize, varargin)
 %SAVEWORMFRAMES Segment the worm in a set of video frames and save the information in a file.
 %
 %   - Save every segmented frame:
@@ -112,19 +112,15 @@ end
 
 worm_file_path = sl.dir.ensureFileExtension(worm_file_path,'.mat');
 
-
 % Are we normalizing the worms?
 samples = [];
 if ~isempty(varargin)
     samples = varargin{1};
-    
-    % Setup the stage movements.
-    moves   = [0, 0];
-    origins = [0,0];
-    pixel2MicronScale = [-1, -1];
-    rotation = 1;
 end
+file_manager = seg_worm.file_manager(video_file_path);
+stage        = seg_worm.stage(file_manager);
 
+%{
 % Are we excluding stage movement frames?
 moveFrames = [];
 if length(varargin) == 4
@@ -140,38 +136,30 @@ if length(varargin) == 4
     % Find the stage movements.
     [moveFrames, moves, origins] = findStageMovement(infoFile, logFile, diffFile, 0);
 end
+%}
 
-% Open the video and get its information.
-if ispc()
-    vr = videoReader(videoFile, 'plugin', 'DirectShow');
-else
-    vr = videoReader(videoFile, 'plugin', 'ffmpegDirect');
-end
-if ~next(vr)
-    error('saveWormFrames:NoFrames',['''' videoFile ''' has no video frames']);
-end
-fps = get(vr, 'fps');
+vr = videoReader(video_file_path,true);
+
+fps = vr.fps;
 
 % Get the vignette.
-vImg = 0;
-vignetteFile = strrep(videoFile, '.avi', '.info.xml.vignette.dat');
-if exist(vignetteFile, 'file')
-    height = get(vr, 'height');
-    width  = get(vr, 'width');
-    fid    = fopen(vignetteFile, 'r');
-    vImg   = fread(fid, [width height], 'int32=>int8', 0, 'b')';
-    fclose(fid);
+vignette = seg_worm.vignette.create(file_manager,vr);
+use_vignette = ~isempty(vignette);
+
+frame = 0;
+
+if ~exist('frames','var') || isempty(frames)
+   frames = 1:vr.n_frames;
+elseif ~isempty(samples) && any(diff(frames) ~= 1)
+    error(['saveWormFrames:NormalizedContinuity', 'When normalizing' ...
+        ', the saved frames must form a continuous sequence.']);
 end
 
-% Is the video grayscale?
-% Note: if there's no difference between the red and green channel, we
-% consider all 3 RGB channels identical grayscale images.
-img = getframe(vr);
-isGray = false;
-if max(max(abs(img(:,:,1) - img(:,:,2)))) == 0
-    isGray = true;
-end
-frame = 0;
+%     if any(diff(frames) ~= 1)
+%        error('Non-consecutive frame requests not yet supported')
+%     end 
+    
+
 
 % If we're normalizing the worms, the frames must be a continuous sequence.
 if ~isempty(frames)
