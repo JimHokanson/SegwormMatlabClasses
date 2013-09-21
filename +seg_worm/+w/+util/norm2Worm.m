@@ -1,10 +1,19 @@
-function worm = norm2Worm(frame, vulvaContour, nonVulvaContour, ...
+function worm = ...
+    norm2Worm(frame, vulvaContour, nonVulvaContour, ...
     skeleton, skeletonAngles, inOutTouch, skeletonLength, widths, ...
     headArea, tailArea, vulvaArea, nonVulvaArea, ...
     origin, pixel2MicronScale, rotation, worm)
-%NORM2WORM Convert normalized worm information into a worm structure.
+%norm2Worm   Convert normalized worm information into a worm structure.
 %
-%   WORM = NORM2WORM(FRAME, VULVACONTOUR, NONVULVACONTOUR, SKELETON,
+%
+%   ???? - I don't know what this function really does
+%
+%   Called by:
+%   normWorms
+%   segWormVideo
+%
+%
+%   worm = seg_worm.w.util.norm2Worm(FRAME, VULVACONTOUR, NONVULVACONTOUR, SKELETON,
 %                    SKELETONANGLES, INOUTTOUCH, SKELETONLENGTH, WIDTHS,
 %                    HEADAREA, TAILAREA, VULVAAREA, NONVULVAAREA,
 %                    ORIGIN, PIXEL2MICRONSCALE, ROTATION, WORM)
@@ -12,6 +21,7 @@ function worm = norm2Worm(frame, vulvaContour, nonVulvaContour, ...
 %
 %       ???? Why would this code be called????
 %
+%       ???? What's the difference between this and norm2Worm
 %
 %
 %   Inputs:
@@ -59,58 +69,12 @@ function worm = norm2Worm(frame, vulvaContour, nonVulvaContour, ...
 %                           re-assembled as best as possible.
 %
 %   Output:
-%       worm - the worm information organized in a structure
-%              This structure contains 8 sub-structures,
-%              6 sub-sub-structures, and 4 sub-sub-sub-structures:
+%       WORM_1 STRUCTURE - See OldWormFormats.m
 %
-%              * Video *
-%              video = {frame}
-%
-%              * Contour *
-%              contour = {pixels, touchI, inI, outI, angles, headI, tailI,
-%                         chainCodeLengths}
-%
-%              * Skeleton *
-%              skeleton = {pixels, touchI, inI, outI, inOutI, angles,
-%                          length, chainCodeLengths, widths}
-%
-%              Note: positive skeleton angles bulge towards the side
-%              clockwise from the worm's head (unless the worm is flipped).
-%
-%              * Head *
-%              head = {bounds, pixels, area,
-%                      cdf (at [2.5% 25% 50% 75% 97.5%]), stdev}
-%              head.bounds{contour.left (indices for [start end]),
-%                          contour.right (indices for [start end]),
-%                          skeleton indices for [start end]}
-%
-%              * Tail *
-%              tail = {bounds, pixels, area,
-%                      cdf (at [2.5% 25% 50% 75% 97.5%]), stdev}
-%              tail.bounds{contour.left (indices for [start end]),
-%                          contour.right (indices for [start end]),
-%                          skeleton indices for [start end]}
-%
-%              * Left Side (Counter Clockwise from the Head) *
-%              left = {bounds, pixels, area,
-%                      cdf (at [2.5% 25% 50% 75% 97.5%]), stdev}
-%              left.bounds{contour (indices for [start end]),
-%                          skeleton (indices for [start end])}
-%
-%              * Right Side (Clockwise from the Head) *
-%              right = {bounds, pixels, area,
-%                       cdf (at [2.5% 25% 50% 75% 97.5%]), stdev}
-%              right.bounds{contour (indices for [start end]),
-%                           skeleton (indices for [start end])}
-%
-%              * Orientation *
-%              orientation = {head, vulva}
-%              orientation.head = {isFlipped,
-%                                  confidence.head, confidence.tail}
-%              orientation.vulva = {isClockwiseFromHead,
-%                                  confidence.vulva, confidence.nonVulva}
-%
-% See also NORMWORMS, READPIXELS2MICRONS, WORM2STRUCT
+%   See also:
+%   NORMWORMS, 
+%   READPIXELS2MICRONS, 
+%   WORM2STRUCT
 %
 %
 % © Medical Research Council 2012
@@ -137,28 +101,25 @@ sWormSegs = 24;
 cWormSegs = 2 * sWormSegs;
 
 % Pre-compute values.
-pixel2MicronArea = sum(pixel2MicronScale .^ 2) / 2;
+pixel2MicronArea      = sum(pixel2MicronScale .^ 2) / 2;
 pixel2MicronMagnitude = sqrt(pixel2MicronArea);
 
 % Convert the contours back to pixel coordinates.
-vulvaContour = round(fliplr(microns2Pixels(origin, vulvaContour, ...
-    pixel2MicronScale, rotation)));
-nonVulvaContour = round(fliplr(microns2Pixels(origin, nonVulvaContour, ...
-    pixel2MicronScale, rotation)));
+vulvaContour    = round(fliplr(microns2Pixels(origin, vulvaContour, pixel2MicronScale, rotation)));
+nonVulvaContour = round(fliplr(microns2Pixels(origin, nonVulvaContour, pixel2MicronScale, rotation)));
 
 % Convert the skeleton back to pixel coordinates.
-skeleton = round(fliplr(microns2Pixels(origin, skeleton, ...
-    pixel2MicronScale, rotation)));
+skeleton = round(fliplr(microns2Pixels(origin, skeleton, pixel2MicronScale, rotation)));
 
 % Compute the orientation.
 samples = size(skeleton,1);
 if isempty(worm)
     isHeadFlipped = false;
     isVulvaClockwiseFromHead = true;
-    hConfidence = 0;
-    tConfidence = 0;
-    vConfidence = 0;
-    nvConfidence = 0;
+    hConfidence   = 0;
+    tConfidence   = 0;
+    vConfidence   = 0;
+    nvConfidence  = 0;
     
     % Is the vulva clockwise from the head?
     if samples > 2
@@ -168,8 +129,7 @@ if isempty(worm)
         % side is clockwise from the head.
         dHT = skeleton(1,:) - skeleton(end,:);
         if dHT(1) == 0
-            if max(vulvaContour(2:(end - 1),1)) > ...
-                    max(nonVulvaContour(2:(end - 1),1))
+            if max(vulvaContour(2:(end - 1),1)) > max(nonVulvaContour(2:(end - 1),1))
                 if dHT(2) < 0
                     isVulvaClockwiseFromHead = false;
                 end
@@ -429,13 +389,14 @@ if isempty(worm) || worm.contour.headI <= worm.contour.tailI
         hLength = worm.contour.chainCodeLengths(worm.contour.headI);
         tLength = worm.contour.chainCodeLengths(worm.contour.tailI);
         eLength = worm.contour.chainCodeLengths(end);
-        caLengths = [(hLength + tLength) / 2; ...
+        caLengths = [(hLength + tLength) / 2; 
+            
+            %????????
             (hLength + tLength + eLength) / 2];
         if caLengths(2) > eLength
             caLengths(2)  = caLengths(2) - eLength;
         end
-        cAngles = chainCodeLengthInterp(worm.contour.angles, caLengths, ...
-            worm.contour.chainCodeLengths);
+        cAngles = chainCodeLengthInterp(worm.contour.angles, caLengths, worm.contour.chainCodeLengths);
         
     % The samples are the head and tail.
     elseif samples == 2
@@ -444,13 +405,10 @@ if isempty(worm) || worm.contour.headI <= worm.contour.tailI
         
     % The samples divide the worm evenly between its head and tail.
     else
-        caLengths = cCCLengths - cCCLengths(1) + ...
-            worm.contour.chainCodeLengths(worm.contour.headI);
+        caLengths = cCCLengths - cCCLengths(1) + worm.contour.chainCodeLengths(worm.contour.headI);
         wrap = caLengths > worm.contour.chainCodeLengths(end);
-        caLengths(wrap) = caLengths(wrap) - ...
-            worm.contour.chainCodeLengths(end);
-        cAngles = chainCodeLengthInterp(worm.contour.angles, caLengths, ...
-            worm.contour.chainCodeLengths);
+        caLengths(wrap) = caLengths(wrap) - worm.contour.chainCodeLengths(end);
+        cAngles = chainCodeLengthInterp(worm.contour.angles, caLengths, worm.contour.chainCodeLengths);
     end
     
 else % worm.contour.headI > worm.contour.tailI
@@ -463,9 +421,9 @@ else % worm.contour.headI > worm.contour.tailI
         
     % The samples include, at least the head and tail.
     else
-        contour = [pixels2; pixels1(2:(end - 1),:)];
-        lengths2 = lengths2 + lengths1(end) - lengths1(end - 1);
-        lengths1 = lengths2(end) + lengths1(2:(end - 1));
+        contour    = [pixels2; pixels1(2:(end - 1),:)];
+        lengths2   = lengths2 + lengths1(end) - lengths1(end - 1);
+        lengths1   = lengths2(end) + lengths1(2:(end - 1));
         cCCLengths = [lengths2; lengths1];
     end
     

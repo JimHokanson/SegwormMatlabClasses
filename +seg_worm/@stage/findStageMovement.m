@@ -1,11 +1,16 @@
 function [frame_statuses,movesI,locations] = findStageMovement(obj)
-%findStageMovement(infoFile, logFile, diffFile, verbose, guiHandle)
-%FINDSTAGEMOVEMENT Find stage movements in a worm experiment.
+%Old Callig format: findStageMovement(infoFile, logFile, diffFile, verbose, guiHandle)
+%findStageMovement  Find stage movements in a worm experiment.
 %
 %   [frames,movesI,locations] = findStageMovement(obj)
 %
 %   Algorithm:
 %   See docs/Finding_Stage_Movement_Algorithm.m
+%
+%   I am going to move this code to:
+%   seg_worm.stage.movement_parser
+%   
+%
 %
 %   [FRAMES INDICES LOCATIONS] = ...
 %       FINDSTAGEMOVEMENT(INFOFILE, LOGFILE, DIFFFILE, VERBOSE, GUIHANDLE)
@@ -30,8 +35,8 @@ function [frame_statuses,movesI,locations] = findStageMovement(obj)
 %                   frame indices of stage movements
 %       locations - the location of the stage after each stage movement
 %
-% See also:
-%   VIDEO2DIFF
+%   See also:
+%   seg_worm.cv.video2Diff
 %
 %
 % © Medical Research Council 2012
@@ -64,8 +69,7 @@ locations   = obj.locations;
 
 % The media time must be initialized.
 if isempty(mediaTimes) || mediaTimes(1) ~= 0
-    error('findStageMovement:NoInitialMediaTime', ...
-        'The first media time must be 0');
+    error('findStageMovement:NoInitialMediaTime','The first media time must be 0');
 end
 
 % If there's more than one initial media time, use the latest one.
@@ -188,7 +192,7 @@ end
 %--------------------------------------------------------------------------
 % Are there any distinguishably large, frame-difference peaks?
 if (verbose)
-    peaksI(1) = peakI;
+    peaksI(1)   = peakI;
     otsuThrs(1) = gOtsuThr;
 end
 
@@ -234,64 +238,17 @@ end
 
 
 %--------------------------------------------------------------------------
-% We reached the end.
+
 endI = peakI + maxMoveFrames;
 if endI >= length(frameDiffs)
+    % We reached the end.
     prevPeakEndI = length(frameDiffs);
-    
-% Find a temporary front end for a potential initial stage movement.
 else
-    searchDiffs = frameDiffs(peakI:endI);
-    
-    % Does the search window contain multiple stage movements?
-    if ~isnan(gOtsuThr) && ~isnan(gSmallThr)
-        foundMove = false;
-        for i = 1:length(searchDiffs)
-            
-            % We found a still interval.
-            if ~foundMove && searchDiffs(i) < gSmallThr
-                foundMove = true;
-                
-            % We found the end of the still interval, cut off the rest.
-            elseif foundMove && searchDiffs(i) > gSmallThr
-                searchDiffs = searchDiffs(1:(i - 1));
-                break;
-            end
-        end
-    end
-    
-    % Find a temporary front end for a potential initial stage movement.
-    [minDiff,i]   = min(searchDiffs);
-    peakFrontEndI = peakI + i - 1;
-    
-    % If the temporary front end's frame difference is small, try to push
-    % the front end backwards (closer to the stage movement).
-    if minDiff <= gSmallThr
-        i = peakI;
-        while i < peakFrontEndI
-            if frameDiffs(i) <= gSmallThr
-                peakFrontEndI = i;
-                break;
-            end
-            i = i + 1;
-        end
-    
-    % If the temporary front end's frame difference is large, try to
-    % push the front end forwards (further from the stage movement).
-    elseif minDiff >= gOtsuThr || (minDiff > gSmallThr && ...
-            peakFrontEndI < endI && ...
-            all(isnan(frameDiffs((peakFrontEndI + 1):endI))))
-        peakFrontEndI = endI;
-    end
-    
-    % Advance.
-    prevPeakEndI = peakFrontEndI;
+   helper_findTempFrontEnd();
 end
 
 
 helper__superAwesome();
-
-
 
 
 % Do the frame differences end with a stage movement?
@@ -493,6 +450,59 @@ end
 % Show the stage movements.
 
 end
+
+function helper_findTempFrontEnd()
+
+ % Find a temporary front end for a potential initial stage movement.
+    
+    searchDiffs = frameDiffs(peakI:endI);
+    
+    % Does the search window contain multiple stage movements?
+    if ~isnan(gOtsuThr) && ~isnan(gSmallThr)
+        foundMove = false;
+        for i = 1:length(searchDiffs)
+            
+            % We found a still interval.
+            if ~foundMove && searchDiffs(i) < gSmallThr
+                foundMove = true;
+                
+            % We found the end of the still interval, cut off the rest.
+            elseif foundMove && searchDiffs(i) > gSmallThr
+                searchDiffs = searchDiffs(1:(i - 1));
+                break;
+            end
+        end
+    end
+    
+    % Find a temporary front end for a potential initial stage movement.
+    [minDiff,i]   = min(searchDiffs);
+    peakFrontEndI = peakI + i - 1;
+    
+    % If the temporary front end's frame difference is small, try to push
+    % the front end backwards (closer to the stage movement).
+    if minDiff <= gSmallThr
+        i = peakI;
+        while i < peakFrontEndI
+            if frameDiffs(i) <= gSmallThr
+                peakFrontEndI = i;
+                break;
+            end
+            i = i + 1;
+        end
+    
+    % If the temporary front end's frame difference is large, try to
+    % push the front end forwards (further from the stage movement).
+    elseif minDiff >= gOtsuThr || (minDiff > gSmallThr && ...
+            peakFrontEndI < endI && ...
+            all(isnan(frameDiffs((peakFrontEndI + 1):endI))))
+        peakFrontEndI = endI;
+    end
+    
+    % Advance.
+    prevPeakEndI = peakFrontEndI;
+
+end
+
 
 function helper__superAwesome()
 

@@ -1,6 +1,5 @@
 function wormStats2OntologyCSV(filename, wormFiles, varargin)
-%WORMSTATS2ONTOLOGYCSV Convert a worm's significant features to an ontology
-%CSV file.
+%WORMSTATS2ONTOLOGYCSV Convert a worm's significant features to an ontology CSV file.
 %
 %   WORMSTATS2ONTOLOGYCSV(FILENAME, WORMFILES)
 %
@@ -38,13 +37,15 @@ function wormStats2OntologyCSV(filename, wormFiles, varargin)
 %       isVerbose     - verbose mode displays the progress;
 %                       the default is yes (true)
 %
-% See also WORMSTATS2ONTOLOGY, WORM2STATSINFO
+% See also:
+%   WORMSTATS2ONTOLOGY, WORM2STATSINFO
 %
 %
 % © Medical Research Council 2012
 % You will not remove any copyright or other notices from the Software; 
 % you must reproduce all copyright notices and other proprietary 
 % notices on any copies of the Software.
+
 
 % Which genotypes should we use?
 useGenotypes = [];
@@ -164,8 +165,7 @@ for i = 1:length(strains)
     end
     
     % Convert annotation terms to category and term strings.
-    [categoryStr termStr] = ...
-        annotation2str(strains(i).annotation, categories);
+    [categoryStr,termStr] = annotation2str(strains(i).annotation, categories);
     
     % Write the categorized annotation.
     if isCategorized

@@ -1,7 +1,16 @@
 function info = wormStatsInfo()
-%WORMFEATUREINFO Get information for computing the worm statistics.
+%wormStatsInfo   Get information for computing the worm statistics.
 %
-%   INFO = WORMSTATSINFO()
+%   INFO = seg_worm.w.stats.wormStatsInfo()
+%
+%   Called by:
+%   -----------------------------------------
+%   plotWormStatsMatrix
+%   worm2StatsInfo
+%   wormStats2Matrix
+%   wormStatsInfo
+%
+%
 %
 %   Output:
 %       info - information for computing the worm data; a structure where:
@@ -67,15 +76,15 @@ function info = wormStatsInfo()
 eventSummaryType = 'd';
 
 % Initialize the feature information.
-dataInfo = wormDataInfo();
-histInfo = wormDisplayInfo();
+dataInfo = seg_worm.feature.roots();
+histInfo = seg_worm.feature.rootDisplayInfo();
 
 % What features do we have?
 info = [];
 for i = 1:length(dataInfo)
-    field = dataInfo(i).field;
+    field    = dataInfo(i).field;
     category = dataInfo(i).category;
-    type = dataInfo(i).type;
+    type     = dataInfo(i).type;
     switch type
         
         % Add simple features.
@@ -91,13 +100,11 @@ for i = 1:length(dataInfo)
             
             % Add the event summary features.
             subFields = dataInfo(i).subFields.summary;
-            [info offset] = addEventSummaryInfo(info, histInfo, i, ...
-                field, subFields, category, eventSummaryType);
+            [info, offset] = addEventSummaryInfo(info, histInfo, i, field, subFields, category, eventSummaryType);
             
             % Add the event data features.
             subFields = dataInfo(i).subFields.data;
-            info = addEventInfo(info, histInfo, i, offset, ...
-                field, subFields, category);
+            info = addEventInfo(info, histInfo, i, offset, field, subFields, category);
     end
 end
 end
@@ -161,10 +168,10 @@ for i = 1:length(feature)
     
     
     % Is the feature signed?
-    signEndI = 1;
+    signEndI  = 1;
     signTypes = unsignedType;
     if feature(i).isSigned
-        signEndI = length(signNames);
+        signEndI  = length(signNames);
         signTypes = signedTypes;
     end
     
@@ -172,25 +179,22 @@ for i = 1:length(feature)
     for j = 1:motionEndI
         for k = 1:signEndI
             newInfo = [];
-            newInfo.name = ...
-                [signNames{k} motionNames{j} feature(i).name];
-            newInfo.unit = feature(i).unit;
-            newInfo.title1 = feature(i).name;
-            newInfo.title2 = motionNames{j}(1:(end - 1));
-            newInfo.title3 = signNames{k}(1:(end - 1));
+            newInfo.name    = [signNames{k} motionNames{j} feature(i).name];
+            newInfo.unit    = feature(i).unit;
+            newInfo.title1  = feature(i).name;
+            newInfo.title2  = motionNames{j}(1:(end - 1));
+            newInfo.title3  = signNames{k}(1:(end - 1));
             newInfo.title1I = featureI;
             newInfo.title2I = j;
             newInfo.title3I = k;
             indexStr = '';
             newInfo.index = nan;
             if length(feature) > 1
-                indexStr = ['(' num2str(i) ')'];
+                indexStr      = ['(' num2str(i) ')'];
                 newInfo.index = i;
             end
-            newInfo.field.histogram = ...
-                [field indexStr motionFields{j} histStr signFields{k}];
-            newInfo.field.statistics = ...
-                [field indexStr motionFields{j} statStr signFields{k}];
+            newInfo.field.histogram  = [field indexStr motionFields{j} histStr signFields{k}];
+            newInfo.field.statistics = [field indexStr motionFields{j} statStr signFields{k}];
             newInfo.isMain = j == 1 && k == 1;
             newInfo.category = category;
             newInfo.type     = type;
@@ -207,8 +211,7 @@ end
 
 
 %% Add the event information.
-function info = addEventInfo(info, histInfo, featureI, offset, ...
-    field, subFields, category)
+function info = addEventInfo(info, histInfo, featureI, offset, field, subFields, category)
 
 % Initialize the feature type.
 eventType = 'e';
@@ -302,8 +305,7 @@ end
 
 
 %% Add the event summary information.
-function [info offset] = addEventSummaryInfo(info, histInfo, featureI, ...
-    field, subFields, category, type)
+function [info, offset] = addEventSummaryInfo(info, histInfo, featureI, field, subFields, category, type)
 
 % Initialize the summary features sign.
 summarySign = 'u';

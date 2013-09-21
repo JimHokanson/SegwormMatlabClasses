@@ -1,8 +1,8 @@
-function [isUsed wormX tickX nameX labelX] = wormInfo2Room(info, filt)
+function [isUsed,wormX,tickX,nameX,labelX] = wormInfo2Room(info, filt)
 %WORMINFO2ROOM Convert worm information to the room in which the experiment
 %was performed.
 %
-%   [ISUSED WORMX TICKX NAMEX LABELX] = WORMINFO2ROOM(INFO, FILT)
+%   [isUsed,wormX,tickX,nameX,labelX] = wormInfo2Room(info, filt)
 %
 %   Inputs:
 %       info - the worm information

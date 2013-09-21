@@ -60,7 +60,7 @@ set(h, 'units', 'normalized', 'position', [0 0 1 1]);
 hold on;
 
 % Show the worm length.
-data = worm.morphology.length;
+data      = worm.morphology.length;
 titleName = 'WORM LENGTH ';
 valueName = 'Length (microns)';
 dataNames = 'Length';

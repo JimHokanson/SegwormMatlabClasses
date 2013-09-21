@@ -1,7 +1,7 @@
-function addWormHistograms(filename, wormFiles, varargin)
-%ADDWORMHISTOGRAMS Combine worm histograms.
+function addWormHistograms(hist_output_filepath, wormFiles, varargin)
+%addWormHistograms  Combine worm histograms.
 %
-%   ADDWORMHISTOGRAMS(FILENAME, WORMFILES, *CONTROLFILES, *ISOLDCONTROL, *VERBOSE)
+%   addWormHistograms(FILENAME, WORMFILES, *CONTROLFILES, *ISOLDCONTROL, *VERBOSE)
 %
 %   Inputs:
 %       filename     - the file name for the histograms;
@@ -33,6 +33,8 @@ function addWormHistograms(filename, wormFiles, varargin)
 % you must reproduce all copyright notices and other proprietary 
 % notices on any copies of the Software.
 
+%Input Handling
+%--------------------------------------------------------------------------
 % Do we have a control?
 controlFiles = [];
 if ~isempty(varargin)
@@ -50,6 +52,7 @@ isVerbose = false;
 if length(varargin) > 2
     isVerbose = varargin{3};
 end
+%--------------------------------------------------------------------------
 
 % Organize the worm files.
 if ~iscell(wormFiles)
@@ -60,8 +63,8 @@ if ~isempty(controlFiles) && ~iscell(controlFiles)
 end
 
 % Delete the file if it already exists.
-if exist(filename, 'file')
-    delete(filename);
+if exist(hist_output_filepath, 'file')
+    delete(hist_output_filepath);
 end
 
 % Save the worm information.
@@ -70,12 +73,12 @@ if isVerbose
 end
 newWormInfo = [];
 for i = 1:length(wormFiles)
-    wormInfo = [];
-    load(wormFiles{i}, 'wormInfo');
+    h = load(wormFiles{i}, 'wormInfo');
+    wormInfo    = h.wormInfo;
     newWormInfo = cat(1, newWormInfo, wormInfo);
 end
 wormInfo = newWormInfo;
-save(filename, 'wormInfo', '-v7.3');
+save(hist_output_filepath, 'wormInfo', '-v7.3');
 clear wormInfo;
 
 % Collect the new control information.
@@ -85,8 +88,8 @@ end
 newControlInfo = [];
 if ~isempty(controlFiles)
     for i = 1:length(controlFiles)
-        wormInfo = [];
-        load(controlFiles{i}, 'wormInfo');
+        h = load(controlFiles{i}, 'wormInfo');
+        wormInfo = h.wormInfo;
         newControlInfo =  cat(1, newControlInfo, wormInfo);
     end
 end
@@ -96,7 +99,8 @@ if isOldControl
     for i = 1:length(wormFiles)
         controlInfo = who('-FILE', wormFiles{i}, 'controlInfo');
         if ~isempty(controlInfo)
-            load(wormFiles{i}, 'controlInfo');
+            h = load(wormFiles{i}, 'controlInfo');
+            controlInfo = h.controlInfo;
             newControlInfo =  cat(1, newControlInfo, controlInfo);
         end
     end
@@ -105,7 +109,7 @@ end
 % Save the control information.
 if ~isempty(newControlInfo)
     controlInfo = newControlInfo;
-    save(filename, 'controlInfo', '-append', '-v7.3');
+    save(hist_output_filepath, 'controlInfo', '-append', '-v7.3');
 end
 clear controlInfo;
 
@@ -113,7 +117,7 @@ clear controlInfo;
 dataInfo = wormDataInfo();
 
 % Save the worm histograms.
-saveHistogram(filename, wormFiles, dataInfo, 'worm', 'worm', isVerbose);
+saveHistogram(hist_output_filepath, wormFiles, dataInfo, 'worm', 'worm', isVerbose);
 
 % Are we adding the old controls?
 if isOldControl
@@ -140,7 +144,7 @@ end
 
 % Save the control histograms.
 if ~isempty(controlFiles)
-    saveHistogram(filename, controlFiles, dataInfo, controlNames, ...
+    saveHistogram(hist_output_filepath, controlFiles, dataInfo, controlNames, ...
         'control', isVerbose);
 end
 end
@@ -268,11 +272,11 @@ end
 function data = addHistogramData(addData)
 
 % Initialize the histogram information and check for consistency.
-data = [];
+data       = [];
 resolution = [];
-isZeroBin = [];
-isSigned = [];
-numSets = 0;
+isZeroBin  = [];
+isSigned   = [];
+numSets    = 0;
 for i = 1:length(addData)
     
     % Add the set(s).
@@ -287,12 +291,11 @@ for i = 1:length(addData)
         % Initialize the histogram information.
         if isempty(resolution)
             resolution = addData{i}.resolution;
-            isZeroBin = addData{i}.isZeroBin;
-            isSigned = addData{i}.isSigned;
+            isZeroBin  = addData{i}.isZeroBin;
+            isSigned   = addData{i}.isSigned;
             
         % Check the histograms for consistency.
-        elseif resolution ~= addData{i}.resolution || ...
-                isZeroBin ~= addData{i}.isZeroBin
+        elseif resolution ~= addData{i}.resolution || isZeroBin ~= addData{i}.isZeroBin
             warning('addWormHistograms:UnequalBins', ...
                 'Two or more histograms have inconsistent bins');
             data = nanHistogram(isSigned, numSets);
@@ -313,8 +316,8 @@ end
 
 % Combine the data counts.
 numCounts = 0;
-counts = cell(length(addData), 1);
-bins = cell(length(addData), 1);
+counts    = cell(length(addData), 1);
+bins      = cell(length(addData), 1);
 for i = 1:length(addData)
     
     % No data.
@@ -334,7 +337,7 @@ for i = 1:length(addData)
 end
 
 % Normalize the data and bins.
-[counts bins] = normBinData(counts, bins, resolution);
+[counts,bins] = normBinData(counts, bins, resolution);
 if isempty(bins) || any(isnan(bins))
     data = [];
     return;
@@ -342,14 +345,14 @@ end
 
 % Initialize the histogram.
 % Note: this must match the field order in worm2histogram.
-data.sets = [];
-data.data = [];
+data.sets    = [];
+data.data    = [];
 data.allData = [];
-data.PDF = [];
-data.bins = [];
+data.PDF     = [];
+data.bins    = [];
 data.resolution = [];
-data.isZeroBin = [];
-data.isSigned = [];
+data.isZeroBin  = [];
+data.isSigned   = [];
 
 % Combine all the data.
 data.allData.counts = nansum(counts, 1);
@@ -387,16 +390,16 @@ if isSigned
         data.allData.mean.abs = NaN;
     end
     data.allData.stdDev.abs = NaN; % unrecoverable
-    data.allData.mean.pos = NaN; % unrecoverable
+    data.allData.mean.pos   = NaN; % unrecoverable
     data.allData.stdDev.pos = NaN; % unrecoverable
-    data.allData.mean.neg = NaN; % unrecoverable
+    data.allData.mean.neg   = NaN; % unrecoverable
     data.allData.stdDev.neg = NaN; % unrecoverable
 end
 
 % Combine the data.
-data.data.counts = counts;
-data.data.samples = [];
-data.data.mean.all = [];
+data.data.counts     = counts;
+data.data.samples    = [];
+data.data.mean.all   = [];
 data.data.stdDev.all = [];
 for i = 1:length(addData)
     if isempty(addData{i})
@@ -415,11 +418,11 @@ end
 
 % Combine the signed data.
 if isSigned
-    data.data.mean.abs = [];
+    data.data.mean.abs   = [];
     data.data.stdDev.abs = [];
-    data.data.mean.pos = [];
+    data.data.mean.pos   = [];
     data.data.stdDev.pos = [];
-    data.data.mean.neg = [];
+    data.data.mean.neg   = [];
     data.data.stdDev.neg = [];
     for i = 1:length(addData)
         if isempty(addData{i})
@@ -475,14 +478,14 @@ end
 
 % Set the histogram information.
 data.resolution = resolution;
-data.isZeroBin = isZeroBin;
-data.isSigned = isSigned;
+data.isZeroBin  = isZeroBin;
+data.isSigned   = isSigned;
 end
 
 
 
 %% Normalize binned data.
-function [normData normBins] = normBinData(data, bins, resolution)
+function [normData,normBins] = normBinData(data, bins, resolution)
 
 % Initialize the normalized data and bins.
 normData = [];

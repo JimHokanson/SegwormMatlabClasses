@@ -1,64 +1,21 @@
 function worm = cell2worm(worm)
-%CELL2WORM Convert a cell array to a worm struct.
-%
-%   WORM = CELL2WORM(WORM)
+%cell2worm  Convert a cell array to a worm struct.
+%   
+%   WORM = seg_worm.w.util.cell2worm(WORM)
 %
 %   Input:
-%       worm - the worm information organized in a cell array
+%   See WORM_CELL_1 in OldWormFormats.m
 %
 %   Output:
-%       worm - the worm information organized in a structure
-%              This structure contains 8 sub-structures,
-%              6 sub-sub-structures, and 4 sub-sub-sub-structures:
+%   See WORM_1 STRUCTURE in OldWormFormats.m
 %
-%              * Video *
-%              video = {frame}
+%   See also:
+%   WORM2CELL
+%   WORM2STRUCT
+%   SEGWORM
 %
-%              * Contour *
-%              contour = {pixels, touchI, inI, outI, angles, headI, tailI,
-%                         chainCodeLengths}
-%
-%              * Skeleton *
-%              skeleton = {pixels, touchI, inI, outI, inOutI, angles,
-%                          length, chainCodeLengths, widths}
-%
-%              Note: positive skeleton angles bulge towards the side
-%              clockwise from the worm's head (unless the worm is flipped).
-%
-%              * Head *
-%              head = {bounds, pixels, area,
-%                      cdf (at [2.5% 25% 50% 75% 97.5%]), stdev}
-%              head.bounds{contour.left (indices for [start end]),
-%                          contour.right (indices for [start end]),
-%                          skeleton indices for [start end]}
-%
-%              * Tail *
-%              tail = {bounds, pixels, area,
-%                      cdf (at [2.5% 25% 50% 75% 97.5%]), stdev}
-%              tail.bounds{contour.left (indices for [start end]),
-%                          contour.right (indices for [start end]),
-%                          skeleton indices for [start end]}
-%
-%              * Left Side (Counter Clockwise from the Head) *
-%              left = {bounds, pixels, area,
-%                      cdf (at [2.5% 25% 50% 75% 97.5%]), stdev}
-%              left.bounds{contour (indices for [start end]),
-%                          skeleton (indices for [start end])}
-%
-%              * Right Side (Clockwise from the Head) *
-%              right = {bounds, pixels, area,
-%                       cdf (at [2.5% 25% 50% 75% 97.5%]), stdev}
-%              right.bounds{contour (indices for [start end]),
-%                           skeleton (indices for [start end])}
-%
-%              * Orientation *
-%              orientation = {head, vulva}
-%              orientation.head = {isFlipped,
-%                                  confidence.head, confidence.tail}
-%              orientation.vulva = {isClockwiseFromHead,
-%                                  confidence.vulva, confidence.nonVulva}
-%
-%   See also WORM2CELL, WORM2STRUCT, SEGWORM
+%   Called by:
+%   seg_worm.w.util.norm2Worm
 %
 %
 % © Medical Research Council 2012

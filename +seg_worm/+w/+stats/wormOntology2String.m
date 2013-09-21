@@ -1,7 +1,7 @@
 function strings = wormOntology2String(annotations)
-%WORMONTOLOGY2STRING Convert worm phenotype ontology to strings.
+%wormOntology2String  Convert worm phenotype ontology to strings.
 %
-%   WORMONTOLOGY2STRING(ANNOTATIONS)
+%   strings = wormOntology2String(annotations)
 %
 %   Input:
 %       annotations - the annotations, a struct with fields:
@@ -42,8 +42,7 @@ for i = 1:length(annotations)
         end
         
         % Construct the string.
-        strings{i} = [strings{i} annotation.category ': ' ...
-            signStr annotation.term 10];
+        strings{i} = [strings{i} annotation.category ': ' signStr annotation.term 10];
     end
 end
 end

@@ -1,5 +1,5 @@
 function wormStats2Matrix(filename, wormFiles, isVerbose)
-%WORMSTATS2MATRIX Construct and save a worms x features matrix.
+%wormStats2Matrix  Construct and save a worms x features matrix.
 %
 %   WORM2STATSINFO(FILENAME, WORMFILES)
 %

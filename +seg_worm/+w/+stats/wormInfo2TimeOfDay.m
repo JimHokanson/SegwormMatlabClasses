@@ -1,8 +1,7 @@
-function [isUsed wormX tickX nameX labelX] = wormInfo2TimeOfDay(info, filt)
-%WORMINFO2TIMEOFDAY Convert worm information to the time the experiment was
-%performed.
+function [isUsed,wormX,tickX,nameX,labelX] = wormInfo2TimeOfDay(info, filt)
+%wormInfo2TimeOfDay  Convert worm information to the time the experiment was performed.
 %
-%   [ISUSED WORMX TICKX NAMEX LABELX] = WORMINFO2TIMEOFDAY(INFO, FILT)
+%   [isUsed,wormX,tickX,nameX,labelX] = wormInfo2TimeOfDay(info, filt)
 %
 %   Inputs:
 %       info - the worm information

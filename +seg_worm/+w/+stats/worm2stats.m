@@ -1,13 +1,10 @@
-function worm2stats(filename, wormFiles, varargin)
-%WORM2STATS Convert worms to a set of statistics.
+function worm2stats(stats_output_file_path, wormFiles, varargin)
+%worm2stats  Convert worms to a set of statistics.
 %
-%   WORMS2STATS(FILENAME, WORMFILES)
+%   See comment in: seg_worm.w.stats.addWormStats
 %
-%   WORMS2STATS(FILENAME, WORMFILES, CONTROLFILES)
 %
-%   WORMS2STATS(FILENAME, WORMFILES, CONTROLFILES, ISOLDCONTROL)
-%
-%   WORMS2STATS(FILENAME, WORMFILES, CONTROLFILES, ISOLDCONTROL, VERBOSE)
+%   worm2stats(FILENAME, WORMFILES, *CONTROLFILES, *ISOLDCONTROL, *VERBOSE)
 %
 %   Inputs:
 %       filename     - the file name for the statistics;
@@ -34,6 +31,8 @@ function worm2stats(filename, wormFiles, varargin)
 % you must reproduce all copyright notices and other proprietary
 % notices on any copies of the Software.
 
+%Input Handling
+%--------------------------------------------------------------------------
 % Do we have a control?
 controlFiles = [];
 if ~isempty(varargin)
@@ -51,6 +50,8 @@ isVerbose = false;
 if length(varargin) > 2
     isVerbose = varargin{3};
 end
+%--------------------------------------------------------------------------
+
 
 % Organize the worm files.
 if ~iscell(wormFiles)
@@ -61,8 +62,8 @@ if ~isempty(controlFiles) && ~iscell(controlFiles)
 end
 
 % Delete the file if it already exists.
-if exist(filename, 'file')
-    delete(filename);
+if exist(stats_output_file_path, 'file')
+    delete(stats_output_file_path);
 end
 
 % Save the worm information.
@@ -76,7 +77,7 @@ for i = 1:length(wormFiles)
     newWormInfo = cat(1, newWormInfo, wormInfo);
 end
 wormInfo = newWormInfo;
-save(filename, 'wormInfo');
+save(stats_output_file_path, 'wormInfo');
 clear wormInfo;
 
 % Collect the new control information.
@@ -106,15 +107,19 @@ end
 % Save the control information.
 if ~isempty(newControlInfo)
     controlInfo = newControlInfo;
-    save(filename, 'controlInfo', '-append');
+    save(stats_output_file_path, 'controlInfo', '-append');
 end
 clear controlInfo;
 
+
+
+%--------------------------------------------------------------------------
+
 % Initialize the data information.
-dataInfo = wormDataInfo();
+dataInfo = seg_worm.feature.roots();
 
 % Save the worm statistics.
-saveStatistics(filename, wormFiles, dataInfo, 'worm', 'worm', isVerbose);
+h__saveStatistics(stats_output_file_path, wormFiles, dataInfo, 'worm', 'worm', isVerbose);
 
 % Are we adding the old controls?
 if isOldControl
@@ -141,8 +146,7 @@ end
 
 % Save the control statistics.
 if ~isempty(controlFiles)
-    saveStatistics(filename, controlFiles, dataInfo, controlNames, ...
-        'control', isVerbose);
+    h__saveStatistics(stats_output_file_path, controlFiles, dataInfo, controlNames, 'control', isVerbose);
 end
 end
 
@@ -150,6 +154,14 @@ end
 
 %% Load worm data from files.
 function data = h__loadWormFiles(filenames, wormName, field)
+%
+%   INPUTS
+%   -----------------------------------------------------------------------
+%
+%   OUTPUTS
+%   -----------------------------------------------------------------------
+%   data : (cell)
+%
 
 % Fix the data.
 if ~iscell(wormName)
@@ -172,13 +184,23 @@ end
 
 
 %% Save the worm statistics.
-function saveStatistics(filename, wormFiles, dataInfo, loadName, saveName, isVerbose)
+function h__saveStatistics(filename, wormFiles, dataInfo, loadName, saveName, isVerbose)
+%
+%
+%
+%   THE TWO CALLS TO THIS ARE:
+%   -----------------------------------------------------------------------
+%   h__saveStatistics(filename, controlFiles, dataInfo, controlNames, 'control', isVerbose);
+%   h__saveStatistics(filename, wormFiles,    dataInfo, 'worm',       'worm',    isVerbose);
 
-% Initialize the locomotion modes.
-motionNames = { ...
-    'forward', ...
-    'paused', ...
-    'backward'};
+%
+%   dataInfo
+%   See :seg_worm.feature.roots 
+
+
+%NOTE: .field
+
+
 
 % Combine the statistics.
 for i = 1:length(dataInfo)
@@ -195,8 +217,7 @@ for i = 1:length(dataInfo)
             
             % Combine motion statistics.
         case 'm'
-            data = h__addMotionStatistics(wormFiles, loadName, field, ...
-                motionNames);
+            data = h__addMotionStatistics(wormFiles, loadName, field);
             eval([saveName '.' field '=data;']);
             
             % Combine event statistics.
@@ -228,18 +249,43 @@ end
 
 %% Combine statistics.
 function data = h__addStatistics(wormFiles, wormName, field)
+%
+%
+%   INPUTS
+%   --------------------------------------------------------------
+%   wormFiles :
+%   wormName  : 
+%   
+
+%???? what does addData contain?????
 addData = h__loadWormFiles(wormFiles, wormName, field);
+
 data(length(addData{1})).statistics = [];
+
 for i = 1:length(addData{1})
-    subData = cellfun(@(x) x(i).histogram, addData, 'UniformOutput', false);
+    
+    subData = cellfun(@(x) x(i).histogram, addData, 'un', 0);
+    
     data(i).statistics = h__addStatisticsData(subData);
 end
+
 end
 
 
 
 %% Combine motion statistics.
-function data = h__addMotionStatistics(wormFiles, wormName, field, motionNames)
+function data = h__addMotionStatistics(wormFiles, wormName, field)
+%
+%
+%   Motion Statistics:
+%   forward, paused, backward
+
+
+% Initialize the locomotion modes.
+motionNames = { ...
+    'forward', ...
+    'paused', ...
+    'backward'};
 
 % Initialize the data.
 data.statistics = [];
@@ -258,13 +304,12 @@ data(length(addData{1})).statistics = [];
 for i = 1:length(addData{1})
     
     % Combine the data statistics.
-    subData = cellfun(@(x) x(i).histogram, addData, 'UniformOutput', false);
+    subData = cellfun(@(x) x(i).histogram, addData, 'un', 0);
     data(i).statistics = h__addStatisticsData(subData);
     
     % Combine the motion statistics.
     for j = 1:length(motionNames)
-        subData = cellfun(@(x) x(i).(motionNames{j}).histogram, addData, ...
-            'UniformOutput', false);
+        subData = cellfun(@(x) x(i).(motionNames{j}).histogram, addData, 'un', 0);
         data(i).(motionNames{j}).statistics = h__addStatisticsData(subData);
     end
 end
@@ -276,17 +321,19 @@ end
 function data = h__addStatisticsData(addData)
 
 % Is the data signed?
-data = [];
+data     = [];
 isSigned = [];
-numSets = 0;
+numSets  = 0;
 for i = 1:length(addData)
     
-    % Add the set.
+    
     if isempty(addData{i})
+        % Add the set.
         numSets = numSets + 1;
         
-        % Sign the data.
-    else
+        
+    else  % Sign the data.
+        
         % Add the sets.
         numSets = numSets + length(addData{i});
         
@@ -302,10 +349,10 @@ for i = 1:length(addData)
 end
 
 % Is there any data?
+
 if isempty(isSigned)
     data = nanHistogram(numSets);
-    data = rmfield(data, ...
-        {'sets', 'allData', 'PDF', 'bins', 'resolution', 'isZeroBin'});
+    data = rmfield(data, {'sets', 'allData', 'PDF', 'bins', 'resolution', 'isZeroBin'});
     return;
 end
 
@@ -315,13 +362,13 @@ data.data = [];
 data.isSigned = isSigned;
 
 % Combine the data.
-data.data.samples = [];
-data.data.mean.all = [];
+data.data.samples    = [];
+data.data.mean.all   = [];
 data.data.stdDev.all = [];
 for i = 1:length(addData)
     if isempty(addData{i})
-        data.data.samples = cat(1, data.data.samples, 0);
-        data.data.mean.all = cat(1, data.data.mean.all, NaN);
+        data.data.samples    = cat(1, data.data.samples, 0);
+        data.data.mean.all   = cat(1, data.data.mean.all, NaN);
         data.data.stdDev.all = cat(1, data.data.stdDev.all, NaN);
     else
         data.data.samples = ...
@@ -333,19 +380,19 @@ for i = 1:length(addData)
     end
 end
 if isSigned
-    data.data.mean.abs = [];
+    data.data.mean.abs   = [];
     data.data.stdDev.abs = [];
-    data.data.mean.pos = [];
+    data.data.mean.pos   = [];
     data.data.stdDev.pos = [];
-    data.data.mean.neg = [];
+    data.data.mean.neg   = [];
     data.data.stdDev.neg = [];
     for i = 1:length(addData)
         if isempty(addData{i})
-            data.data.mean.abs = cat(1, data.data.mean.abs, NaN);
+            data.data.mean.abs   = cat(1, data.data.mean.abs,   NaN);
             data.data.stdDev.abs = cat(1, data.data.stdDev.abs, NaN);
-            data.data.mean.pos = cat(1, data.data.mean.pos, NaN);
+            data.data.mean.pos   = cat(1, data.data.mean.pos,   NaN);
             data.data.stdDev.pos = cat(1, data.data.stdDev.pos, NaN);
-            data.data.mean.neg = cat(1, data.data.mean.neg, NaN);
+            data.data.mean.neg   = cat(1, data.data.mean.neg,   NaN);
             data.data.stdDev.neg = cat(1, data.data.stdDev.neg, NaN);
         else
             data.data.mean.abs = ...
@@ -372,7 +419,7 @@ function data = h__addEventStatistics(wormFiles, wormName, field)
 
 % Initialize the combined statistics.
 addData = h__loadWormFiles(wormFiles, wormName, field);
-data = [];
+data    = [];
 if isempty(addData)
     data.data = NaN;
     return;

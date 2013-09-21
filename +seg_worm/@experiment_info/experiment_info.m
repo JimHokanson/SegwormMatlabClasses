@@ -2,6 +2,9 @@ classdef experiment_info < handle
     %
     %   Class:
     %   seg_worm.experiment_info
+    %
+    %   I think I had wanted this class to be responsible for creating
+    %   the 'info' structure ...
     
     properties
     end

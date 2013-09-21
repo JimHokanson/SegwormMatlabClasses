@@ -1,4 +1,4 @@
-function [isUsed wormX tickX nameX labelX] = wormInfo2Tracker(info, filt)
+function [isUsed,wormX,tickX,nameX,labelX] = wormInfo2Tracker(info, filt)
 %WORMINFO2TRACKER Convert worm information to the tracker number on which
 %the experiment was performed.
 %

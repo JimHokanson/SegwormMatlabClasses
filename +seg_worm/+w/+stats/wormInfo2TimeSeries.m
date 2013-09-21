@@ -42,7 +42,7 @@ function [isUsed wormX tickX nameX labelX] = wormInfo2TimeSeries(info, filt)
 % notices on any copies of the Software.
 
 % Filter the worms.
-[isUsed data] = filterWormInfo(info, filt);
+[isUsed, data] = filterWormInfo(info, filt);
 
 % Determine the unit scale, label, and tick spacing.
 scale = 60;

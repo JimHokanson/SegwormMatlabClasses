@@ -1,13 +1,16 @@
 function addWormStats(filename, wormFiles, varargin)
-%WORM2STATS Combine worm statistics.
+%addWormStats   Combine worm statistics.
 %
-%   ADDWORMSTATS(FILENAME, WORMFILES)
 %
-%   ADDWORMSTATS(FILENAME, WORMFILES, CONTROLFILES)
+%   This function uses "statistics" files, and worm2stats uses
+%   histograms. These two functions look basically redundant
+%   and should probably be merged ...
 %
-%   ADDWORMSTATS(FILENAME, WORMFILES, CONTROLFILES, ISOLDCONTROL)
 %
-%   ADDWORMSTATS(FILENAME, WORMFILES, CONTROLFILES, ISOLDCONTROL, VERBOSE)
+%   seg_worm.w.stats.addWormStats(FILENAME, WORMFILES, *CONTROLFILES, *ISOLDCONTROL, *VERBOSE)
+%
+%   ???What's the difference between this and worm2stats???
+%
 %
 %   Inputs:
 %       filename     - the file name for the statistics;

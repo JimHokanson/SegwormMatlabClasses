@@ -1,6 +1,5 @@
-function exps = ...
-    wormExps(dirPath, gene, allele, strain, isFood, side, tracker)
-%WORMEXPS Find worm experiments matching the given criteria.
+function exps = wormExps(dirPath, gene, allele, strain, isFood, side, tracker)
+%WORMEXPS  Find worm experiments matching the given criteria.
 %
 %   WORMEXPS(DIRPATH, GENE, ALLELE, STRAIN, ISFOOD, SIDE, TRACKER)
 %
@@ -145,13 +144,13 @@ else
 end
 
 % Parse the experiments information.
-minSeps = 7;
-geneI = 6;
-alleleI = 5;
-strainI = 4;
-foodI = 3;
-dateI = 2;
-sideI = 1;
+minSeps  = 7;
+geneI    = 6;
+alleleI  = 5;
+strainI  = 4;
+foodI    = 3;
+dateI    = 2;
+sideI    = 1;
 trackerI = 0;
 dateFormat = 'yyyy-mm-dd   HH_MM_SS';
 for i = 1:length(exps)

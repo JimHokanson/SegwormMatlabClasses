@@ -1,8 +1,8 @@
-function [isUsed wormX tickX nameX labelX] = wormInfo2WeekOfYear(info, filt)
+function [isUsed,wormX,tickX,nameX,labelX] = wormInfo2WeekOfYear(info, filt)
 %WORMINFO2WEEKOFYEAR Convert worm information to the week of the year the
 %experiment was performed.
 %
-%   [ISUSED WORMX TICKX NAMEX LABELX] = WORMINFO2WEEKOFYEAR(INFO, FILT)
+%   [isUsed,wormX,tickX,nameX,labelX] = wormInfo2WeekOfYear(info, filt)
 %
 %   Inputs:
 %       info - the worm information
@@ -38,7 +38,7 @@ function [isUsed wormX tickX nameX labelX] = wormInfo2WeekOfYear(info, filt)
 % notices on any copies of the Software.
 
 % Filter the worms.
-[isUsed data] = filterWormInfo(info, filt);
+[isUsed,data] = filterWormInfo(info, filt);
 
 % Compute the x-axis values.
 wormX(1,:) = [data(isUsed).week];

@@ -29,7 +29,8 @@ function [isUsed wormX tickX nameX labelX] = wormInfo2HourOfDay(info, filt)
 %       nameX  - the x-axis tick names
 %       labelX - the x-axis tick labels
 %
-% See also PLOTWORMSTATS, FILTERWORMINFO
+% See also:
+%   PLOTWORMSTATS, FILTERWORMINFO
 %
 %
 % © Medical Research Council 2012
@@ -38,7 +39,7 @@ function [isUsed wormX tickX nameX labelX] = wormInfo2HourOfDay(info, filt)
 % notices on any copies of the Software.
 
 % Filter the worms.
-[isUsed data] = filterWormInfo(info, filt);
+[isUsed,data] = filterWormInfo(info, filt);
 
 % Compute the x-axis values.
 wormX(1,:) = [data(isUsed).hour];

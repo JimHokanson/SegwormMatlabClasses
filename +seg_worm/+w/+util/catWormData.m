@@ -1,5 +1,12 @@
 function data = catWormData(wormFile, varargin)
-%CATWORMBLOCKS Concatenate the worm data.
+%catWormData   Concatenate the worm data.
+%
+%   data = seg_worm.w.util.catWormData(wormFile, index, start_frame, end_frame)
+%   
+%
+%   NOT CALLED BY ANY FUNCTIONS IN CODE BASE
+%
+%
 %
 %   DATA = CATWORMDATA(WORMFILE)
 %   DATA = CATWORMDATA(WORMFILE, INDEX)
@@ -7,51 +14,7 @@ function data = catWormData(wormFile, varargin)
 %   DATA = CATWORMDATA(WORMFILE, INDEX, STARTFRAME, ENDFRAME)
 %
 %   Inputs:
-%
-%       wormFile   - the name of the file containing normalized worms (see
-%                    saveWormFrames). The file format is MAT (Matlab's
-%                    '.mat') and contains the following variables:
-%                   
-%                    samples      = the samples per normalized worm; if
-%                                   empty, the worms are in structs
-%                    fps          = frames/seconds
-%                    firstFrame   = the first frame number (in block1)
-%                    lastFrame    = the last frame number (in the last block)
-%                    blockSize    = the size of a block
-%                    blocks       = the number of blocks
-%                    block1       = the first block
-%                    ...
-%                    blockN       = the N-th (last) block
-%
-%                    If the data is normalized, the blocks are cell arrays
-%                    with following structure (see normWorms):
-%
-%                    blockN{1}  = status:
-%                                 s = segmented
-%                                 f = segmentation failed
-%                                 m = stage movement
-%                                 d = dropped frame
-%                    blockN{2}  = vulvaContours
-%                    blockN{3}  = nonVulvaContours
-%                    blockN{4}  = skeletons
-%                    blockN{5}  = angles
-%                    blockN{6}  = inOutTouches
-%                    blockN{7}  = lengths
-%                    blockN{8}  = widths
-%                    blockN{9}  = headAreas
-%                    blockN{10} = tailAreas
-%                    blockN{11} = vulvaAreas
-%                    blockN{12} = nonVulvaAreas
-%
-%                    Otherwise, the blocks are just cell arrays of worm
-%                    cells; missing worms are labeled with their frame
-%                    status instead:
-%
-%                    blockN = 1 to, at most, blockSize number of worm cells;
-%                             or, for missing worms, their frame status:
-%                             f = segmentation failed
-%                             m = stage movement
-%                             d = dropped frame
+%       See WORM_FILE in OldWormFormats.m
 %
 %       index      - the data index in the block;
 %                    if empty, return all data
@@ -64,7 +27,9 @@ function data = catWormData(wormFile, varargin)
 %
 %       data - the concatenated worm data
 %
-%   See also SAVEWORMVIDEOFRAMES, NORMWORMS
+%   See also:
+%   SAVEWORMVIDEOFRAMES
+%   NORMWORMS
 %
 %
 % © Medical Research Council 2012
@@ -113,12 +78,12 @@ end
 end
 
 % Echo the data.
-function [data dataBlockI] = echoFunc(dataInfo, dataBlockI)
+function [data,dataBlockI] = echoFunc(dataInfo, dataBlockI)
 
 % Initialize the variables.
 dataBlock = dataInfo.data;
-startI = dataInfo.startDataFrameI;
-endI = dataInfo.endDataFrameI;
+startI    = dataInfo.startDataFrameI;
+endI      = dataInfo.endDataFrameI;
 
 % Extract the subset of the data.
 data = cell(length(dataBlockI), 1);

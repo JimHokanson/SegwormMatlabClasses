@@ -1,8 +1,7 @@
 function annotation = wormFrameAnnotation()
-%FRAMEANNOTATIONCODES Get the video frame annotation information for worm
-%segmentation.
+%wormFrameAnnotation  Get the video frame annotation information for worm segmentation.
 %
-%   ANNOTATION = WORMFRAMEANNOTATION()
+%   annotation = wormFrameAnnotation()
 %
 %   Output:
 %       annotation - a struct of the the video frame annotation information

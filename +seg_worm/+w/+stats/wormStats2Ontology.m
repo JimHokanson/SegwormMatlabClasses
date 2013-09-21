@@ -1,14 +1,16 @@
 function [strains, reference] = wormStats2Ontology(filenames, varargin)
-%WORMSTATS2ONTOLOGY Convert a worm's significant features to ontology.
+%wormStats2Ontology  Convert a worm's significant features to ontology.
 %
-%   WORMSTATS2ONTOLOGY(FILENAME)
+%   wormStats2Ontology(FILENAME)
 %
-%   WORMSTATS2ONTOLOGY(FILENAME, USEGENOTYPES, ISSTRICTMATCH, ISTTEST,
+%   wormStats2Ontology(FILENAME, USEGENOTYPES, ISSTRICTMATCH, ISTTEST,
 %                      FEATUREPALPHA, FEATUREQALPHA,
 %                      STRAINPALPHA, STRAINQALPHA, ISVERBOSE)
 %
 %   Inputs:
 %       filenames     - the filenames containing the statistics
+%
+%   Optional Inputs:
 %       useGenotypes  - the genotype(s) to annotate;
 %                       if empty, all genotypes are used
 %                       the default is all (empty)
@@ -60,7 +62,8 @@ function [strains, reference] = wormStats2Ontology(filenames, varargin)
 %                   indices      = the associated feature indices
 %                   alternatives = the alternative reference indices
 %
-% See also WORMONTOLOGY2STRING, WORM2STATSINFO
+%   See also:
+%   WORMONTOLOGY2STRING, WORM2STATSINFO
 %
 %
 % © Medical Research Council 2012
@@ -138,13 +141,13 @@ end
 
 % Initialize the reference of annotations.
 reference = [];
-refI = 0;
+refI      = 0;
 bothSigns = 'b';
-unSign = 'u';
-noSign = '0';
-posSign = '+';
-negSign = '-';
-absSign = 'a';
+unSign    = 'u';
+noSign    = '0';
+posSign   = '+';
+negSign   = '-';
+absSign   = 'a';
 
 
 
@@ -153,11 +156,11 @@ absSign = 'a';
 % Length.
 refI = refI + 1;
 lengthI = refI;
-reference(lengthI).term = 'Length';
+reference(lengthI).term     = 'Length';
 reference(lengthI).category = 'Body';
-reference(lengthI).indices = 1;
+reference(lengthI).indices  = 1;
 reference(lengthI).alternatives = [];
-reference(lengthI).sign = unSign;
+reference(lengthI).sign     = unSign;
 
 % Width.
 refI = refI + 1;
@@ -247,10 +250,10 @@ reference(posWaveI).alternatives = [posAmpI posAmpRatioI posWavelengthI];
 % Body Bends.
 refI = refI + 1;
 bodyBendsI = refI;
-reference(bodyBendsI).term = 'Body Bends';
-reference(bodyBendsI).category = 'Posture';
-reference(bodyBendsI).indices = [9:11, 14:16, 23:24];
-reference(bodyBendsI).sign = unSign;
+reference(bodyBendsI).term      = 'Body Bends';
+reference(bodyBendsI).category  = 'Posture';
+reference(bodyBendsI).indices   = [9:11, 14:16, 23:24];
+reference(bodyBendsI).sign      = unSign;
 reference(bodyBendsI).alternatives = ...
     [posAmpI posAmpRatioI posWavelengthI posWaveI];
 
@@ -430,10 +433,10 @@ reference(dwellI).alternatives = pausedI;
 
 % Initialize the annotations.
 numStrains = 0;
-strains.genotype = [];
-strains.strain = [];
-strains.gene = [];
-strains.allele = [];
+strains.genotype   = [];
+strains.strain     = [];
+strains.gene       = [];
+strains.allele     = [];
 strains.annotation = [];
 
 % Annotate the files.
@@ -444,7 +447,7 @@ for i = 1:length(filenames)
     significance = [];
     wormData = [];
     wormInfo = [];
-    worm = [];
+    worm     = [];
     if ~isempty(whos('-FILE', filenames{i}, 'worm'))
         load(filenames{i}, 'worm');
     elseif ~isempty(whos('-FILE', filenames{i}, 'significance'))
@@ -600,11 +603,11 @@ function annotation = annotate(features, pValues, qValues, ... %powers, ...
 % Determine the main features.
 [mainI, ~, subI] = unique([info(features).title1I]);
 featureI = cell(length(mainI), 1);
-sigI = cell(length(mainI), 1);
-pValueI = cell(length(mainI), 1);
-qValueI = cell(length(mainI), 1);
+sigI     = cell(length(mainI), 1);
+pValueI  = cell(length(mainI), 1);
+qValueI  = cell(length(mainI), 1);
 % powerI = cell(length(mainI), 1);
-zScoreI = cell(length(mainI), 1);
+zScoreI  = cell(length(mainI), 1);
 for i = 1:length(mainI)
     featureI{i} = features(i == subI);
     sigI{i} = features(i == subI);
@@ -615,13 +618,13 @@ for i = 1:length(mainI)
 end
 
 % Match the main features to the reference.
-numRefs = 0;
-refI = [];
-mainIs = [];
+numRefs   = 0;
+refI      = [];
+mainIs    = [];
 featureIs = [];
-sigIs = [];
-pValueIs = [];
-qValueIs = [];
+sigIs     = [];
+pValueIs  = [];
+qValueIs  = [];
 % powerIs = [];
 zScoreIs = [];
 for i = 1:length(reference)
@@ -629,13 +632,13 @@ for i = 1:length(reference)
     if ~isempty(refFeatures)
         numRefs = numRefs + 1;
         refI(numRefs) = i;
-        mainIs{numRefs} = refFeatures;
+        mainIs{numRefs}    = refFeatures;
         featureIs{numRefs} = cat(2, featureI{refFeatureI});
-        sigIs{numRefs} = cat(2, sigI{refFeatureI});
-        pValueIs{numRefs} = cat(2, pValueI{refFeatureI});
-        qValueIs{numRefs} = cat(2, qValueI{refFeatureI});
+        sigIs{numRefs}     = cat(2, sigI{refFeatureI});
+        pValueIs{numRefs}  = cat(2, pValueI{refFeatureI});
+        qValueIs{numRefs}  = cat(2, qValueI{refFeatureI});
 %         powerIs{numRefs} = cat(2, powerI{refFeatureI});
-        zScoreIs{numRefs} = cat(2, zScoreI{refFeatureI});
+        zScoreIs{numRefs}  = cat(2, zScoreI{refFeatureI});
     end
 end
 
@@ -645,8 +648,7 @@ keep = false(length(refI), 1);
 for i = 1:length(refI)
     
     % Are there any alternatives?
-    [~, ~, alternateI{i}] = ...
-        intersect(reference(refI(i)).alternatives, refI);
+    [~, ~, alternateI{i}] = intersect(reference(refI(i)).alternatives, refI);
     
     % Remove the redundant reference.
     if isempty(alternateI{i})
@@ -688,11 +690,11 @@ end
 
 % Annotate the features.
 bothSigns = 'b';
-unSign = 'u';
-noSign = '0';
-posSign = '+';
-negSign = '-';
-absSign = 'a';
+unSign    = 'u';
+noSign    = '0';
+posSign   = '+';
+negSign   = '-';
+absSign   = 'a';
 annotationI = 0;
 annotation = [];
 for i = 1:length(refI)

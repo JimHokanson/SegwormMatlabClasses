@@ -1,4 +1,4 @@
-function [filename pages] = worm2TOCOntologyTIF(filename, worm, wormName, ...
+function [filename,pages] = worm2TOCOntologyTIF(filename, worm, wormName, ...
     varargin)
 %WORM2TOCONTOLOGYTIF Save worm details to a TIF.
 %
@@ -293,39 +293,15 @@ if length(varargin) > 11
 end
 
 % Construct the file name.
-if saveQuality > 0
-    
-    % Remove the TIF extension.
-    tifExt = '.tif';
-    tifName = filename;
-    if length(tifName) >= length(tifExt) && ...
-            strcmp(filename((end - length(tifExt) + 1):end), tifExt)
-        tifName = filename(1:(end - length(tifExt)));
-    end
-    
-    % Create the filename.
-    if isempty(tifName)
-        if isempty(controlName)
-            tifName = [wormName ' details'];
-        else
-            tifName = [wormName ' vs ' controlName ' details'];
-        end
-    end
-    
-    % Add the TIF extension.
-    filename = [tifName '.tif'];
-
-% We are not saving a file.
-else
-    filename = [];
-end
+filename = helper__getFilename(saveQuality,filename,wormName,controlName);
 
 % Initialize the feature information.
-dispInfo = wormDisplayInfo();
-dataInfo = wormDataInfo();
-statsInfo = wormStatsInfo();
+%------------------------------------------------------
+dispInfo    = wormDisplayInfo();
+dataInfo    = wormDataInfo();
+statsInfo   = wormStatsInfo();
 statTitle1I = [statsInfo.title1I];
-statIndex = [statsInfo.index];
+statIndex   = [statsInfo.index];
 
 
 %% Create a figure.
@@ -348,25 +324,25 @@ if isVerbose
 end
 
 % Initialize the drawing information.
-headerColor = str2colors('k', 0.5);
-sigSepStr = '   ';
+headerColor   = str2colors('k', 0.5);
+sigSepStr     = '   ';
 tocHeadHeight = 0.05;
-tocHeadWidth = 0.5;
+tocHeadWidth  = 0.5;
 tocHeight = 1 - tocHeadHeight;
-tocWidth = tocHeadWidth / 2;
+tocWidth  = tocHeadWidth / 2;
 fontSize1 = 32;
 fontSize2 = 20;
 fontSize3 = 14;
-yStart = 0.99;
-xOff1 = 0.99;
-xOff2 = 0.93;
-yOff = 0.0261;
+yStart    = 0.99;
+xOff1     = 0.99;
+xOff2     = 0.93;
+yOff      = 0.0261;
 
 % Initialize the feature categories.
 morphologyStr = 'Morphology';
-postureStr = 'Posture';
-motionStr = 'Motion';
-pathStr = 'Path';
+postureStr    = 'Posture';
+motionStr     = 'Motion';
+pathStr       = 'Path';
 
 % Draw the table of contents header.
 tocHeadPosition = [0, tocHeight, tocHeadWidth, tocHeadHeight];
@@ -1072,5 +1048,34 @@ for i = 1:length(signs)
     else
         color{i} = zeroColor;
     end
+end
+end
+
+function filename = helper__getFilename(saveQuality,filename,wormName,controlName)
+if saveQuality > 0
+    
+    % Remove the TIF extension.
+    tifExt = '.tif';
+    tifName = filename;
+    if length(tifName) >= length(tifExt) && ...
+            strcmp(filename((end - length(tifExt) + 1):end), tifExt)
+        tifName = filename(1:(end - length(tifExt)));
+    end
+    
+    % Create the filename.
+    if isempty(tifName)
+        if isempty(controlName)
+            tifName = [wormName ' details'];
+        else
+            tifName = [wormName ' vs ' controlName ' details'];
+        end
+    end
+    
+    % Add the TIF extension.
+    filename = [tifName '.tif'];
+
+% We are not saving a file.
+else
+    filename = [];
 end
 end

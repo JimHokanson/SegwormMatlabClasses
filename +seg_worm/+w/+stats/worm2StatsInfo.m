@@ -153,7 +153,11 @@ function worm2StatsInfo(filename, wormFiles, varargin)
 %       isVerbose        - verbose mode displays the progress;
 %                          the default is yes (true)
 %
-% See also WORM2HISTOGRAM, WORM2STATS, FILTERWORMINFO, WORMSTATSINFO
+%   See also:
+%   WORM2HISTOGRAM, 
+%   WORM2STATS, 
+%   FILTERWORMINFO, 
+%   WORMSTATSINFO
 %
 %
 % © Medical Research Council 2012

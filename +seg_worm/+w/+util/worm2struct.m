@@ -8,9 +8,9 @@ function worm = worm2struct(frame, ...
     rcBounds, rsBounds, rPixels, rArea, rCDF, rStdev, ...
     isHeadTailFlipped, hConfidence, tConfidence,...
     isVulvaClockwiseFromHead, vConfidence, nvConfidence)
-%WORM2STRUCT Organize worm information in a structure.
+%WORM2STRUCT  Organize worm information in a structure.
 %
-%   WORM = WORM2STRUCT(FRAME,
+%   WORM = seg_worm.w.util.worm2struct(FRAME,
 %       CPIXELS, CTOUCHI, CINI, COUTI, CANGLES, CHEADI, CTAILI,
 %       SPIXELS, STOUCHI, SINI, SOUTI, SINOUTI, SANGLES, SLENGTH, SWIDTHS,
 %       HLCBOUNDS, HRCBOUNDS, HSBOUNDS, HPIXELS, HCDF, HSTDEV,
@@ -169,58 +169,12 @@ function worm = worm2struct(frame, ...
 %                                  vulval side?
 %
 %   Output:
-%       worm - the worm information organized in a structure
-%              This structure contains 8 sub-structures,
-%              6 sub-sub-structures, and 4 sub-sub-sub-structures:
+%       See WORM_1 STRUCTURE in OldWormFormats.m
 %
-%              * Video *
-%              video = {frame}
-%
-%              * Contour *
-%              contour = {pixels, touchI, inI, outI, angles, headI, tailI,
-%                         chainCodeLengths}
-%
-%              * Skeleton *
-%              skeleton = {pixels, touchI, inI, outI, inOutI, angles,
-%                          length, chainCodeLengths, widths}
-%
-%              Note: positive skeleton angles bulge towards the side
-%              clockwise from the worm's head (unless the worm is flipped).
-%
-%              * Head *
-%              head = {bounds, pixels, area,
-%                      cdf (at [2.5% 25% 50% 75% 97.5%]), stdev}
-%              head.bounds{contour.left (indices for [start end]),
-%                          contour.right (indices for [start end]),
-%                          skeleton indices for [start end]}
-%
-%              * Tail *
-%              tail = {bounds, pixels, area,
-%                      cdf (at [2.5% 25% 50% 75% 97.5%]), stdev}
-%              tail.bounds{contour.left (indices for [start end]),
-%                          contour.right (indices for [start end]),
-%                          skeleton indices for [start end]}
-%
-%              * Left Side (Counter Clockwise from the Head) *
-%              left = {bounds, pixels, area,
-%                      cdf (at [2.5% 25% 50% 75% 97.5%]), stdev}
-%              left.bounds{contour (indices for [start end]),
-%                          skeleton (indices for [start end])}
-%
-%              * Right Side (Clockwise from the Head) *
-%              right = {bounds, pixels, area,
-%                       cdf (at [2.5% 25% 50% 75% 97.5%]), stdev}
-%              right.bounds{contour (indices for [start end]),
-%                           skeleton (indices for [start end])}
-%
-%              * Orientation *
-%              orientation = {head, vulva}
-%              orientation.head = {isFlipped,
-%                                  confidence.head, confidence.tail}
-%              orientation.vulva = {isClockwiseFromHead,
-%                                  confidence.vulva, confidence.nonVulva}
-%
-%   See also WORM2CELL, CELL2WORM, SEGWORM
+%   See also:
+%   WORM2CELL, 
+%   CELL2WORM, 
+%   SEGWORM
 %
 %
 % © Medical Research Council 2012
@@ -244,9 +198,8 @@ skeleton = struct('pixels', sPixels, ...
 
 % Organize the head.
 hContour = struct('left', hlcBounds, 'right', hrcBounds);
-hBounds = struct('contour', hContour, 'skeleton', hsBounds);
-head = struct('bounds', hBounds, 'pixels', hPixels, 'area', hArea, ...
-    'cdf', hCDF, 'stdev', hStdev);
+hBounds  = struct('contour', hContour, 'skeleton', hsBounds);
+head     = struct('bounds', hBounds, 'pixels', hPixels, 'area', hArea, 'cdf', hCDF, 'stdev', hStdev);
 
 % Organize the tail.
 tContour = struct('left', tlcBounds, 'right', trcBounds);

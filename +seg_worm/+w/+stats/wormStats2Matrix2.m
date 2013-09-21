@@ -1,4 +1,4 @@
-function wormStats2Matrix(filename, wormFiles, varargin)
+function wormStats2Matrix2(filename, wormFiles, varargin)
 %WORMSTATS2MATRIX Construct and save a features x worms matrix.
 %
 %   WORMSTATS2MATRIX(FILENAME, WORMFILES)

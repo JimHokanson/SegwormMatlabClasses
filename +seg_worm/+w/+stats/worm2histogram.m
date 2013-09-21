@@ -101,9 +101,8 @@ progSize = length(dataInfo) + 2;
 if isVerbose
     disp('Saving "wormInfo" ...');
 end
-[progState, progCount] = progress('Saving "wormInfo" ...', ...
-    progFunc, progState, progCount, progSize);
-wormInfo = cellfun(@(x) load(x, 'info'), wormFiles);
+[progState, progCount] = progress('Saving "wormInfo" ...',progFunc, progState, progCount, progSize);
+wormInfo = cellfun(@(x) load(x, 'info'), wormFiles); %Yikes!!!
 wormInfo = [wormInfo.info];
 if size(wormInfo, 1) < size(wormInfo, 2)
     wormInfo = wormInfo';
@@ -194,10 +193,9 @@ for i = 1:length(dataInfo)
         % Compute the motion histogram.
         case 'm'
             if ~isempty(dataInfo(i).subFields)
-                field = [field '.' dataInfo(i).subFields{1}]
+                field = [field '.' dataInfo(i).subFields{1}];
             end
-            data = motion2histograms(wormFiles, field, subFields, ...
-                histInfo, motionNames, motionEvents);
+            data = motion2histograms(wormFiles, field, subFields, histInfo, motionNames, motionEvents);
             eval([wormName '.' field '=data;']);
             
         % Compute the event histogram.
@@ -259,8 +257,8 @@ function histData = motion2histograms(wormFiles, field, subFields, ...
 
 % Get the histogram information.
 resolution = [];
-isZeroBin = [];
-isSigned = [];
+isZeroBin  = [];
+isSigned   = [];
 info = getStructField(histInfo, field);
 if isempty(info)
     warning('worm2histogram:NoInfo', ...

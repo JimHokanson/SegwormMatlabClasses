@@ -1,7 +1,7 @@
-function info = wormDisplayInfo()
-%WORMDISPLAYINFO Get information for displaying the worm data.
+function info = rootDisplayInfo()
+%rootDisplayInfo  Get information for displaying the worm data.
 %
-%   INFO = WORMDISPLAYINFO()
+%   info = seg_worm.feature.rootDisplayInfo()
 %
 %   This function looks like for most features it provides descriptions
 %   on how to display the feature ...
@@ -56,37 +56,37 @@ fields = { ...
     'Tail'};
 for i = 1:length(fields)
     field = lower(fields{i});
-    info.morphology.width.(field).resolution = 1;
-    info.morphology.width.(field).isZeroBin = false;
-    info.morphology.width.(field).isSigned = false;
-    info.morphology.width.(field).name = [fields{i} ' Width'];
-    info.morphology.width.(field).shortName = fields{i};
-    info.morphology.width.(field).unit = 'Microns';
+    info.morphology.width.(field).resolution    = 1;
+    info.morphology.width.(field).isZeroBin     = false;
+    info.morphology.width.(field).isSigned      = false;
+    info.morphology.width.(field).name          = [fields{i} ' Width'];
+    info.morphology.width.(field).shortName     = fields{i};
+    info.morphology.width.(field).unit          = 'Microns';
 end
 
 % Organize the area information.
 info.morphology.area.resolution = 100;
-info.morphology.area.isZeroBin = false;
-info.morphology.area.isSigned = false;
-info.morphology.area.name = 'Area';
-info.morphology.area.shortName = 'Area';
-info.morphology.area.unit = 'Microns²';
+info.morphology.area.isZeroBin  = false;
+info.morphology.area.isSigned   = false;
+info.morphology.area.name       = 'Area';
+info.morphology.area.shortName  = 'Area';
+info.morphology.area.unit       = 'Microns²';
 
 % Organize the area/length information.
 info.morphology.areaPerLength.resolution = 0.1;
-info.morphology.areaPerLength.isZeroBin = false;
-info.morphology.areaPerLength.isSigned = false;
-info.morphology.areaPerLength.name = 'Area/Length';
-info.morphology.areaPerLength.shortName = 'Area/Length';
-info.morphology.areaPerLength.unit = 'Microns';
+info.morphology.areaPerLength.isZeroBin  = false;
+info.morphology.areaPerLength.isSigned   = false;
+info.morphology.areaPerLength.name       = 'Area/Length';
+info.morphology.areaPerLength.shortName  = 'Area/Length';
+info.morphology.areaPerLength.unit       = 'Microns';
 
 % Organize the width/length information.
 info.morphology.widthPerLength.resolution = 0.0001;
-info.morphology.widthPerLength.isZeroBin = false;
-info.morphology.widthPerLength.isSigned = false;
-info.morphology.widthPerLength.name = 'Width/Length';
-info.morphology.widthPerLength.shortName = 'Width/Length';
-info.morphology.widthPerLength.unit = 'No Units';
+info.morphology.widthPerLength.isZeroBin  = false;
+info.morphology.widthPerLength.isSigned   = false;
+info.morphology.widthPerLength.name       = 'Width/Length';
+info.morphology.widthPerLength.shortName  = 'Width/Length';
+info.morphology.widthPerLength.unit       = 'No Units';
 
 
 

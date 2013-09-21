@@ -1,12 +1,14 @@
-function data = worm2func(func, state, wormFile, startFrame, endFrame, ...
-    backScale, frontScale, varargin)
+function data = worm2func(func, state, wormFile, startFrame, endFrame, backScale, frontScale, varargin)
 %WORM2FUNC Apply a function to worm data (normalized within blocks).
 %
-%   DATA = WORM2FUNC(FUNC, STATE, WORMFILE, STARTFRAME, ENDFRAME,
-%                    BACKSCALE, FRONTSCALE)
 %
-%   DATA = WORM2FUNC(FUNC, STATE, WORMFILE, STARTFRAME, ENDFRAME,
-%                    BACKSCALE, FRONTSCALE, ISEXTENDED)
+%   This function is called by:
+%   catWormData
+%   wormBends
+%
+%   DATA = WORM2FUNC(FUNC, STATE, WORMFILE, STARTFRAME, ENDFRAME, BACKSCALE, FRONTSCALE)
+%
+%   DATA = WORM2FUNC(FUNC, STATE, WORMFILE, STARTFRAME, ENDFRAME, BACKSCALE, FRONTSCALE, ISEXTENDED)
 %
 %   Inputs:
 %       func       - the function to apply per data block;
@@ -39,50 +41,8 @@ function data = worm2func(func, state, wormFile, startFrame, endFrame, ...
 %                                      the ending frame in the block
 %                    fps             = the data frames/seconds
 %
-%       wormFile   - the name of the file containing normalized worms (see
-%                    saveWormFrames). The file format is MAT (Matlab's
-%                    '.mat') and contains the following variables:
-%                   
-%                    samples      = the samples per normalized worm; if
-%                                   empty, the worms are in structs
-%                    fps          = frames/seconds
-%                    firstFrame   = the first frame number (in block1)
-%                    lastFrame    = the last frame number (in the last block)
-%                    blockSize    = the size of a block
-%                    blocks       = the number of blocks
-%                    block1       = the first block
-%                    ...
-%                    blockN       = the N-th (last) block
-%
-%                    If the data is normalized, the blocks are cell arrays
-%                    with following structure (see normWorms):
-%
-%                    blockN{1}  = status:
-%                                 s = segmented
-%                                 f = segmentation failed
-%                                 m = stage movement
-%                                 d = dropped frame
-%                    blockN{2}  = vulvaContours
-%                    blockN{3}  = nonVulvaContours
-%                    blockN{4}  = skeletons
-%                    blockN{5}  = angles
-%                    blockN{6}  = inOutTouches
-%                    blockN{7}  = lengths
-%                    blockN{8}  = widths
-%                    blockN{9}  = headAreas
-%                    blockN{10} = tailAreas
-%                    blockN{11} = vulvaAreas
-%                    blockN{12} = nonVulvaAreas
-%
-%                    Otherwise, the blocks are just cell arrays of worm
-%                    cells; missing worms are labeled with their frame
-%                    status instead:
-%
-%                    blockN = 1 to, at most, blockSize number of worm cells;
-%                             or, for missing worms, their frame status:
-%                             f = segmentation failed
-%                             m = stage movement
-%                             d = dropped frame
+%       wormFile   
+%           See WORM_FILE in OldWormFormats
 %
 %       startFrame - the first frame to use;
 %                    if empty, we start at the first frame
@@ -293,12 +253,12 @@ end
 
 % Correct the data types.
 startFrame = double(startFrame);
-endFrame = double(endFrame);
-fps = double(fps);
+endFrame   = double(endFrame);
+fps        = double(fps);
 firstFrame = double(firstFrame);
-lastFrame = double(lastFrame);
-blockSize = double(blockSize);
-blocks = double(blocks);
+lastFrame  = double(lastFrame);
+blockSize  = double(blockSize);
+blocks     = double(blocks);
 
 % Compute the scales.
 if isempty(backScale) || backScale < 0
@@ -344,18 +304,19 @@ for i = startBlockI:endBlockI
     % Load the data.
     backScaleFrames = min(backScale, startDataBlockFrame);
     frontScaleFrames = min(frontScale, lastFrame - endDataBlockFrame);
-    [dataInfo blockInfo] = loadData(wormFile, fps, ...
+    [dataInfo,blockInfo] = loadData(wormFile, fps, ...
         startDataBlockFrame, endDataBlockFrame, backScaleFrames, ...
         frontScaleFrames, isExtended, firstFrame, blocks, blockSize, ...
         blockInfo);
     
     % Apply the function.
-    [data{i - startBlockI + 1} state] = func(dataInfo, state);
+    [data{i - startBlockI + 1},state] = func(dataInfo, state);
 end
 end
 
 % Load data by index.
-function [dataInfo blockInfo] = loadData(wormFile, fps, startFrame, ...
+%----------------------------------------------------------------------
+function [dataInfo,blockInfo] = loadData(wormFile, fps, startFrame, ...
     endFrame, backScale, frontScale, isExtended, firstFrame, ...
     lastBlockI, blockSize, blockInfo)
 
@@ -444,8 +405,8 @@ if isExtended
 end
 
 % Find any missing blocks.
-endBlockI = floor((endFrame - firstFrame) / blockSize) + 1;
-newEndBlockI = newBlockInfo.index + length(newBlockInfo.blocks) - 1;
+endBlockI     = floor((endFrame - firstFrame) / blockSize) + 1;
+newEndBlockI  = newBlockInfo.index + length(newBlockInfo.blocks) - 1;
 missingBlocks = endBlockI - newEndBlockI;
 if missingBlocks > 0
     
@@ -555,6 +516,7 @@ dataInfo = struct( ...
 end
 
 % Load a block by index.
+%----------------------------------------------------------------------
 function blockInfo = loadBlock(wormFile, index)
 
 % Load the block.
@@ -574,6 +536,7 @@ blockInfo = struct('index', index, 'blocks', {{block}});
 end
 
 % Extract a subset of the data.
+%----------------------------------------------------------------------
 function subset = dataSubset(data, startI, endI)
 
 % Fix the start and end indices.
@@ -600,6 +563,7 @@ end
 end
 
 % Concatenate the data.
+%----------------------------------------------------------------------
 function data = catData(varargin)
 
 % We only have 1 data block.
@@ -638,6 +602,7 @@ end
 
 
 % How many dimensions does this normed data cell element have?
+%----------------------------------------------------------------------
 function dims = normDataDims(index)
 dims = [];
 if index >= 2 && index <= 4
@@ -648,6 +613,7 @@ end
 end
 
 % How many elements are in our normed data cell array?
+%----------------------------------------------------------------------
 function dataLength = normDataLength()
 dataLength = 12;
 end

@@ -1,4 +1,4 @@
-function [isUsed wormX tickX nameX labelX] = wormInfo2Week(info, filt)
+function [isUsed,wormX,tickX,nameX,labelX] = wormInfo2Week(info, filt)
 %WORMINFO2WEEKOFYEAR Convert worm information to the week the experiment
 %was performed.
 %
