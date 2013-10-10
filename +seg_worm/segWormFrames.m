@@ -143,23 +143,20 @@ close(vr);
 %below. This is all very confusing. I need to look back at what the overall
 %strategy is for orienting the worm
 
-for iFrame = 1:n_frames-1
-   previous_worm  = worms{iFrame};
-   cur_worm = worms{iFrame+1};
-    
-   if ~(previous_worm.parse_error || cur_worm.parse_error)
-       %seg_worm.worm.orientation.orientToPreviousWorm
-       cur_worm.orientation_handler.orientToRefWorm(previous_worm,verbose);
-       
-%        [hOrthoConfidence tOrthoConfidence ...
-%  	hParaConfidence tParaConfidence ...
-% 	hMagConfidence tMagConfidence] = ...
-%     	headTailMovementConfidence(worms{iFrame}, next_worm);
-       
-       
-       
-   end
-end
+% for iFrame = 1:n_frames-1
+%    previous_worm  = worms{iFrame};
+%    cur_worm = worms{iFrame+1};
+%     
+%    if ~(previous_worm.parse_error || cur_worm.parse_error)
+%        %seg_worm.worm.orientation.orientToPreviousWorm
+%        cur_worm.orientation_handler.orientToRefWorm(previous_worm);
+%        
+% %        [hOrthoConfidence tOrthoConfidence ...
+% %  	hParaConfidence tParaConfidence ...
+% % 	hMagConfidence tMagConfidence] = ...
+% %     	headTailMovementConfidence(worms{iFrame}, next_worm);
+%    end
+% end
 
 
 

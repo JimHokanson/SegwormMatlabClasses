@@ -1,7 +1,7 @@
 function label = worm2AlleleLabel(wormInfo)
-%WORM2ALLELELABEL Label the worm allele.
+%worm2AlleleLabel  Label the worm allele.
 %
-%   LABEL = WORM2ALLELELABEL(WORMINFO)
+%   LABEL = worm2AlleleLabel(WORMINFO)
 %
 %   Input:
 %       wormInfo - the worm information
@@ -9,7 +9,8 @@ function label = worm2AlleleLabel(wormInfo)
 %   Output:
 %       label - the worm label
 %
-% See also WORMSTATS2MATRIX
+%   See also 
+%   WORMSTATS2MATRIX
 %
 %
 % © Medical Research Council 2012

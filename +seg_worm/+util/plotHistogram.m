@@ -2,6 +2,9 @@ function plotHistogram(data, titleName, xAxisName, yAxisPrefix, ...
     dataNames, histColors, varargin)
 %PLOTHISTOGRAM Plot a histogram(s) of data.
 %
+%   seg_worm.util.plotHistogram
+%
+%
 %   PLOTHISTOGRAM(DATA, TITLENAME, XAXISNAME, YAXISPREFIX, DATANAMES,
 %                 HISTCOLORS)
 %

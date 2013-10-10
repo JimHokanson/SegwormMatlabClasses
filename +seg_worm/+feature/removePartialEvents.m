@@ -1,17 +1,26 @@
 function eventStats = removePartialEvents(eventStats, totalFrames)
-%REMOVEPARTIALEVENTS Remove partial events at the start and end of the data.
+%removePartialEvents  Remove partial events at the start and end of the data.
 %
-%   EVENTSTATS = REMOVEPARTIALEVENTS(EVENTSTATS, TOTALFRAMES)
+%   eventStats = removePartialEvents(eventStats, totalFrames)
+%
+%   Removes events that start right as the video starts or end right as the
+%   video ends. Since the video does not extend further in either direction
+%   we can't know for sure that the video has ended.
+%
+%
+%   Called by:
+%   seg_worm.w.stats.worm2histogram
+%
+%
+%   seg_worm.feature.removePartialEvents
 %
 %   Inputs:
 %       eventStats  - the event statistics (see events2stats)
 %       totalFrames - the total number of frames in the video
 %
 %   Output:
-%       eventStats - the event statistics (see events2stats) with partial
+%       eventStats - the event statistics with partial
 %                    events, at the start and end of the data, removed
-%
-%   See also EVENTS2STATS
 %
 %
 % © Medical Research Council 2012

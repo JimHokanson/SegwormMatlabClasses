@@ -2,6 +2,10 @@ classdef parse_error < handle
     %
     %   Class:
     %   seg_worm.parse_error
+    %
+    %   IMPROVEMENTS
+    %   -----------------------------------------------------
+    %   1) Allow pausing at events (interactive mode property)
     
     properties
         error_found   = false

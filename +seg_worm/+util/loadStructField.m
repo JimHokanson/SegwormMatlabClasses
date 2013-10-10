@@ -1,7 +1,10 @@
 function data = loadStructField(fileName, structName, field)
-%LOADSTRUCTFIELD Load a struct field from a file.
+%loadStructField  Load a struct field from a file.
 %
-%   DATA = LOADSTRUCTFIELD(FILENAME, DATA, FIELD)
+%   seg_worm.util.loadStructField
+%
+%
+%   DATA = loadStructField(FILENAME, DATA, FIELD)
 %
 %   Inputs:
 %       fileName   - the name of the file with the struct
@@ -10,6 +13,11 @@ function data = loadStructField(fileName, structName, field)
 %
 %   Output:
 %       data - the field data
+%
+%
+%   EXAMPLE ????
+%   -----------------------------------------------------------------------
+%   
 %
 %
 % © Medical Research Council 2012
@@ -27,8 +35,5 @@ if ~isfield(structData, structName)
 end
 
 % Get the field.
-data = getStructField(structData, [structName '.' field]);
-
-% Free the memory.
-clear structData;
+data = seg_worm.util.getStructField(structData, [structName '.' field]);
 end

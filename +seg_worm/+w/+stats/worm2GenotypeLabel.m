@@ -1,7 +1,7 @@
 function label = worm2GenotypeLabel(wormInfo)
-%WORM2GENOTYPELABEL Label the worm genotype.
+%worm2GenotypeLabel Label the worm genotype.
 %
-%   LABEL = WORM2GENOTYPELABEL(WORMINFO)
+%   LABEL = worm2GenotypeLabel(WORMINFO)
 %
 %   Input:
 %       wormInfo - the worm information
@@ -9,7 +9,8 @@ function label = worm2GenotypeLabel(wormInfo)
 %   Output:
 %       label - the worm label
 %
-% See also WORMSTATS2MATRIX
+%   See also:
+%   WORMSTATS2MATRIX
 %
 %
 % © Medical Research Council 2012

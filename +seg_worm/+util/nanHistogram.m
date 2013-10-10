@@ -1,11 +1,7 @@
 function data = nanHistogram(varargin)
 %HISTOGRAM Get a histogram full of NaNs.
 %
-%   DATA = NANHISTOGRAM()
-%
-%   DATA = NANHISTOGRAM(ISSIGNED)
-%
-%   DATA = NANHISTOGRAM(ISSIGNED, NUMSETS)
+%   data = seg_worm.util.nanHistogram(*isSigned, *numSets)
 %
 %   Inputs:
 %       isSigned   - is the data signed (+/-)?
@@ -57,7 +53,9 @@ function data = nanHistogram(varargin)
 %                     mean.neg   = the mean of all the negative data
 %                     stdDev.neg = the deviation of all the negative data
 %
-% See also HISTOGRAM, EMPTYHISTOGRAM
+%   See also:
+%   HISTOGRAM
+%   EMPTYHISTOGRAM
 %
 %
 % © Medical Research Council 2012
@@ -66,6 +64,8 @@ function data = nanHistogram(varargin)
 % notices on any copies of the Software.
 
 
+%Input Handling
+%--------------------------------------------------------------------------
 % Is the data signed (+/-)?
 isSigned = [];
 if ~isempty(varargin) && ~isempty(varargin{1})
@@ -81,70 +81,72 @@ if length(varargin) > 1
     numSets = varargin{2};
 end
 
+
+
 % Organize the histogram set data.
-data.sets.samples = numSets;
-data.sets.mean.all = NaN;
+data.sets.samples    = numSets;
+data.sets.mean.all   = NaN;
 data.sets.stdDev.all = NaN;
 if isSigned
     
     % Set the absolute value statisitics.
-    data.sets.mean.abs = NaN;
+    data.sets.mean.abs   = NaN;
     data.sets.stdDev.abs = NaN;
     
     % Set the positive value statisitics.
-    data.sets.mean.pos = NaN;
+    data.sets.mean.pos   = NaN;
     data.sets.stdDev.pos = NaN;
     
     % Set the negative value statisitics.
-    data.sets.mean.neg = NaN;
+    data.sets.mean.neg   = NaN;
     data.sets.stdDev.neg = NaN;
 end
 
 % Organize the histogram data sets.
 nanSets = nan(numSets, 1);
-data.data.counts = nanSets;
-data.data.samples = nanSets;
-data.data.mean.all = nanSets;
+data.data.counts     = nanSets;
+data.data.samples    = nanSets;
+data.data.mean.all   = nanSets;
 data.data.stdDev.all = nanSets;
 if isSigned
     
     % Set the absolute value statisitics.
-    data.data.mean.abs = nanSets;
+    data.data.mean.abs   = nanSets;
     data.data.stdDev.abs = nanSets;
     
     % Set the positive value statisitics.
-    data.data.mean.pos = nanSets;
+    data.data.mean.pos   = nanSets;
     data.data.stdDev.pos = nanSets;
     
     % Set the negative value statisitics.
-    data.data.mean.neg = nanSets;
+    data.data.mean.neg   = nanSets;
     data.data.stdDev.neg = nanSets;
 end
 
 % Organize the histogram total data.
-data.allData.counts = NaN;
-data.allData.samples = NaN;
-data.allData.mean.all = NaN;
+data.allData.counts     = NaN;
+data.allData.samples    = NaN;
+data.allData.mean.all   = NaN;
 data.allData.stdDev.all = NaN;
 if isSigned
     
     % Set the absolute value statisitics.
-    data.allData.mean.abs = NaN;
+    data.allData.mean.abs   = NaN;
     data.allData.stdDev.abs = NaN;
     
     % Set the positive value statisitics.
-    data.allData.mean.pos = NaN;
+    data.allData.mean.pos   = NaN;
     data.allData.stdDev.pos = NaN;
     
     % Set the negative value statisitics.
-    data.allData.mean.neg = NaN;
+    data.allData.mean.neg   = NaN;
     data.allData.stdDev.neg = NaN;
 end
 
 % Organize the histogram.
-data.PDF = NaN;
-data.bins = NaN;
+data.PDF        = NaN;
+data.bins       = NaN;
 data.resolution = NaN;
-data.isZeroBin = NaN;
-data.isSigned = isSigned;
+data.isZeroBin  = NaN;
+data.isSigned   = isSigned;
 end

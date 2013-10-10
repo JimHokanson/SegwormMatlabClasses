@@ -22,8 +22,8 @@ function info = roots()
 %   addWormHistograms
 %   addWormStats
 %   worm2NormTimes
-%   worm2histogram
-%   worm2stats
+%   seg_worm.w.stats.worm2histogram
+%   seg_worm.w.stats.worm2stats
 %   wormDataInfoIndices
 %   wormStats2Matrix2
 %   wormStatsInfo
@@ -69,7 +69,7 @@ function info = roots()
 %      isTimeSeries = is the data a time series?
 %
 %   See also:
-%   WORMDISPLAYINFO, 
+%   seg_worm.feature.displayInfo
 %   WORM2HISTOGRAM, 
 %   ADDWORMHISTOGRAMS, 
 %   WORM2STATS,
@@ -82,8 +82,17 @@ function info = roots()
 % you must reproduce all copyright notices and other proprietary 
 % notices on any copies of the Software.
 
+%Q&A
+%--------------------------------------------------------------------------
+%{
+
+1. Why do we care of something is a time-series
+   - only the following functions care:
+        - plotWormStats.m
+        - worm2NormTimes.m
 
 
+%}
 
 
 % Initialize the data types.
@@ -98,19 +107,61 @@ locomotionType = 'l';
 pathType       = 'p';
 
 % Initialize the duration data field.
+
+%Simple Data Type
+%----------------------------------------------------------------
+% 'path.duration.worm'
+% 'path.duration.head'
+% 'path.duration.midbody'
+% 'path.duration.tail'};
 durationField = {'times'};  %?? This doesn't follow the same format ...
 
+%EVENT NOTES
+%----------------------------------------------------------------
+%'summary' - stat fields
+%
+%   summary - provides some overall summary of the event data
+%
+% - data
+% - length(data)
+% - nanmean(data)
+% - nanstd(data)
+%
+%'data' - 
+%
+%   Very similar to the other fields, just they are present
+%   in the 'frames' struct
+%
+%   example:
+%
+%   posture.coils.frames.time
+%   posture.coils.frames.interTime
+%   posture.coils.frames.interDistance
+%
+
+%interTime - time to next event, last event value NaN (I think this is right)
+%interDistance - ????
+
 % Initialize the coil event data fields.
+%-----------------------------------------------------------------
+% posture.coils
 coilEventFields.summary = {'frequency', 'timeRatio'};
 coilEventFields.data    = {'time', 'interTime', 'interDistance'};
 coilEventFields.sign    = [];
 
 % Initialize the turn event data fields.
+%-----------------------------------------------------------------
+% locomotion.turns.omegas
+% locomotion.turns.upsilons
 turnEventFields.summary = {'frequency', 'timeRatio'};
 turnEventFields.data    = {'time', 'interTime', 'interDistance'};
 turnEventFields.sign    = 'isVentral';
 
 % Initialize the motion event data fields.
+%-----------------------------------------------------------------
+% locomotion.motion.forward
+% locomotion.motion.paused
+% locomotion.motion.backward
 motionEventFields.summary = {'frequency', 'ratio.time', 'ratio.distance'};
 motionEventFields.data    = {'time', 'distance', 'interTime', 'interDistance'};
 motionEventFields.sign    = [];

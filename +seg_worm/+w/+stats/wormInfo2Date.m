@@ -1,8 +1,8 @@
 function [isUsed,wormX,tickX,nameX,labelX] = wormInfo2Date(info, filt)
-%WORMINFO2DATE Convert worm information to the date the experiment was
+%wormInfo2Date  Convert worm information to the date the experiment was
 %performed.
 %
-%   [ISUSED WORMX TICKX NAMEX LABELX] = WORMINFO2DATE(INFO, FILT)
+%   [isUsed,wormX,tickX,nameX,labelX] = wormInfo2Date(info, filt)
 %
 %   Inputs:
 %       info - the worm information
@@ -29,7 +29,9 @@ function [isUsed,wormX,tickX,nameX,labelX] = wormInfo2Date(info, filt)
 %       nameX  - the x-axis tick names
 %       labelX - the x-axis tick labels
 %
-% See also PLOTWORMSTATS, FILTERWORMINFO
+%   See also:
+%   PLOTWORMSTATS
+%   FILTERWORMINFO
 %
 %
 % © Medical Research Council 2012

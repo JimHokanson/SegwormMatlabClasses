@@ -1,7 +1,17 @@
 function addWormHistograms(hist_output_filepath, wormFiles, varargin)
 %addWormHistograms  Combine worm histograms.
 %
-%   addWormHistograms(FILENAME, WORMFILES, *CONTROLFILES, *ISOLDCONTROL, *VERBOSE)
+%   addWormHistograms(hist_output_filepath, wormFiles, *controlFiles, *add_old_controls, *VERBOSE)
+%
+%   seg_worm.w.stats.addWormHistograms
+%
+%
+%   This function is meant to take histogram files originally created
+%   using  'seg_worm.w.stats.worm2histogram' and merges them. Each of the
+%   old files contains a histogram (consisting of one or more sets/videos).
+%   The old files may also contain control histograms (which also may have
+%   one or more sets of videos).
+%
 %
 %   Inputs:
 %       filename     - the file name for the histograms;
@@ -15,13 +25,15 @@ function addWormHistograms(hist_output_filepath, wormFiles, varargin)
 %       wormFiles    - the histogram files to use for the worm(s)
 %       controlFiles - the histogram files to use for the control(s);
 %                      if empty, the worm has no new control
-%       isOldControl - are we adding the old controls?
+%       add_old_controls - are we adding the old controls?
 %                      the default is yes (true)
 %       isVerbose    - verbose mode display the progress;
 %                      the default is no (false)
 %
 %   See also:
-%   WORM2HISTOGRAM
+%   seg_worm.w.stats.worm2histogram     %Original function that created wormFiles
+%      
+%
 %   HISTOGRAM
 %   WORM2CSV
 %   WORMDISPLAYINFO,
@@ -42,9 +54,9 @@ if ~isempty(varargin)
 end
 
 % Are we adding the old controls?
-isOldControl = true;
+add_old_controls = true;
 if length(varargin) > 1
-    isOldControl = varargin{2};
+    add_old_controls = varargin{2};
 end
 
 % Are we in verbose mode?
@@ -77,7 +89,7 @@ for i = 1:length(wormFiles)
     wormInfo    = h.wormInfo;
     newWormInfo = cat(1, newWormInfo, wormInfo);
 end
-wormInfo = newWormInfo;
+wormInfo = newWormInfo; %#ok<NASGU>
 save(hist_output_filepath, 'wormInfo', '-v7.3');
 clear wormInfo;
 
@@ -95,12 +107,12 @@ if ~isempty(controlFiles)
 end
 
 % Collect the old control information.
-if isOldControl
+if add_old_controls
     for i = 1:length(wormFiles)
         controlInfo = who('-FILE', wormFiles{i}, 'controlInfo');
         if ~isempty(controlInfo)
-            h = load(wormFiles{i}, 'controlInfo');
-            controlInfo = h.controlInfo;
+            h              = load(wormFiles{i}, 'controlInfo');
+            controlInfo    = h.controlInfo;
             newControlInfo =  cat(1, newControlInfo, controlInfo);
         end
     end
@@ -108,7 +120,7 @@ end
 
 % Save the control information.
 if ~isempty(newControlInfo)
-    controlInfo = newControlInfo;
+    controlInfo = newControlInfo; %#ok<NASGU>
     save(hist_output_filepath, 'controlInfo', '-append', '-v7.3');
 end
 clear controlInfo;
@@ -120,7 +132,10 @@ dataInfo = wormDataInfo();
 saveHistogram(hist_output_filepath, wormFiles, dataInfo, 'worm', 'worm', isVerbose);
 
 % Are we adding the old controls?
-if isOldControl
+%
+%   ??? What does this mean???
+%
+if add_old_controls
     
     % Initialize the new control names.
     controlNames = cell(length(controlFiles), 1);
@@ -144,8 +159,7 @@ end
 
 % Save the control histograms.
 if ~isempty(controlFiles)
-    saveHistogram(hist_output_filepath, controlFiles, dataInfo, controlNames, ...
-        'control', isVerbose);
+    saveHistogram(hist_output_filepath, controlFiles, dataInfo, controlNames,'control', isVerbose);
 end
 end
 
@@ -200,8 +214,7 @@ for i = 1:length(dataInfo)
             
         % Combine motion histograms.
         case 'm'
-            data = addMotionHistograms(wormFiles, loadName, field, ...
-                motionNames);
+            data = addMotionHistograms(wormFiles, loadName, field, motionNames);
             eval([saveName '.' field '=data;']);
             
         % Combine event histograms.
@@ -355,8 +368,8 @@ data.isZeroBin  = [];
 data.isSigned   = [];
 
 % Combine all the data.
-data.allData.counts = nansum(counts, 1);
-data.allData.samples = 0;
+data.allData.counts   = nansum(counts, 1);
+data.allData.samples  = 0;
 data.allData.mean.all = 0;
 for i = 1:length(addData)
     if ~isempty(addData{i}) && addData{i}.allData.samples > 0

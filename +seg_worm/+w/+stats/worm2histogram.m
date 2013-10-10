@@ -1,11 +1,22 @@
-function worm2histogram(filename, wormFiles, varargin)
+function worm2histogram(hist_output_file_path, wormFiles, varargin)
 %worm2histogram   Convert worm features to their histogram.
 %
-%   seg_worm.w.stats.worm2histogram
+%   seg_worm.w.stats.worm2histogram(hist_output_file_path, wormFiles, *CONTROLFILES, *VERBOSE, *PROGFUNC, *PROGSTATE)
 %
-%   WORM2HISTOGRAM(FILENAME, WORMFILES, *CONTROLFILES, *VERBOSE)
 %
-%   WORM2HISTOGRAM(FILENAME, WORMFILES, *CONTROLFILES, *VERBOSE, *PROGFUNC, *PROGSTATE)
+%   Called by:
+%   worm2Histogram_GUI
+%   This also seems like it could be a top level file
+%
+%
+%   hist_output_file_path:
+%       saved in this file will be the following:
+%           .worm     : output of seg_worm.util.histogram
+%           .wormInfo : structure array of the 'info' entry from each feature
+%           MIGHT ALSO CONTAIN - these are the same as above, just for 
+%           feature files that have been designated "controls"
+%           .control     :
+%           .controlInfo :
 %
 %   Inputs:
 %
@@ -21,6 +32,10 @@ function worm2histogram(filename, wormFiles, varargin)
 %
 %
 %       wormFiles    - the feature files to use for the worm
+%                       
+%                   These contain the 'info' and 'worm' structures.
+%
+%   
 %       controlFiles - the feature files to use for the control;
 %                      if empty, the worm has no control
 %       isVerbose    - verbose mode display the progress;
@@ -39,7 +54,7 @@ function worm2histogram(filename, wormFiles, varargin)
 %
 % See also:
 %   ADDWORMHISTOGRAMS, 
-%   HISTOGRAM, 
+%   seg_worm.util.histogram  %This is a key function
 %   WORM2CSV, 
 %   WORMDISPLAYINFO,
 %   WORMDATAINFO
@@ -67,7 +82,7 @@ if length(varargin) > 1
 end
 
 % Initialize the progress function.
-progFunc = [];
+progFunc  = [];
 progState = [];
 if length(varargin) > 2
     progFunc = varargin{3};
@@ -85,31 +100,32 @@ if ~isempty(controlFiles) && ~iscell(controlFiles)
 end
 
 % Delete the file if it already exists.
-if exist(filename, 'file')
-    delete(filename);
+if exist(hist_output_file_path, 'file')
+    delete(hist_output_file_path);
 end
 
 % Initialize the worm data information.
-histInfo = wormDisplayInfo();
-dataInfo = wormDataInfo();
+%--------------------------------------------------------------------------
+histInfo = seg_worm.feature.displayInfo();
+dataInfo = seg_worm.feature.roots();
 
 % Initilize the progress.
 progCount = 0;
-progSize = length(dataInfo) + 2;
+progSize  = length(dataInfo) + 2;
 
 % Save the worm information.
 if isVerbose
     disp('Saving "wormInfo" ...');
 end
-[progState, progCount] = progress('Saving "wormInfo" ...',progFunc, progState, progCount, progSize);
+[progState, progCount] = h__progress('Saving "wormInfo" ...',progFunc, progState, progCount, progSize);
+
 wormInfo = cellfun(@(x) load(x, 'info'), wormFiles); %Yikes!!!
+%This loads the 'info' entry for each worm file
 wormInfo = [wormInfo.info];
-if size(wormInfo, 1) < size(wormInfo, 2)
-    wormInfo = wormInfo';
-end
-wormFrames = arrayfun(@(x) x.video.length.frames, wormInfo);
+
+n_frames_per_video = arrayfun(@(x) x.video.length.frames, wormInfo);
 if isempty(controlFiles)
-    save(filename, 'wormInfo', '-v7.3');
+    save(hist_output_file_path, 'wormInfo', '-v7.3');
 else
     if isVerbose
         disp('Saving "controlInfo" ...');
@@ -120,19 +136,19 @@ else
         controlInfo = controlInfo';
     end
     controlFrames = arrayfun(@(x) x.video.length.frames, controlInfo);
-    save(filename, 'wormInfo', 'controlInfo', '-v7.3');
+    save(hist_output_file_path, 'wormInfo', 'controlInfo', '-v7.3');
 end
 
 % Free memory.
 clear('wormInfo', 'controlInfo');
 
 % Save the worm histograms.
-saveHistogram(filename, wormFiles, wormFrames, histInfo, dataInfo, ...
+h__saveHistogram(hist_output_file_path, wormFiles, n_frames_per_video, histInfo, dataInfo, ...
     'worm', isVerbose, progFunc, progState, progCount, progSize);
 
 % Save the control histograms.
 if ~isempty(controlFiles)
-    saveHistogram(filename, controlFiles, controlFrames, histInfo, ...
+    h__saveHistogram(hist_output_file_path, controlFiles, controlFrames, histInfo, ...
         dataInfo, 'control', isVerbose, ...
         progFunc, progState, progCount, progSize);
 end
@@ -141,35 +157,35 @@ end
 
 
 %% Load worm data from files.
-function data = helper__loadWormFiles(filenames, field)
-data = cellfun(@(x) loadStructField(x, 'worm', field), filenames, ...
-    'UniformOutput', false);
+function data = h__loadWormFiles(filenames, field)
+    %From the worm structure in the file, load the desired field
+    %
+    %   NOTE: The files contain two structures:
+    %   worm
+    %   info
+    data = cellfun(@(x) seg_worm.util.loadStructField(x, 'worm', field), filenames, 'un', 0);
 end
 
 
 
 %% Save the worm histograms.
-function saveHistogram(filename, wormFiles, frames, histInfo, dataInfo, ...
+function h__saveHistogram(filename, wormFiles, frames, histInfo, dataInfo, ...
     wormName, isVerbose, progFunc, progState, progCount, progSize)
 
 % Determine the locomotion modes.
-motionModes = helper__loadWormFiles(wormFiles, 'locomotion.motion.mode');
-motionNames = { ...
-    'forward', ...
-    'paused', ...
-    'backward'};
+motionModes = h__loadWormFiles(wormFiles, 'locomotion.motion.mode');
+motionNames = {'forward'; 'paused'; 'backward'};
 motionEvents = { ...
-    cellfun(@(x) x == 1, motionModes, 'UniformOutput', false), ...
-    cellfun(@(x) x == 0, motionModes, 'UniformOutput', false), ...
-    cellfun(@(x) x == -1, motionModes, 'UniformOutput', false)};
+    cellfun(@(x) x == 1, motionModes, 'un', 0), ...
+    cellfun(@(x) x == 0, motionModes, 'un', 0), ...
+    cellfun(@(x) x == -1, motionModes, 'un', 0)};
 
 % Check the locomotion modes.
 for i = 1:length(motionEvents)
     for j = 1:length(motionEvents{i})
         if all(motionEvents{i}{j} ~= 1)
             warning('worm2histogram:NoMotionData', ...
-                ['There are no ' motionNames{i} ' motion frames in "' ...
-                wormFiles{j} '"']);
+                ['There are no ' motionNames{i} ' motion frames in "' wormFiles{j} '"']);
         end
     end
 end
@@ -180,29 +196,86 @@ for i = 1:length(dataInfo)
     if isVerbose
         disp(['Saving "' field '" ...']);
     end
-    [progState, progCount] = progress(['Saving "' field '" ...'], ...
+    [progState, progCount] = h__progress(['Saving "' field '" ...'], ...
         progFunc, progState, progCount, progSize);
+    
+    
     subFields = dataInfo(i).subFields;
+    
+    
+    %wormName - either 'worm' or 'control'
+    
+    %This is where the magic happens
+    %----------------------------------------------------------------------
     switch dataInfo(i).type
         
         % Compute the simple histogram.
         case 's'
-            data = helper__data2histogram(wormFiles, field, subFields, histInfo);
+            data = h__data2histogram(wormFiles, field, subFields, histInfo);
             eval([wormName '.' field '=data;']);
+            
+            %field -> path.duration.worm
+            %
+            %data =>
+            %    histogram: [1x1 struct]
+            
             
         % Compute the motion histogram.
         case 'm'
+            %????? - where would this be the case ???
             if ~isempty(dataInfo(i).subFields)
                 field = [field '.' dataInfo(i).subFields{1}];
             end
-            data = motion2histograms(wormFiles, field, subFields, histInfo, motionNames, motionEvents);
+            data = h__motion2histograms(wormFiles, field, subFields, histInfo, motionNames, motionEvents);
             eval([wormName '.' field '=data;']);
+            
+%             if strcmp(field,'posture.wavelength.secondary')
+%                keyboard 
+%             end
+            
+            %field -> morphology.length
+            %
+            %data =>
+            %     histogram: [1x1 struct]
+            %       forward: [1x1 struct]
+            %        paused: [1x1 struct]
+            %      backward: [1x1 struct]
+            %
+            %   data.forward =>
+            %     histogram: [1x1 struct]
+            
             
         % Compute the event histogram.
         case 'e'
-            data = event2histograms(wormFiles, frames, field, ...
-                subFields.summary, subFields.data, subFields.sign, ...
-                histInfo);
+            data = h__event2histograms(wormFiles, frames, field, subFields.summary, subFields.data, subFields.sign, histInfo);
+            
+            %field -> posture.coils
+            %
+            %data =>
+            %             frequency: [1x1 struct] <- summary field
+            %             timeRatio: [1x1 struct] <- summary field
+            %                  time: [1x1 struct] <- data field
+            %             interTime: [1x1 struct] <- data field
+            %         interDistance: [1x1 struct] <- data field
+            %
+            %   data.frequency => NOTE: summary fields have this form
+            %            data: [4x1 double]
+            %         samples: 4
+            %            mean: 0.0047
+            %          stdDev: 0.0033
+            %
+            %   data.time      =>
+            %           histogram: [1x1 struct]
+            %   data.time.histogram =>
+            %           sets: [1x1 struct]
+            %           data: [1x1 struct]
+            %        allData: [1x1 struct]
+            %            PDF: [1x32 double]
+            %           bins: [1x32 double]
+            %     resolution: 0.1000
+            %      isZeroBin: 0
+            %       isSigned: 0 
+            
             eval([wormName '.' field '=data;']);
     end
 end
@@ -214,13 +287,26 @@ end
 
 
 %% Convert data to a histogram.
-function histData = helper__data2histogram(wormFiles, field, subFields, histInfo)
+
+function histData = h__data2histogram(wormFiles, field, subFields, histInfo)
+%
+%   This function is for 'simple' data types.
+%
+%   See: seg_worm.feature.roots
+%
+%   example: path.duration.worm
+%
+%   
+%
+%
+%   Called by: h__saveHistogram
+%
 
 % Get the histogram information.
 resolution = [];
 isZeroBin  = [];
 isSigned   = [];
-info       = getStructField(histInfo, field);
+info       = seg_worm.util.getStructField(histInfo, field);
 if isempty(info)
     warning('worm2histogram:NoInfo', ...
         ['There is no information for "' field '"']);
@@ -235,7 +321,7 @@ dataField = field;
 if ~isempty(subFields)
     dataField = [dataField '.' subFields{1}];
 end
-data = helper__loadWormFiles(wormFiles, dataField);
+data = h__loadWormFiles(wormFiles, dataField);
 
 % Check the data.
 for i = 1:length(data)
@@ -246,27 +332,53 @@ for i = 1:length(data)
 end
 
 % Compute the histogram.
-histData.histogram = histogram(data, resolution, isZeroBin, isSigned);
+histData.histogram = seg_worm.util.histogram(data, resolution, isZeroBin, isSigned);
 end
 
 
 
 %% Convert motion data to a set of histograms.
-function histData = motion2histograms(wormFiles, field, subFields, ...
-    histInfo, motionNames, motionEvents)
+function histData = h__motion2histograms(wormFiles, field, subFields, histInfo, motionNames, motionEvents)
+%
+%
+%   Called by: h__saveHistogram
+%   
+%
+%     wormFiles : 
+%     field     : ex. morphology.length
+%     subFields : ????
+%     histInfo  : See seg_worm.feature.displayInfo
+%   
+%           Important fields that in histInfo (at 'field'):
+%
+%                   i.e. histInfo.morphology.length =>
+%             resolution: 1
+%              isZeroBin: 0
+%               isSigned: 0
+%                   name: 'Length'
+%              shortName: 'Length'
+%                   unit: 'Microns'
+
+%This is passsed in ...
+% motionNames = {'forward'; 'paused'; 'backward'};
+% motionEvents = { ...
+%     cellfun(@(x) x == 1, motionModes, 'un', 0), ...
+%     cellfun(@(x) x == 0, motionModes, 'un', 0), ...
+%     cellfun(@(x) x == -1, motionModes, 'un', 0)};
+
+
 
 % Get the histogram information.
 resolution = [];
 isZeroBin  = [];
 isSigned   = [];
-info = getStructField(histInfo, field);
+info       = seg_worm.util.getStructField(histInfo, field);
 if isempty(info)
-    warning('worm2histogram:NoInfo', ...
-        ['There is no information for "' field '"']);
+    warning('worm2histogram:NoInfo', ['There is no information for "' field '"']);
 else
     resolution = info.resolution;
-    isZeroBin = info.isZeroBin;
-    isSigned = info.isSigned;
+    isZeroBin  = info.isZeroBin;
+    isSigned   = info.isSigned;
 end
 
 % Get the data.
@@ -274,13 +386,12 @@ dataField = field;
 if ~isempty(subFields)
     dataField = [dataField '.' subFields{1}];
 end
-data = helper__loadWormFiles(wormFiles, dataField);
+data = h__loadWormFiles(wormFiles, dataField);
 
 % Check the data.
 for i = 1:length(data)
     if isempty(data{i})
-        warning('worm2histogram:NoData', ['"' field '" in "' ...
-            wormFiles{i} '" contains no data']);
+        warning('worm2histogram:NoData', ['"' field '" in "' wormFiles{i} '" contains no data']);
     end
 end
 
@@ -293,31 +404,49 @@ for i = 1:size(data{1}, 1)
 end
 
 % Go through the data.
-for i = 1:size(data{1}, 1)
+for i = 1:size(data{1}, 1) %Why would this have more than one entry ?????
+    %??? - it looks like size(data{1},1) might always be 1 ...
     
     % Compute the data histogram.
-    subData = cellfun(@(x) x(i,:), data, 'UniformOutput', false);
-    histData(i).histogram = ...
-        histogram(subData, resolution, isZeroBin, isSigned);
+    subData = cellfun(@(x) x(i,:), data, 'un', 0);
+    histData(i).histogram = seg_worm.util.histogram(subData, resolution, isZeroBin, isSigned);
     
     % Compute the motion histograms.
     for j = 1:length(motionEvents)
         
+        
+        %motionEvents
+        %
+        %   {1x4 cell}    {1x4 cell}    {1x4 cell}
+        %
+        %   4 experiments, indices (3 total), represent
+        %   forward, paused, backward
+        
+        
         % Organize the motion data.
-        isData = false;
+        isData     = false;
         motionData = cell(length(subData),1);
-        for k = 1:length(subData)
-            motionData{k} = subData{k}(motionEvents{j}{k});
+        for k = 1:length(subData) %For each experiment ...
+            %motionEvents{j}{k}
+            motionData{k} = subData{k}(motionEvents{j}{k}); 
             if ~isempty(motionData{k})
                 isData = true;
             end
         end
         
+%    motionData => {4 x 1}
+%     [1x1750 double]
+%     [1x1955 double]
+%     [1x3102 double]
+%     [1x2635 double]
+        
+        
         % Compute the motion histogram.
         if isData
-            histData(i) = setStructField(histData(i), ...
+            histData(i) = seg_worm.util.setStructField(...
+                histData(i), ...
                 [motionNames{j} '.histogram'], ...
-                histogram(motionData, resolution, isZeroBin, isSigned));
+                seg_worm.util.histogram(motionData, resolution, isZeroBin, isSigned));
         end
     end
 end
@@ -326,15 +455,22 @@ end
 
 
 %% Convert event data to a set of histograms.
-function histData = event2histograms(wormFiles, frames, field, ...
+function histData = h__event2histograms(wormFiles, frames, field, ...
     statFields, histFields, signField, histInfo)
+%
+%   See Also: seg_worm.feature.roots
+%   field       : ex. 'posture.coils'
+%   statFields  : ex. {'frequency' 'timeRatio'} aka 'summary'
+%   histFields  : ex. {'time' 'interTime' 'interDistance'} aka 'data'
+%
+
 
 % Get the data.
-data = helper__loadWormFiles(wormFiles, field);
+data = h__loadWormFiles(wormFiles, field);
 
 % Remove partial events.
 for i = 1:length(data)
-    data{i}.frames = removePartialEvents(data{i}.frames, frames(i));
+    data{i}.frames = seg_worm.feature.removePartialEvents(data{i}.frames, frames(i));
 end
 
 % Check the data.
@@ -349,73 +485,88 @@ end
 % Initialize the histogram data.
 histData = [];
 for i = 1:length(statFields)
-    histData = setStructField(histData, statFields{i}, []);
+    histData = seg_worm.util.setStructField(histData, statFields{i}, []);
 end
 
-% Compute the event statistics.
+% Compute the event statistics. 'summary'
+%--------------------------------------------------------------------------
 for i = 1:length(statFields)
 
     % Organize the event data.
     eventData = zeros(length(data),1);
     for j = 1:length(data)
-        subData = getStructField(data{j}, statFields{i});
+        subData = seg_worm.util.getStructField(data{j}, statFields{i});
         if ~isempty(subData)
             eventData(j) = subData;
         end
     end
     
     % Compute the event statistics.
-    histData = setStructField(histData, ...
-        [statFields{i} '.data'], eventData);
-    histData = setStructField(histData, ...
-        [statFields{i} '.samples'], length(eventData));
-    histData = setStructField(histData, ...
-        [statFields{i} '.mean'], nanmean(eventData));
-    histData = setStructField(histData, ...
-        [statFields{i} '.stdDev'], nanstd(eventData));
+    %
+    %   ??? - length - what is an example where this is more than one per
+    %   data set???
+    %   
+    %   ??? - nanmean, nanstd - doesn't length become innacurate??
+    %
+    %
+    histData = seg_worm.util.setStructField(histData, [statFields{i} '.data'],      eventData);
+    histData = seg_worm.util.setStructField(histData, [statFields{i} '.samples'],   length(eventData));
+    histData = seg_worm.util.setStructField(histData, [statFields{i} '.mean'],      nanmean(eventData));
+    histData = seg_worm.util.setStructField(histData, [statFields{i} '.stdDev'],    nanstd(eventData));
 end
 
 % Create the histogram structures.
 for i = 1:length(histFields)
-    histData = setStructField(histData, [histFields{i} '.histogram'], []);
+    histData = seg_worm.util.setStructField(histData, [histFields{i} '.histogram'], []);
 end
 
 % Compute the event histograms.
+%--------------------------------------------------------------------------
 for i = 1:length(histFields)
+    
+    %Example: - 'time' 'interTime' 'interDistance'
     
     % Get the histogram information.
     resolution = [];
-    isZeroBin = [];
-    isSigned = [];
-    subField = [field '.' histFields{i}];
-    info = getStructField(histInfo, subField);
+    isZeroBin  = [];
+    isSigned   = [];
+    subField   = [field '.' histFields{i}];
+    info = seg_worm.util.getStructField(histInfo, subField);
     if isempty(info)
-        warning('worm2histogram:NoInfo', ...
-            ['There is no information for "' subField '"']);
+        %??? - when would this be called ...
+        warning('worm2histogram:NoInfo', ['There is no information for "' subField '"']);
     else
         resolution = info.resolution;
-        isZeroBin = info.isZeroBin;
-        isSigned = info.isSigned;
+        isZeroBin  = info.isZeroBin;
+        isSigned   = info.isSigned;
     end
 
     % Organize the event data.
     eventData = cell(length(data),1);
     for j = 1:length(data)
-        subData = data{j}.frames;
+        subData = data{j}.frames; %All the event data is in .frames ...
         if ~isempty(field)
-            eventData{j} = getStructField(subData, histFields{i});
+            eventData{j} = seg_worm.util.getStructField(subData, histFields{i});
             
             % Sign the event.
             if ~isempty(signField)
-                signs = getStructField(subData, signField);
+                signs = seg_worm.util.getStructField(subData, signField);
+                %??? certain indices are flipped???
+                %signs - logical array
                 eventData{j}(signs) = -eventData{j}(signs);
             end
         end
     end
+    %At this point, we have a cell array where each element
+    %is an experiment, and each element contains
+    %the values from the specified field
+    %
+    %   At this point it is similar to other data and is ready
+    %   to be put into the histogram function ...
     
     % Compute the event histogram.
-    histData = setStructField(histData, [histFields{i} '.histogram'], ...
-        histogram(eventData, resolution, isZeroBin, isSigned));
+    histData = seg_worm.util.setStructField(histData, [histFields{i} '.histogram'], ...
+        seg_worm.util.histogram(eventData, resolution, isZeroBin, isSigned));
 end
 end
 
@@ -423,7 +574,7 @@ end
 
 %% Progress.
 function [progState, progCount] = ...
-    progress(msg, progFunc, progState, progCount, progSize)
+    h__progress(msg, progFunc, progState, progCount, progSize)
 
 % Are we monitoring progression?
 if ~isempty(progFunc)

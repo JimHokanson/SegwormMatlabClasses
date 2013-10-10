@@ -1,18 +1,20 @@
 function worm2NormTimes(filename, seconds, wormFiles, varargin)
-%WORM2NORMTIMES Normalize worm feature time series.
+%WORM2NORMTIMES  Normalize worm feature time series.
+%
+%   seg_worm.w.stats.worm2NormTimes
+%
+%   A better name for this file, at first glance, seems to be
+%   'downsampleTimeData'
 %
 %   WORM2NORMTIMES(FILENAME, SECONDS, WORMFILES)
 %
 %   WORM2NORMTIMES(FILENAME, SECONDS, WORMFILES, CONTROLFILES)
 %
-%   WORM2NORMTIMES(FILENAME, SECONDS, WORMFILES, CONTROLFILES,
-%                  ISOLDCONTROL)
+%   WORM2NORMTIMES(FILENAME, SECONDS, WORMFILES, CONTROLFILES, ISOLDCONTROL)
 %
-%   WORM2NORMTIMES(FILENAME, SECONDS, WORMFILES, CONTROLFILES,
-%                  ISOLDCONTROL, ISSAVEMEMORY, VERBOSE)
+%   WORM2NORMTIMES(FILENAME, SECONDS, WORMFILES, CONTROLFILES, ISOLDCONTROL, ISSAVEMEMORY, VERBOSE)
 %
-%   WORM2NORMTIMES(FILENAME, SECONDS, WORMFILES, CONTROLFILES,
-%                  ISOLDCONTROL, ISSAVEMEMORY, VERBOSE)
+%   WORM2NORMTIMES(FILENAME, SECONDS, WORMFILES, CONTROLFILES, ISOLDCONTROL, ISSAVEMEMORY, VERBOSE)
 %
 %   Inputs:
 %       filename     - the file name for the statistics;
@@ -36,7 +38,11 @@ function worm2NormTimes(filename, seconds, wormFiles, varargin)
 %       isVerbose    - verbose mode display the progress;
 %                      the default is yes (true)
 %
-% See also WORM2HISTOGRAM, HISTOGRAM, WORMDISPLAYINFO, WORMDATAINFO
+%   See also:
+%   seg_worm.w.stats.worm2histogram, 
+%   HISTOGRAM, 
+%   WORMDISPLAYINFO, 
+%   WORMDATAINFO
 %
 %
 % © Medical Research Council 2012
@@ -86,9 +92,9 @@ if isVerbose
     disp('Combining "wormInfo" ...');
 end
 newFPS = 1.0 / double(seconds);
-isNormWorm = [];
-wormFrames = [];
-wormScales = [];
+isNormWorm  = [];
+wormFrames  = [];
+wormScales  = [];
 newWormInfo = [];
 for i = 1:length(wormFiles)
     
@@ -107,10 +113,8 @@ for i = 1:length(wormFiles)
     % Can the features be downsampled?
     fps = arrayfun(@(x) x.video.resolution.fps, wormInfo);
     if any(round(double(newFPS) / double(fps)) > 1)
-        error('worm2NormTimes:FrameRate', ['"' wormFiles{i} ...
-            '" is sampled at ' num2str(fps) ...
-            ' frames/second and cannot be downsampled to ' ...
-            num2str(newFPS) ' frames/second']);
+        error('worm2NormTimes:FrameRate', ['"' wormFiles{i} '" is sampled at ' num2str(fps) ...
+            ' frames/second and cannot be downsampled to ' num2str(newFPS) ' frames/second']);
     end
     
     % Compute the new frames/seconds.
@@ -130,9 +134,9 @@ end
 if isVerbose
     disp('Combining "controlInfo" ...');
 end
-isNormControl = [];
-controlFrames = [];
-controlScales = [];
+isNormControl  = [];
+controlFrames  = [];
+controlScales  = [];
 newControlInfo = [];
 if ~isempty(controlFiles)
     for i = 1:length(controlFiles)
@@ -199,8 +203,7 @@ if isOldControl
                 scales = round(fps * seconds);
                 controlScales{end + 1} = scales;
                 for j = 1:length(controlInfo)
-                    controlInfo(j).video.resolution.fps = ...
-                        fps(j) ./ scales(j);
+                    controlInfo(j).video.resolution.fps = fps(j) ./ scales(j);
                 end
                 
                 % Save the worm information.
@@ -239,10 +242,10 @@ end
 
 % Save the normalized worm features.
 if isempty(wormFileData)
-    saveFeatures(filename, wormScales, wormFrames, isNormWorm, ...
+    h__saveFeatures(filename, wormScales, wormFrames, isNormWorm, ...
         wormFiles, histInfo, dataInfo, 'worm', 'worm', isVerbose);
 else
-    saveFeatures(filename, wormScales, wormFrames, isNormWorm, ...
+    h__saveFeatures(filename, wormScales, wormFrames, isNormWorm, ...
         wormFileData, histInfo, dataInfo, 'worm', 'worm', isVerbose);
 end
 
@@ -282,11 +285,11 @@ end
 % Save the normalized control features.
 if ~isempty(controlFiles)
     if isempty(controlFileData)
-        saveFeatures(filename, controlScales, controlFrames, ...
+        h__saveFeatures(filename, controlScales, controlFrames, ...
             isNormControl, controlFiles, histInfo, dataInfo, ...
             controlNames, 'control', isVerbose);
     else
-        saveFeatures(filename, controlScales, controlFrames, ...
+        h__saveFeatures(filename, controlScales, controlFrames, ...
             isNormControl, controlFileData, histInfo, dataInfo, ...
             controlNames, 'control', isVerbose);
     end
@@ -297,7 +300,7 @@ end
 
 %% Load worm data from files.
 % varargin = empty
-function data = loadWormFiles(files, wormName, field, varargin)
+function data = h__loadWormFiles(files, wormName, field, varargin)
 
 % Should any of the data be left empty?
 empty = false(size(files));
@@ -345,7 +348,7 @@ end
 
 
 %% Save the normalized features.
-function saveFeatures(filename, wormScales, wormFrames, isNormWorm, ...
+function h__saveFeatures(filename, wormScales, wormFrames, isNormWorm, ...
     wormFiles, histInfo, dataInfo, loadName, saveName, isVerbose)
 
 % Determine the locomotion modes.
@@ -377,20 +380,20 @@ for i = 1:length(dataInfo)
         
         % Normalize a simple feature.
         case 's'
-            data = normFeatures(wormScales, isNormWorm, wormFiles, ...
+            data = h__normFeatures(wormScales, isNormWorm, wormFiles, ...
                 histInfo, loadName, field);
             eval([saveName '.' field '=data;']);
             
         % Normalize a motion feature.
         case 'm'
-            data = normMotionFeatures(wormScales, wormFrames, ...
+            data = h__normMotionFeatures(wormScales, wormFrames, ...
                 isNormWorm, wormFiles, histInfo, loadName, field, ...
                 motionNames, motionEvents);
             eval([saveName '.' field '=data;']);
             
         % Normalize an event feature.
         case 'e'
-            data = normEventFeatures(wormScales, wormFrames, ...
+            data = h__normEventFeatures(wormScales, wormFrames, ...
                 isNormWorm, wormFiles, histInfo, loadName, field, ...
                 dataInfo(i).subFields.data, dataInfo(i).subFields.sign);
             eval([saveName '.' field '=data;']);
@@ -404,7 +407,7 @@ end
 
 
 %% Normalize the features.
-function data = normFeatures(wormScales, isNormWorm, wormFiles, ...
+function data = h__normFeatures(wormScales, isNormWorm, wormFiles, ...
     histInfo, wormName, field)
 
 % Get the data.
@@ -431,13 +434,13 @@ for i = 1:length(normData)
 end
 
 % Normalize the feature data.
-data = normFeaturesData(wormScales, normData, info.isSigned);
+data = h__normFeaturesData(wormScales, normData, info.isSigned);
 end
 
 
 
 %% Normalize the motion features.
-function data = normMotionFeatures(wormScales, wormFrames, isNormWorm, ...
+function data = h__normMotionFeatures(wormScales, wormFrames, isNormWorm, ...
     wormFiles, histInfo, wormName, field, motionNames, motionEvents)
 
 % Get the data.
@@ -511,13 +514,13 @@ for i = 1:dataLength
     
     % Normalize the feature data.
     subData = cellfun(@(x) x(i).all, normData, 'UniformOutput', false);
-    data(i,1).all = normFeaturesData(wormScales, subData, info(i).isSigned);
+    data(i,1).all = h__normFeaturesData(wormScales, subData, info(i).isSigned);
     
     % Normalize the motion feature data.
     for j = 1:length(motionNames)
         subData = cellfun(@(x) x(i).(motionNames{j}), normData, ...
             'UniformOutput', false);
-        data(i,1).(motionNames{j}) = normFeaturesData(wormScales, ...
+        data(i,1).(motionNames{j}) = h__normFeaturesData(wormScales, ...
             subData, info(i).isSigned);
     end
 end
@@ -526,7 +529,7 @@ end
 
 
 %% Normalize event features.
-function data = normEventFeatures(wormScales, wormFrames, isNormWorm, ...
+function data = h__normEventFeatures(wormScales, wormFrames, isNormWorm, ...
     wormFiles, histInfo, wormName, field, subFields, signField)
 
 % Get the data.
@@ -612,15 +615,15 @@ end
 
 % Normalize the event data.
 subData = cellfun(@(x) x.start, normData, 'UniformOutput', false);
-data.start = normFeaturesData(wormScales, subData, isSigned, false, @nansum);
+data.start = h__normFeaturesData(wormScales, subData, isSigned, false, @nansum);
 subData = cellfun(@(x) x.end, normData, 'UniformOutput', false);
-data.end = normFeaturesData(wormScales, subData, isSigned, false, @nansum);
+data.end = h__normFeaturesData(wormScales, subData, isSigned, false, @nansum);
 
 % Normalize the event feature data.
 for i = 1:length(subFields)
     subData = cellfun(@(x) x.(subFields{i}), normData, 'UniformOutput', ...
         false);
-    data.(subFields{i}) = normFeaturesData(wormScales, subData, ...
+    data.(subFields{i}) = h__normFeaturesData(wormScales, subData, ...
         info.(subFields{i}).isSigned);
 end
 end
@@ -629,7 +632,7 @@ end
 
 %% Normalize the feature data.
 % varargin = [isAbs, normOp]
-function data = normFeaturesData(wormScales, normData, isSigned, varargin)
+function data = h__normFeaturesData(wormScales, normData, isSigned, varargin)
 
 % If signed, are we computing the absolute value?
 isAbs = true;

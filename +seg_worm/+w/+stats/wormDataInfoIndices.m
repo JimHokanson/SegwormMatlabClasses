@@ -1,8 +1,11 @@
-function [morphologyI postureI locomotionI pathI] = wormDataInfoIndices()
+function [morphologyI,postureI,locomotionI,pathI] = wormDataInfoIndices()
 %WORMDATAINFOINDICES Separate the worm data information into morphology,
 %posture, locomotion, and path features.
 %
-%   [MORPHOLOGYI POSTUREI LOCOMOTIONI PATHI] = WORMDATAINFOINDICES()
+%   
+%
+%
+%   [morphologyI,postureI,locomotionI,pathI]  = WORMDATAINFOINDICES()
 %
 %   Outputs:
 %       morphologyI - the indices for the morphology features

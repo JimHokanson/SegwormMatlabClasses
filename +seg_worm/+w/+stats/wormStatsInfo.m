@@ -3,12 +3,14 @@ function info = wormStatsInfo()
 %
 %   INFO = seg_worm.w.stats.wormStatsInfo()
 %
+%   Old name:
+%   wormStatsInfo
+%
 %   Called by:
 %   -----------------------------------------
 %   plotWormStatsMatrix
 %   worm2StatsInfo
 %   wormStats2Matrix
-%   wormStatsInfo
 %
 %
 %
@@ -77,7 +79,7 @@ eventSummaryType = 'd';
 
 % Initialize the feature information.
 dataInfo = seg_worm.feature.roots();
-histInfo = seg_worm.feature.rootDisplayInfo();
+histInfo = seg_worm.feature.displayInfo();
 
 % What features do we have?
 info = [];
@@ -104,7 +106,7 @@ for i = 1:length(dataInfo)
             
             % Add the event data features.
             subFields = dataInfo(i).subFields.data;
-            info = addEventInfo(info, histInfo, i, offset, field, subFields, category);
+            info      = addEventInfo(info, histInfo, i, offset, field, subFields, category);
     end
 end
 end
@@ -161,7 +163,7 @@ if type == 'm'
 end
 
 % Get the feature information.
-feature = getStructField(histInfo, field);
+feature = seg_worm.util.getStructField(histInfo, field);
 
 % Add the feature information.
 for i = 1:length(feature)
@@ -195,7 +197,7 @@ for i = 1:length(feature)
             end
             newInfo.field.histogram  = [field indexStr motionFields{j} histStr signFields{k}];
             newInfo.field.statistics = [field indexStr motionFields{j} statStr signFields{k}];
-            newInfo.isMain = j == 1 && k == 1;
+            newInfo.isMain   = j == 1 && k == 1;
             newInfo.category = category;
             newInfo.type     = type;
             newInfo.subType  = motionTypes{j};
@@ -242,21 +244,21 @@ signedTypes = {
     'n'};
 
 % Get the feature information.
-feature = getStructField(histInfo, field);
+feature = seg_worm.util.getStructField(histInfo, field);
 
 % Add the feature information.
 for i = 1:length(feature)
     for j = 1:length(subFields)
         
         % Get the feature information.
-        subFeature = getStructField(feature(i), subFields{j});
+        subFeature = seg_worm.util.getStructField(feature(i), subFields{j});
         
         % Determine the feature type.
         if strncmp(subFields{j}, interStr, length(interStr))
-            type = interType;
+            type    = interType;
             subType = lower(subFields{j}(length(interStr) + 1));
         else
-            type = eventType;
+            type    = eventType;
             subType = subFields{j}(1);
         end
         
@@ -264,18 +266,18 @@ for i = 1:length(feature)
         signEndI = 1;
         signTypes = unsignedType;
         if subFeature(i).isSigned
-            signEndI = length(signNames);
+            signEndI  = length(signNames);
             signTypes = signedTypes;
         end
         
         % Create the new feature.
         for k = 1:signEndI
             newInfo = [];
-            newInfo.name = [signNames{k} subFeature.name];
-            newInfo.unit = subFeature.unit;
-            newInfo.title1 = feature(i).name;
-            newInfo.title2 = subFeature.shortName;
-            newInfo.title3 = signNames{k}(1:(end - 1));
+            newInfo.name    = [signNames{k} subFeature.name];
+            newInfo.unit    = subFeature.unit;
+            newInfo.title1  = feature(i).name;
+            newInfo.title2  = subFeature.shortName;
+            newInfo.title3  = signNames{k}(1:(end - 1));
             newInfo.title1I = featureI;
             newInfo.title2I = j + offset;
             newInfo.title3I = k;
@@ -285,15 +287,13 @@ for i = 1:length(feature)
                 indexStr = ['(' num2str(i) ').'];
                 newInfo.index = i;
             end
-            newInfo.field.histogram = ...
-                [field indexStr subFields{j} histStr signFields{k}];
-            newInfo.field.statistics = ...
-                [field indexStr subFields{j} statStr signFields{k}];
-            newInfo.isMain = k == 1;
+            newInfo.field.histogram  = [field indexStr subFields{j} histStr signFields{k}];
+            newInfo.field.statistics = [field indexStr subFields{j} statStr signFields{k}];
+            newInfo.isMain   = k == 1;
             newInfo.category = category;
-            newInfo.type = type;
-            newInfo.subType = subType;
-            newInfo.sign = signTypes{k};
+            newInfo.type     = type;
+            newInfo.subType  = subType;
+            newInfo.sign     = signTypes{k};
             
             % Add the new feature.
             info = cat(1, info, newInfo);
@@ -318,8 +318,8 @@ ratioStr = 'ratio.';
 for i = 1:length(subFields)
     
     % Get the feature information.
-    feature = getStructField(histInfo, field);
-    subFeature = getStructField(feature, subFields{i});
+    feature    = seg_worm.util.getStructField(histInfo, field);
+    subFeature = seg_worm.util.getStructField(feature, subFields{i});
     
     % Determine the sub-feature type.
     if subFields{i}(1) == 'f'
@@ -340,14 +340,14 @@ for i = 1:length(subFields)
     newInfo.title1I = featureI;
     newInfo.title2I = i;
     newInfo.title3I = 1;
-    newInfo.field.histogram = [field '.' subFields{i} dataStr];
+    newInfo.field.histogram  = [field '.' subFields{i} dataStr];
     newInfo.field.statistics = newInfo.field.histogram;
-    newInfo.index = nan;
-    newInfo.isMain = false;
+    newInfo.index    = nan;
+    newInfo.isMain   = false;
     newInfo.category = category;
-    newInfo.type = type;
-    newInfo.subType = subType;
-    newInfo.sign = summarySign;
+    newInfo.type     = type;
+    newInfo.subType  = subType;
+    newInfo.sign     = summarySign;
     
     % Add the new feature.
     info = cat(1, info, newInfo);

@@ -1,6 +1,9 @@
 % Initialize the control info.
 %
 %
+%   Not sure what this actually does ...
+%
+%
 % © Medical Research Council 2012
 % You will not remove any copyright or other notices from the Software; 
 % you must reproduce all copyright notices and other proprietary 
@@ -9,13 +12,12 @@ controlFile = 'N2_stat.mat';
 load(controlFile, 'wormInfo');
 
 % Filter out bad experiments.
-isUsed = filterWormInfo(wormInfo, standardWormFilter());
+isUsed   = filterWormInfo(wormInfo, standardWormFilter());
 wormInfo = wormInfo(isUsed);
 
 % Get the dates.
-dates = arrayfun(@(x) datenum(x.experiment.environment.timestamp), ...
-    wormInfo);
-[year month day] = datevec(dates);
+dates = arrayfun(@(x) datenum(x.experiment.environment.timestamp), wormInfo);
+[year,month,day] = datevec(dates);
 controlDates = datenum(year, month, day);
 
 % Free memory.
@@ -23,11 +25,11 @@ clear('wormInfo');
 
 % Go through the strains.
 files = rdir('*_stat.mat');
-numI = 0;
-numWorms = [];
+numI        = 0;
+numWorms    = [];
 numControls = [];
-strains = [];
-genotypes = [];
+strains     = [];
+genotypes   = [];
 for i = 1:length(files)
     
     % Load the worm information.
@@ -38,9 +40,8 @@ for i = 1:length(files)
     load(name, 'wormInfo');
     
     % Get the dates.
-    dates = arrayfun(@(x) datenum(x.experiment.environment.timestamp), ...
-        wormInfo);
-    [year month day] = datevec(dates);
+    dates = arrayfun(@(x) datenum(x.experiment.environment.timestamp), wormInfo);
+    [year,month,day] = datevec(dates);
     dates = datenum(year, month, day);
     dates = unique(dates);
     
@@ -53,12 +54,12 @@ for i = 1:length(files)
     controls = controlDates(isControl);
     
     % Compute the number of worms and controls.
-    numI = numI + 1;
-    numWorms(numI) = length(wormInfo);
+    numI              = numI + 1;
+    numWorms(numI)    = length(wormInfo);
     numControls(numI) = length(controls);
     
     % Display the info.
-    strains{numI} = wormInfo(1).experiment.worm.strain;
+    strains{numI}   = wormInfo(1).experiment.worm.strain;
     genotypes{numI} = wormInfo(1).experiment.worm.genotype;
     id = [genotypes{numI} ' ' strains{numI}];
     disp(['"' id '" worms= ' num2str(numWorms(numI)) ...

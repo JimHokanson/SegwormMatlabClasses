@@ -1,14 +1,23 @@
-function worm2StatsInfo(filename, wormFiles, varargin)
-%WORM2STATSINFO  Compute worm statistics information and save it to a file.
+function worm2StatsInfo(output_file_path, wormFiles, varargin)
+%worm2StatsInfo  Compute worm statistics information and save it to a file.
 %
-%   WORM2STATSINFO(FILENAME, WORMFILES)
+%   This appears to be a top level function.
 %
-%   WORM2STATSINFO(FILENAME, WORMFILES, WORMINFOFILTER, WORMFEATFILTER,
-%                  CONTROLFILES, CONTROLINFOFILTER, CONTROLFEATFILTER,
-%                  ZSCOREMODE, PERMUTATIONS, ISVERBOSE)
+%   seg_worm.w.stats.worm2StatsInfo(FILENAME, WORMFILES)
+%
+%   seg_worm.w.stats.worm2StatsInfo(FILENAME, 
+%                  WORMFILES, 
+%                  WORMINFOFILTER, 
+%                  WORMFEATFILTER,
+%                  CONTROLFILES, 
+%                  CONTROLINFOFILTER, 
+%                  CONTROLFEATFILTER,
+%                  ZSCOREMODE, 
+%                  PERMUTATIONS, 
+%                  ISVERBOSE)
 %
 %   Inputs:
-%       filename - the file name for the worm statistics information;
+%       output_file_path - the file name for the worm statistics information;
 %                  a file containing a structure with fields:
 %
 %                  wormInfo & controlInfo = the worm information
@@ -164,12 +173,6 @@ function worm2StatsInfo(filename, wormFiles, varargin)
 % You will not remove any copyright or other notices from the Software; 
 % you must reproduce all copyright notices and other proprietary 
 % notices on any copies of the Software.
-%
-%
-% © Medical Research Council 2012
-% You will not remove any copyright or other notices from the Software; 
-% you must reproduce all copyright notices and other proprietary 
-% notices on any copies of the Software.
 
 % Determine the worm information filters.
 wormInfoFilter = [];
@@ -223,8 +226,8 @@ if length(varargin) > 7
 end
 
 % Delete the file if it already exists.
-if exist(filename, 'file')
-    delete(filename);
+if exist(output_file_path, 'file')
+    delete(output_file_path);
 end
 
 % Fix the worm files.
@@ -240,7 +243,7 @@ if ~isempty(controlFiles)
 end
 
 % Load the worm files.
-useWorm = cell(length(wormFiles), 1);
+useWorm  = cell(length(wormFiles), 1);
 wormInfo = [];
 wormData = cell(length(wormFiles), 1);
 for i = 1:length(wormFiles)
@@ -259,25 +262,22 @@ for i = 1:length(wormFiles)
     end
     
     % Organize the worms.
-    wormInfo = cat(1, wormInfo, data.wormInfo(useWorm{i}));
+    wormInfo    = cat(1, wormInfo, data.wormInfo(useWorm{i}));
     wormData{i} = data.worm;
 end
 
 % Is there any worm data?
 if length(wormInfo) <= 1
-    warning('worm2StatsInfo:InsufficientWormData', ...
-        'Insufficient worm data was found');
+    warning('worm2StatsInfo:InsufficientWormData','Insufficient worm data was found');
     return;
 end
 
 % Sort the worm information by date.
-dates = cell2mat(arrayfun(@(x) ...
-    datenum(x.experiment.environment.timestamp), wormInfo, ...
-    'UniformOutput', false));
+dates = cell2mat(arrayfun(@(x) datenum(x.experiment.environment.timestamp), wormInfo, 'un', 0));
 wormSortI = 1:length(wormInfo);
 if length(dates) == length(wormInfo)
     [~, wormSortI] = sort(dates);
-    wormInfo = wormInfo(wormSortI);
+    wormInfo       = wormInfo(wormSortI);
 end
 
 % Load the control files.
@@ -326,11 +326,10 @@ if ~isempty(controlFiles)
 end
 
 % Initialize the worm file formats.
-histStr = 'histogram';
-statStr = 'statistics';
-isWormHist = ...
-    cellfun(@(x) isfield(x.morphology.length, histStr), wormData);
-wormField = cell(length(isWormHist), 1);
+histStr    = 'histogram';
+statStr    = 'statistics';
+isWormHist = cellfun(@(x) isfield(x.morphology.length, histStr), wormData);
+wormField  = cell(length(isWormHist), 1);
 for i = 1:length(isWormHist)
     if isWormHist(i)
         wormField{i} = histStr;
@@ -354,14 +353,12 @@ if ~isempty(controlFiles)
 end
 
 % Initialize the feature information.
-dataInfo = wormStatsInfo();
+dataInfo = seg_worm.w.stats.wormStatsInfo();
 
 % Organize the worm features.
-wormData = worm2data(dataInfo, useWorm, wormSortI, wormData, wormField, ...
-    isVerbose);
+wormData = h__worm2data(dataInfo, useWorm, wormSortI, wormData, wormField, isVerbose);
 if ~isempty(controlFiles)
-    controlData = worm2data(dataInfo, useControl, controlSortI, ...
-        controlData, controlField, isVerbose);
+    controlData = h__worm2data(dataInfo, useControl, controlSortI, controlData, controlField, isVerbose);
 end
 
 % Normalize the worm features.
@@ -375,13 +372,13 @@ if ~isempty(controlFiles)
     exclusiveI = find(isExclusive);
     
     % Normalize the worm features.
-    wormData = normalizeData(wormData, controlData, isExclusive, ...
+    wormData = h__normalizeData(wormData, controlData, isExclusive, ...
         zScoreMode(1));
     if length(zScoreMode) > 1
-        controlData = normalizeData(controlData, wormData, isExclusive, ...
+        controlData = h__normalizeData(controlData, wormData, isExclusive, ...
         zScoreMode(2));
     else
-        controlData = normalizeData(controlData, wormData, isExclusive, ...
+        controlData = h__normalizeData(controlData, wormData, isExclusive, ...
         zScoreMode(1));
     end
 end
@@ -482,9 +479,9 @@ end
 
 % Save the features.
 if isempty(controlFiles)
-    save(filename, 'dataInfo', 'wormInfo', 'wormData', '-v7.3');
+    save(output_file_path, 'dataInfo', 'wormInfo', 'wormData', '-v7.3');
 else
-    save(filename, 'dataInfo', 'wormInfo', 'wormData', ...
+    save(output_file_path, 'dataInfo', 'wormInfo', 'wormData', ...
         'controlInfo', 'controlData', 'significance', '-v7.3');
 end
 end
@@ -492,12 +489,11 @@ end
 
 
 %% Organize the features.
-function data = ...
-    worm2data(info, useWorm, wormSortI, wormData, wormField, isVerbose)
+function data = h__worm2data(info, useWorm, wormSortI, wormData, wormField, isVerbose)
 
 % Organize the worm features.
-data(length(info),1).zScore = [];
-data(length(info),1).dataMeans = [];
+data(length(info),1).zScore      = [];
+data(length(info),1).dataMeans   = [];
 data(length(info),1).dataStdDevs = [];
 data(length(info),1).dataSamples = [];
 for i = 1:length(info)
@@ -512,29 +508,34 @@ for i = 1:length(info)
         for j = 1:length(wormData)
             
             % Get the feature data.
-            dataMeans = getStructField(wormData{j}, ...
-                info(i).field.(wormField{j}), true);
+            %
+            %   wtf = wormData{j}   
+            %   
+            %wtf.posture.wavelength.secondary.backward.statistics.data.mean.all
+            %   -> [3x1 double]
+            %
+            %
+            %   GETTING AN ERROR:
+            %   Somewhere a NaN is not being inserted ...
+            %
+            dataMeans = seg_worm.util.getStructField(wormData{j}, info(i).field.(wormField{j}), true);
             
             % Organize the feature data.
             if isempty(dataMeans)
-                data(i).dataMeans = ...
-                    cat(1, data(i).dataMeans, nan(sum(useWorm{j}), 1));
+                data(i).dataMeans = cat(1, data(i).dataMeans, nan(sum(useWorm{j}), 1));
             else
-                data(i).dataMeans = ...
-                    cat(1, data(i).dataMeans, dataMeans(useWorm{j}));
+                data(i).dataMeans = cat(1, data(i).dataMeans, dataMeans(useWorm{j}));
             end
             
             % Organize the feature data standard deviations and samples.
             if isempty(dataMeans) || info(i).type == 'd'
-                data(i).dataStdDevs = ...
-                    cat(1, data(i).dataStdDevs, nan(sum(useWorm{j}), 1));
-                data(i).dataSamples = ...
-                    cat(1, data(i).dataSamples, nan(sum(useWorm{j}), 1));
+                data(i).dataStdDevs = cat(1, data(i).dataStdDevs, nan(sum(useWorm{j}), 1));
+                data(i).dataSamples = cat(1, data(i).dataSamples, nan(sum(useWorm{j}), 1));
             else
-                dataStdDevs = getStructField(wormData{j}, ...
-                    field2StdDev(info(i).field.(wormField{j})), true);
-                dataSamples = getStructField(wormData{j}, ...
-                    field2Samples(info(i).field.(wormField{j})), true);
+                dataStdDevs = seg_worm.util.getStructField(wormData{j}, ...
+                    h__field2StdDev(info(i).field.(wormField{j})), true);
+                dataSamples = seg_worm.util.getStructField(wormData{j}, ...
+                    h__field2Samples(info(i).field.(wormField{j})), true);
                 data(i).dataStdDevs = ...
                     cat(1, data(i).dataStdDevs, dataStdDevs(useWorm{j}));
                 data(i).dataSamples = ...
@@ -543,18 +544,18 @@ for i = 1:length(info)
         end
         
         % Sort the data.
-        data(i).dataMeans = data(i).dataMeans(wormSortI);
+        data(i).dataMeans   = data(i).dataMeans(wormSortI);
         data(i).dataStdDevs = data(i).dataStdDevs(wormSortI);
         data(i).dataSamples = data(i).dataSamples(wormSortI);
         
         % Compute the feature statistics.
-        data(i).mean = nanmean(data(i).dataMeans);
-        data(i).stdDev = nanstd(data(i).dataMeans);
+        data(i).mean    = nanmean(data(i).dataMeans);
+        data(i).stdDev  = nanstd(data(i).dataMeans);
         data(i).samples = sum(~isnan(data(i).dataMeans));
         if data(i).samples < 3
             data(i).pNormal = NaN;
         else
-            [~, data(i).pNormal, ~] = swtest(data(i).dataMeans, 0.05, 0);
+            [~, data(i).pNormal, ~] = seg_worm.fex.swtest(data(i).dataMeans, 0.05, 0);
         end
         
     % The feature is indexed.
@@ -566,8 +567,7 @@ for i = 1:length(info)
             indexI = strfind(field, ')');
             subField = [];
             eval(['subField = wormData{j}.' field(1:indexI) ';']);
-            dataMeans = ...
-                getStructField(subField, field((indexI + 2):end), true);
+            dataMeans = seg_worm.util.getStructField(subField, field((indexI + 2):end), true);
             
             % Organize the feature data.
             if isempty(dataMeans)
@@ -580,15 +580,13 @@ for i = 1:length(info)
             
             % Organize the feature data standard deviations and samples.
             if isempty(dataMeans) || info(i).type == 'd'
-                data(i).dataStdDevs = ...
-                    cat(1, data(i).dataStdDevs, nan(sum(useWorm{j}), 1));
-                data(i).dataSamples = ...
-                    cat(1, data(i).dataSamples, nan(sum(useWorm{j}), 1));
+                data(i).dataStdDevs = cat(1, data(i).dataStdDevs, nan(sum(useWorm{j}), 1));
+                data(i).dataSamples = cat(1, data(i).dataSamples, nan(sum(useWorm{j}), 1));
             else
-                dataStdDevs = getStructField(subField, ...
-                    field2StdDev(field((indexI + 2):end)), true);
-                dataSamples = getStructField(subField, ...
-                    field2Samples(field((indexI + 2):end)), true);
+                dataStdDevs = seg_worm.util.getStructField(subField, ...
+                    h__field2StdDev(field((indexI + 2):end)), true);
+                dataSamples = seg_worm.util.getStructField(subField, ...
+                    h__field2Samples(field((indexI + 2):end)), true);
                 data(i).dataStdDevs = ...
                     cat(1, data(i).dataStdDevs, dataStdDevs(useWorm{j}));
                 data(i).dataSamples = ...
@@ -597,18 +595,18 @@ for i = 1:length(info)
         end
         
         % Sort the data.
-        data(i).dataMeans = data(i).dataMeans(wormSortI);
+        data(i).dataMeans   = data(i).dataMeans(wormSortI);
         data(i).dataStdDevs = data(i).dataStdDevs(wormSortI);
         data(i).dataSamples = data(i).dataSamples(wormSortI);
 
         % Compute the feature statistics.
-        data(i).mean = nanmean(data(i).dataMeans);
-        data(i).stdDev = nanstd(data(i).dataMeans);
+        data(i).mean    = nanmean(data(i).dataMeans);
+        data(i).stdDev  = nanstd(data(i).dataMeans);
         data(i).samples = sum(~isnan(data(i).dataMeans));
         if data(i).samples < 3
             data(i).pNormal = NaN;
         else
-            [~, data(i).pNormal, ~] = swtest(data(i).dataMeans, 0.05, 0);
+            [~, data(i).pNormal, ~] = seg_worm.fex.swtest(data(i).dataMeans, 0.05, 0);
         end
     end
 end
@@ -630,7 +628,7 @@ end
 
 
 %% Normalize the data.
-function wormData = normalizeData(wormData, controlData, isExclusive, ...
+function wormData = h__normalizeData(wormData, controlData, isExclusive, ...
     zScoreMode)
 switch zScoreMode
     
@@ -670,16 +668,14 @@ switch zScoreMode
         for i = 1:length(wormData)
             
             % Combine the data.
-            allData = ...
-                cat(1, wormData(i).dataMeans, controlData(i).dataMeans);
+            allData = cat(1, wormData(i).dataMeans, controlData(i).dataMeans);
             
             % Normalize the worm.
             wormData(i).zScore  = NaN;
-            zMean = nanmean(allData);
+            zMean   = nanmean(allData);
             zStdDev = nanstd(allData);
             if zStdDev > 0
-                wormData(i).zScore  = ...
-                    (wormData(i).mean - zMean) / zStdDev;
+                wormData(i).zScore  = (wormData(i).mean - zMean) / zStdDev;
             end
         end
 end
@@ -688,10 +684,10 @@ end
 
 
 %% Convert a data mean field to its standard deviation equivalent.
-function field = field2StdDev(field)
+function field = h__field2StdDev(field)
 
 % Find the last "mean".
-meanStr = '.mean.';
+meanStr   = '.mean.';
 stdDevStr = '.stdDev.';
 i = strfind(field, meanStr);
 
@@ -701,18 +697,17 @@ if isempty(i)
     
 % Replace the mean with the standard deviation.
 else
-    field = [field(1:(i(end) - 1)) stdDevStr ...
-        field((i(end) + length(meanStr)):end)];
+    field = [field(1:(i(end) - 1)) stdDevStr field((i(end) + length(meanStr)):end)];
 end
 end
 
 
 
 %% Convert a data mean field to its samples equivalent.
-function field = field2Samples(field)
+function field = h__field2Samples(field)
 
 % Find the last "mean".
-meanStr = '.mean.';
+meanStr    = '.mean.';
 samplesStr = '.samples';
 i = strfind(field, meanStr);
 

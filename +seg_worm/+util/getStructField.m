@@ -1,15 +1,26 @@
 function data = getStructField(data, field, varargin)
-%GETSTRUCTFIELD Get a field in a structure.
+%getStructField  Get a field in a structure.
 %
-%   DATA = GETSTRUCTFIELD(DATA, FIELD)
+%   data = getStructField(DATA, FIELD)
 %
-%   DATA = GETSTRUCTFIELD(DATA, FIELD, ISSAFE)
+%   data = getStructField(data, field, *isSafe)
+%
+%   seg_worm.util.getStructField
+%
+%
+%
+%   NOTE: If a field does not exist then data will be returned as empty (no
+%   error)
+%
 %
 %   Inputs:
 %       data   - the structure
 %       field  - the field to get (a period delimited string)
 %       isSafe - are we using safe mode? when using safe mode, each field
 %                is tested to ensure it exists; the default is no (false)
+%
+%
+%
 %
 %   Output:
 %       data - the field data;
@@ -21,18 +32,25 @@ function data = getStructField(data, field, varargin)
 % you must reproduce all copyright notices and other proprietary 
 % notices on any copies of the Software.
 
+
+
 % Are we using safe mode?
 isSafe = false;
 if ~isempty(varargin)
     isSafe = varargin{1};
 end
 
-% No data.
+
 if isempty(field)
-    return;
+    % No data.
     
-% Get the field.
+    %Why would field 'input' be empty ?????
+    %I could understand the field not existing, but the request being
+    %empty doesn't make sense to me
+    data = [];
+    return;
 else
+    % Get the field.
     fields = textscan(field, '%s', 'Delimiter', '.');
     fields = fields{1};
     

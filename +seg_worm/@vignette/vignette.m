@@ -27,9 +27,15 @@ classdef vignette < handle
             %
             %   vignette = seg_worm.vignette.create(file_manager,video_reader)
             %
+            %   OUTPUTS
+            %   =============================================
+            %   vignette: 
+            %
+            %   NOTE: The static function allows us to return an empty
+            %   object.
            v_file_path = file_manager.vignette_data_file;
            if exist(v_file_path,'file')
-               obj_or_empty = seg_worm.vignette.create(v_file_path,video_reader);
+               obj_or_empty = seg_worm.vignette(v_file_path,video_reader);
            else
                obj_or_empty = [];
            end
@@ -43,21 +49,20 @@ classdef vignette < handle
             %
             obj.file_path      = file_path;
 
-            
-            if obj.file_available
-                height = video_reader.height;
-                width  = video_reader.width;
+            height = video_reader.height;
+            width  = video_reader.width;
 
-                %???? Why is the vignette signed????
-                %
-                %???? Why int32 to int8
-                %
-                %For some reason the data is written as a 4 byte value
-                %when only occuping 1 byte
-                temp = single(sl.io.fileRead(obj.file_path ,'int32=>int8','endian','b'));
+            %???? Why is the vignette signed????
+            %
+            %???? Why int32 to int8
+            %
+            %For some reason the data is written as a 4 byte value
+            %when only occuping 1 byte
+            temp = single(sl.io.fileRead(obj.file_path ,'int32=>int8','endian','b'));
 
-                obj.mask_data = reshape(temp,height,width)';
-            end
+            %Why did this work before ?????
+            %obj.mask_data = reshape(temp,height,width)';
+            obj.mask_data = reshape(temp,width,height)';
         end
     end
     methods

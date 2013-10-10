@@ -1,9 +1,7 @@
 function wormStats2Matrix(filename, wormFiles, isVerbose)
 %wormStats2Matrix  Construct and save a worms x features matrix.
 %
-%   WORM2STATSINFO(FILENAME, WORMFILES)
-%
-%   WORM2STATSINFO(FILENAME, WORMFILES, *ISVERBOSE)
+%   seg_worm.w.stats.wormStats2Matrix(filename, wormFiles, *isVerbose)
 %
 %   Inputs:
 %       filename - the file name for the worm statistics information;
@@ -96,7 +94,9 @@ function wormStats2Matrix(filename, wormFiles, isVerbose)
 %       isVerbose - verbose mode displays the progress;
 %                   the default is yes (true)
 %
-% See also WORM2STATSINFO, WORMSTATSINFO
+%   See also:
+%   WORM2STATSINFO
+%   seg_worm.w.stats.wormStatsInfo
 %
 %
 % © Medical Research Council 2012
@@ -121,19 +121,19 @@ if ~iscell(wormFiles)
 end
 
 % Initialize the feature information.
-dataInfo = wormStatsInfo();
+dataInfo = seg_worm.w.stats.wormStatsInfo();
 
 % Construct the feature matrix.
 worm = [];
 control = [];
-worm.info.strain        = cell(length(wormFiles), 1);
-worm.info.genotype      = cell(length(wormFiles), 1);
-worm.info.gene          = cell(length(wormFiles), 1);
-worm.info.allele        = cell(length(wormFiles), 1);
-worm.stats.mean         = nan(length(wormFiles), length(dataInfo));
-worm.stats.stdDev       = nan(length(wormFiles), length(dataInfo));
-worm.stats.samples      = nan(length(wormFiles), length(dataInfo));
-worm.stats.pNormal      = nan(length(wormFiles), length(dataInfo));
+worm.info.strain          = cell(length(wormFiles), 1);
+worm.info.genotype        = cell(length(wormFiles), 1);
+worm.info.gene            = cell(length(wormFiles), 1);
+worm.info.allele          = cell(length(wormFiles), 1);
+worm.stats.mean           = nan(length(wormFiles), length(dataInfo));
+worm.stats.stdDev         = nan(length(wormFiles), length(dataInfo));
+worm.stats.samples        = nan(length(wormFiles), length(dataInfo));
+worm.stats.pNormal        = nan(length(wormFiles), length(dataInfo));
 worm.stats.qNormal.strain = nan(length(wormFiles), length(dataInfo));
 worm.stats.qNormal.all    = nan(length(wormFiles), length(dataInfo));
 worm.stats.zScore         = nan(length(wormFiles), length(dataInfo));

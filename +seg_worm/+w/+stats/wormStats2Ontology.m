@@ -510,11 +510,11 @@ for i = 1:length(filenames)
         % Translate the significant features to signed annotations.
         numStrains = numStrains + 1;
         strains(numStrains).genotype = genotype;
-        strains(numStrains).strain = worm2StrainLabel(wormInfo);
-        strains(numStrains).gene = worm2GeneLabel(wormInfo);
-        strains(numStrains).allele = worm2AlleleLabel(wormInfo);
-        strains(numStrains).pValue = sigWorm.pValue;
-        strains(numStrains).qValue = sigWorm.qValue;
+        strains(numStrains).strain   = worm2StrainLabel(wormInfo);
+        strains(numStrains).gene     = worm2GeneLabel(wormInfo);
+        strains(numStrains).allele   = worm2AlleleLabel(wormInfo);
+        strains(numStrains).pValue   = sigWorm.pValue;
+        strains(numStrains).qValue   = sigWorm.qValue;
         strains(numStrains).annotation = [];
         if ~isempty(sigI)
             strains(numStrains).annotation = annotate(sigI, ...
@@ -574,12 +574,12 @@ for i = 1:length(filenames)
             
             % Annotate the strain.
             numStrains = numStrains + 1;
-            strains(numStrains).genotype = genotype;
-            strains(numStrains).strain = worm.info.strain{j};
-            strains(numStrains).gene = worm.info.gene{j};
-            strains(numStrains).allele = worm.info.allele{j};
-            strains(numStrains).pValue = min(pValues);
-            strains(numStrains).qValue = min(qValues);
+            strains(numStrains).genotype   = genotype;
+            strains(numStrains).strain     = worm.info.strain{j};
+            strains(numStrains).gene       = worm.info.gene{j};
+            strains(numStrains).allele     = worm.info.allele{j};
+            strains(numStrains).pValue     = min(pValues);
+            strains(numStrains).qValue     = min(qValues);
             strains(numStrains).annotation = [];
             if ~isempty(sigI)
                 strains(numStrains).annotation = annotate(sigI, ...

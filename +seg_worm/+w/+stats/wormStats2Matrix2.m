@@ -33,6 +33,7 @@ function wormStats2Matrix2(filename, wormFiles, varargin)
 %                  isEvent  = for each row, is it an event feature subsets?
 %
 %       wormFiles - the worm statistics files
+%
 %       filt - the filtering criteria; a structure with any of the fields:
 %
 %              minFPS     = the minimum video frame rate (frames/seconds)
@@ -52,7 +53,8 @@ function wormStats2Matrix2(filename, wormFiles, varargin)
 %       isVerbose    - verbose mode displays the progress;
 %                      the default is yes (true)
 %
-% See also WORM2STATS, FILTERWORMINFO
+%   See also:
+%   WORM2STATS, FILTERWORMINFO
 %
 %
 % © Medical Research Council 2012

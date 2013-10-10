@@ -1,22 +1,10 @@
 function histData = histogram(data, varargin)
-%HISTOGRAM Compute the data's histogram.
-%
-%
-%   seg_worm.util.histogram
-%
-%   HISTDATA = HISTOGRAM(DATA)
-%
-%   HISTDATA = HISTOGRAM(DATA, RESOLUTIONS)
-%
-%   HISTDATA = HISTOGRAM(DATA, RESOLUTIONS, ISZEROBIN)
-%
-%   HISTDATA = HISTOGRAM(DATA, RESOLUTIONS, ISZEROBIN, ISSIGNED)
-%
-%   HISTDATA = HISTOGRAM(DATA, RESOLUTIONS, ISZEROBIN, ISSIGNED, VERBOSE)
+%histogram  Compute the data's histogram.
+%   
+%   histData = seg_worm.util.histogram(data, *resolution, *isZeroBin, *isSigned, *verbose)
 %
 %   Inputs:
-%       data       - the data for the histogram(s) (a cell array of
-%                    observed sets)
+%       data       - the data for the histogram(s) (a cell array of observed sets)
 %       resolution - the data resolution;
 %                    if empty, the resolution is estimated from the square
 %                    root of the data's length (a very popular method)
@@ -28,6 +16,18 @@ function histData = histogram(data, varargin)
 %       verbose    - verbose mode shows the results in a figure
 %
 %   Outputs:
+%
+%           Example:
+%       worm.morphology.length.histogram
+%                       sets: [1x1 struct]
+%                       data: [1x1 struct]
+%                    allData: [1x1 struct]
+%                        PDF: [1x418 double]
+%                       bins: [1x418 double]
+%                 resolution: 1
+%                  isZeroBin: 0
+%                   isSigned: 0
+%   -----------------------------------------------------------------------
 %       histData - the histogram(s) data. A struct with fields:
 %                  Note: the absolute, positive, and negative value
 %                  statistics are only available when the data is signed
@@ -38,7 +38,9 @@ function histData = histogram(data, varargin)
 %                  resolution = the data resolution
 %                  isZeroBin  = is there a bin center at 0
 %                  isSigned   = is the data signed (+/-)?
-%                  sets       = a struct with fields:
+%                  --------------------------------------------------------
+%                  sets       = a struct with fields: (Statistics computed
+%                           on the stats in 'data', i.e mean(data.mean)
 %                     samples    = the number of set samples
 %                     mean.all   = the mean of the sets
 %                     stdDev.all = the standard deviation of the sets
@@ -48,7 +50,14 @@ function histData = histogram(data, varargin)
 %                     stdDev.pos = the deviation of the positive set values
 %                     mean.neg   = the mean of the negative set values
 %                     stdDev.neg = the deviation of the negative set values
-%                  data       = a struct with fields:
+%
+%                  --------------------------------------------------------
+%                  NOTE: This field ('data') is considered to be the 
+%                  "Stats" that is referred to in other functions.
+%                  --------------------------------------------------------
+%                  data       = a struct with fields: (Statistics computed
+%                    on a video by video basis, i.e. [mean(set1) mean(set2) mean(set3)])
+%
 %                     counts     = the count per set per bin (sets x bins)
 %                     samples    = the number of data samples per set
 %                     mean.all   = the mean of the data per set
@@ -59,7 +68,11 @@ function histData = histogram(data, varargin)
 %                     stdDev.pos = the deviation of the positive data per set
 %                     mean.neg   = the mean of the negative data per set
 %                     stdDev.neg = the deviation of the negative data per set
-%                  allData    = a struct with fields:
+%
+%                  --------------------------------------------------------
+%                  allData    = a struct with fields: (Statistics computed
+%                       on all data i.e. mean(all_data))
+%
 %                     counts     = the count per bin
 %                     samples    = the total number of all data samples
 %                     mean.all   = the mean of all the data
@@ -70,6 +83,11 @@ function histData = histogram(data, varargin)
 %                     stdDev.pos = the deviation of all the positive data
 %                     mean.neg   = the mean of all the negative data
 %                     stdDev.neg = the deviation of all the negative data
+%
+%
+%   IMPROVEMENTS:
+%   1) It would be nice to know what histogram data we were binning 
+%
 %
 %
 % © Medical Research Council 2012
@@ -115,34 +133,46 @@ allData = allData(:);
 
 % Remove empty data.
 samples = cellfun(@(x) sum(~isnan(x)), data);
-keepI = find(samples > 0);
-if length(data) ~= length(keepI)
-    data = data(keepI);
-end
+
+%JAH QUESTION: Is commenting this out an appropriate fix or not?
+%This can cause a problem ...
+%------------------------------------------------
+%This means that although we asked for n sets,
+%we might not get n sets of data out ...
+%
+% % % % keepI = find(samples > 0);
+% % % % if length(data) ~= length(keepI)
+% % % %     keyboard
+% % % %     data = data(keepI);
+% % % % end
+%
+%   Problem seen with a backwards event ...
+%   worm2StatsInfo/worm2data
+%   
 
 % Remove infinite data measurements.
 for i = 1:length(data)
     data{i}(data{i} == -inf) = NaN;
-    data{i}(data{i} == inf) = NaN;
+    data{i}(data{i} == inf)  = NaN;
 end
 
 % Is there any data?
 if isempty(data)
     warning('histogram:NoData', 'There is no data to bin');
-    histData = nanHistogram(isSigned);
+    histData = seg_worm.util.nanHistogram(isSigned);
     return;
 end
 empty = cellfun(@(x) isempty(x) || all(isnan(x)), data);
 if all(empty)
     warning('histogram:NoData', 'There is no data to bin');
-    histData = nanHistogram(isSigned, length(empty));
+    histData = seg_worm.util.nanHistogram(isSigned, length(empty));
     return;
 end
 
 % Compute the data range.
 minDataLength = min(cellfun('length', data));
-minData = min(cellfun(@min, data));
-maxData = max(cellfun(@max, data));
+minData       = min(cellfun(@min, data));
+maxData       = max(cellfun(@max, data));
 
 % Compute the data resolution.
 if isempty(resolution)
@@ -199,9 +229,8 @@ maxEdge = maxData + maxPad;
 % their final composition (what they will look like after tossing away
 % the empty last bin).
 numBins = round((maxEdge - minEdge) / resolution);
-bins = linspace(minEdge + halfResolution, maxEdge - halfResolution, ...
-    numBins);
-edges = bins - halfResolution;
+bins    = linspace(minEdge + halfResolution, maxEdge - halfResolution, numBins);
+edges   = bins - halfResolution;
 edges(end + 1) = edges(end) + resolution;
 
 % Fix the zero bin.
@@ -269,94 +298,94 @@ else
 end
 
 % Compute the means of the data sets.
-means = cellfun(@nanmean, data);
+means   = cellfun(@nanmean, data);
 stdDevs = cellfun(@nanstd, data);
 if isSigned
     
     % Compute the absolute value statisitics.
-    absData = cellfun(@(x) abs(x), data, 'UniformOutput', false);
-    absMeans = cellfun(@(x) nanmean(x), absData);
+    absData    = cellfun(@(x) abs(x), data, 'UniformOutput', false);
+    absMeans   = cellfun(@(x) nanmean(x), absData);
     absStdDevs = cellfun(@(x) nanstd(x), absData);
     
     % Compute the positive value statisitics.
-    posData = cellfun(@(x) x(x > 0), data, 'UniformOutput', false);
-    posMeans = cellfun(@(x) nanmean(x), posData);
+    posData    = cellfun(@(x) x(x > 0), data, 'UniformOutput', false);
+    posMeans   = cellfun(@(x) nanmean(x), posData);
     posStdDevs = cellfun(@(x) nanstd(x), posData);
     
     % Compute the negative value statisitics.
-    negData = cellfun(@(x) x(x < 0), data, 'UniformOutput', false);
-    negMeans = cellfun(@(x) nanmean(x), negData);
+    negData    = cellfun(@(x) x(x < 0), data, 'UniformOutput', false);
+    negMeans   = cellfun(@(x) nanmean(x), negData);
     negStdDevs = cellfun(@(x) nanstd(x), negData);
 end
 
 % Organize the histogram set data.
-histData.sets.samples = length(data);
-histData.sets.mean.all = nanmean(means);
+histData.sets.samples    = length(data);
+histData.sets.mean.all   = nanmean(means);
 histData.sets.stdDev.all = nanstd(means);
 if isSigned
     
     % Compute the absolute value statisitics.
-    histData.sets.mean.abs = nanmean(absMeans);
+    histData.sets.mean.abs   = nanmean(absMeans);
     histData.sets.stdDev.abs = nanstd(absMeans);
     
     % Compute the positive value statisitics.
-    histData.sets.mean.pos = nanmean(posMeans);
+    histData.sets.mean.pos   = nanmean(posMeans);
     histData.sets.stdDev.pos = nanstd(posMeans);
     
     % Compute the negative value statisitics.
-    histData.sets.mean.neg = nanmean(negMeans);
+    histData.sets.mean.neg   = nanmean(negMeans);
     histData.sets.stdDev.neg = nanstd(negMeans);
 end
 
 % Organize the histogram data sets.
-histData.data.counts = counts;
-histData.data.samples(:,1) = samples;
-histData.data.mean.all(:,1) = means;
+histData.data.counts          = counts;
+histData.data.samples(:,1)    = samples; %Yikes, I think is is to force a colum vector ...
+histData.data.mean.all(:,1)   = means;
 histData.data.stdDev.all(:,1) = stdDevs;
 if isSigned
     
     % Compute the absolute value statisitics.
-    histData.data.mean.abs(:,1) = absMeans;
+    histData.data.mean.abs(:,1)   = absMeans;
     histData.data.stdDev.abs(:,1) = absStdDevs;
     
     % Compute the positive value statisitics.
-    histData.data.mean.pos(:,1) = posMeans;
+    histData.data.mean.pos(:,1)   = posMeans;
     histData.data.stdDev.pos(:,1) = posStdDevs;
     
     % Compute the negative value statisitics.
-    histData.data.mean.neg(:,1) = negMeans;
+    histData.data.mean.neg(:,1)   = negMeans;
     histData.data.stdDev.neg(:,1) = negStdDevs;
 end
 
 % Organize the histogram total data.
-histData.allData.counts = allCounts;
-histData.allData.samples = sum(samples);
-histData.allData.mean.all = nanmean(allData);
+histData.allData.counts     = allCounts;
+histData.allData.samples    = sum(samples);
+histData.allData.mean.all   = nanmean(allData);
 histData.allData.stdDev.all = nanstd(allData);
 if isSigned
     
     % Compute the absolute value statisitics.
     absAllData = abs(allData);
-    histData.allData.mean.abs = nanmean(absAllData);
+    histData.allData.mean.abs   = nanmean(absAllData);
     histData.allData.stdDev.abs = nanstd(absAllData);
     
     % Compute the positive value statisitics.
     posAllData = allData(allData > 0);
-    histData.allData.mean.pos = nanmean(posAllData);
+    histData.allData.mean.pos   = nanmean(posAllData);
     histData.allData.stdDev.pos = nanstd(posAllData);
     
     % Compute the negative value statisitics.
     negAllData = allData(allData < 0);
-    histData.allData.mean.neg = nanmean(negAllData);
+    histData.allData.mean.neg   = nanmean(negAllData);
     histData.allData.stdDev.neg = nanstd(negAllData);
 end
 
 % Organize the histogram.
-histData.PDF = pdfs;
+histData.PDF  = pdfs;
 histData.bins = bins;
 histData.resolution = resolution;
-histData.isZeroBin = isZeroBin;
-histData.isSigned = isSigned;
+histData.isZeroBin  = isZeroBin;
+histData.isSigned   = isSigned;
 
 % Show the results.
 if verbose
@@ -383,16 +412,16 @@ if verbose
         for i = 1:length(data)
             
             % Set the statistics.
-            histDatas(i).sets.samples = 1;
-            histDatas(i).sets.mean = histData.data.mean(i);
-            histDatas(i).sets.stdDev = 0;
-            histDatas(i).data.counts = histData.data.counts(i,:);
-            histDatas(i).data.samples = histData.data.samples(i);
-            histDatas(i).data.mean = histData.data.mean(i);
-            histDatas(i).data.stdDev = histData.data.stdDev(i);
+            histDatas(i).sets.samples    = 1;
+            histDatas(i).sets.mean       = histData.data.mean(i);
+            histDatas(i).sets.stdDev     = 0;
+            histDatas(i).data.counts     = histData.data.counts(i,:);
+            histDatas(i).data.samples    = histData.data.samples(i);
+            histDatas(i).data.mean       = histData.data.mean(i);
+            histDatas(i).data.stdDev     = histData.data.stdDev(i);
             histDatas(i).allData.samples = histData.data.samples(i);
-            histDatas(i).allData.mean = histData.data.mean(i);
-            histDatas(i).allData.stdDev = histData.data.stdDev(i);
+            histDatas(i).allData.mean    = histData.data.mean(i);
+            histDatas(i).allData.stdDev  = histData.data.stdDev(i);
             
             % Set the PDF.
             counts = histDatas(i).data.counts;
@@ -403,8 +432,7 @@ if verbose
         subplot(1, 2, 2);
         dataNames(1:length(data)) = {'Data'};
         colors = lines(length(data));
-        plotHistogram(histDatas, 'Histogram', 'Value', dataNames, ...
-            colors, colors);
+        seg_worm.util.plotHistogram(histDatas, 'Histogram', 'Value', dataNames, colors, colors);
     end
 end
 end

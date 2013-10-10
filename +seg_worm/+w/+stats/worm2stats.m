@@ -1,13 +1,20 @@
 function worm2stats(stats_output_file_path, wormFiles, varargin)
 %worm2stats  Convert worms to a set of statistics.
 %
-%   See comment in: seg_worm.w.stats.addWormStats
+%   seg_worm.w.stats.worm2stats(stats_output_file_path, wormFiles, *CONTROLFILES, *ISOLDCONTROL, *VERBOSE)
 %
 %
-%   worm2stats(FILENAME, WORMFILES, *CONTROLFILES, *ISOLDCONTROL, *VERBOSE)
+%   Called by:
+%   Seems to be a top level file ...
+%
+%
+%   NOTE: The stats are basically a subset of the histogram. For
+%   non-histogram data (summary statstics for events), the data are
+%   maintained, otherwise 'histogram' structures are replaced with
+%   'statistics' structures
 %
 %   Inputs:
-%       filename     - the file name for the statistics;
+%       stats_output_file_path     - the file name for the statistics;
 %                      the file includes:
 %
 %                      wormInfo    = the worm information
@@ -23,7 +30,11 @@ function worm2stats(stats_output_file_path, wormFiles, varargin)
 %       isVerbose    - verbose mode display the progress;
 %                      the default is no (false)
 %
-% See also WORM2HISTOGRAM, HISTOGRAM, WORMDISPLAYINFO, WORMDATAINFO
+%   See also:
+%   seg_worm.w.stats.worm2histogram
+%   seg_worm.util.histogram,
+%   WORMDISPLAYINFO, 
+%   WORMDATAINFO
 %
 %
 % © Medical Research Council 2012
@@ -67,6 +78,7 @@ if exist(stats_output_file_path, 'file')
 end
 
 % Save the worm information.
+%---------------------------------------------------------------
 if isVerbose
     disp('Combining "wormInfo" ...');
 end
@@ -80,7 +92,11 @@ wormInfo = newWormInfo;
 save(stats_output_file_path, 'wormInfo');
 clear wormInfo;
 
+
+
+
 % Collect the new control information.
+%---------------------------------------------------------------
 if isVerbose
     disp('Combining "controlInfo" ...');
 end
@@ -94,6 +110,7 @@ if ~isempty(controlFiles)
 end
 
 % Collect the old control information.
+%---------------------------------------------------------------
 if isOldControl
     for i = 1:length(wormFiles)
         controlInfo = who('-FILE', wormFiles{i}, 'controlInfo');
@@ -105,6 +122,7 @@ if isOldControl
 end
 
 % Save the control information.
+%---------------------------------------------------------------
 if ~isempty(newControlInfo)
     controlInfo = newControlInfo;
     save(stats_output_file_path, 'controlInfo', '-append');
@@ -119,6 +137,7 @@ clear controlInfo;
 dataInfo = seg_worm.feature.roots();
 
 % Save the worm statistics.
+%--------------------------------------------------------------------------
 h__saveStatistics(stats_output_file_path, wormFiles, dataInfo, 'worm', 'worm', isVerbose);
 
 % Are we adding the old controls?
@@ -192,10 +211,27 @@ function h__saveStatistics(filename, wormFiles, dataInfo, loadName, saveName, is
 %   -----------------------------------------------------------------------
 %   h__saveStatistics(filename, controlFiles, dataInfo, controlNames, 'control', isVerbose);
 %   h__saveStatistics(filename, wormFiles,    dataInfo, 'worm',       'worm',    isVerbose);
-
+%   h__saveStatistics(filename, wormFiles,    dataInfo, loadName,      saveName, isVerbose)
 %
-%   dataInfo
-%   See :seg_worm.feature.roots 
+%   NOTE: The controlNames indicates that in a new file, the field that
+%   will be the control is the 'worm' entry, in old files, it is identified
+%   as 'control
+%
+%   i.e. features A - histogram A - 'worm'
+%        features B - histogram B - 'worm'
+%   
+%   now, B might be our control for A
+%
+%   Alternatively, when doing histograms, B might be identified as a
+%   control at that time, and subsequently needs to be accessed by
+%   'control'
+%
+%   INPUTS
+%   =======================================================================
+%   dataInfo : 
+%
+%   See Also
+%   seg_worm.feature.roots 
 
 
 %NOTE: .field
@@ -213,11 +249,13 @@ for i = 1:length(dataInfo)
         % Combine simple statistics.
         case 's'
             data = h__addStatistics(wormFiles, loadName, field);
+            
             eval([saveName '.' field '=data;']);
             
             % Combine motion statistics.
         case 'm'
             data = h__addMotionStatistics(wormFiles, loadName, field);
+            
             eval([saveName '.' field '=data;']);
             
             % Combine event statistics.
@@ -227,7 +265,9 @@ for i = 1:length(dataInfo)
             subFields = dataInfo(i).subFields.summary;
             for j = 1:length(subFields);
                 subField = [field '.' subFields{j}];
+                
                 data = h__addEventStatistics(wormFiles, loadName, subField);
+                
                 eval([saveName '.' subField '=data;']);
             end
             
@@ -235,7 +275,9 @@ for i = 1:length(dataInfo)
             subFields = dataInfo(i).subFields.data;
             for j = 1:length(subFields);
                 subField = [field '.' subFields{j}];
+                
                 data = h__addStatistics(wormFiles, loadName, subField);
+                
                 eval([saveName '.' subField '=data;']);
             end
     end
@@ -256,6 +298,8 @@ function data = h__addStatistics(wormFiles, wormName, field)
 %   wormFiles :
 %   wormName  : 
 %   
+
+%For simple data types ...
 
 %???? what does addData contain?????
 addData = h__loadWormFiles(wormFiles, wormName, field);
@@ -319,6 +363,11 @@ end
 
 %% Combine statistics.
 function data = h__addStatisticsData(addData)
+%
+%   INPUTS
+%   ================================================
+%   addData : 
+%
 
 % Is the data signed?
 data     = [];
@@ -329,7 +378,8 @@ for i = 1:length(addData)
     
     if isempty(addData{i})
         % Add the set.
-        numSets = numSets + 1;
+        numSets = numSets + 1; %???? Why would we add 1
+        %Just because nothing is an observation????
         
         
     else  % Sign the data.
@@ -338,8 +388,16 @@ for i = 1:length(addData)
         numSets = numSets + length(addData{i});
         
         % Sign the data.
+        %
+        %
+        %   This little bit of code is fairly confusing
+        %
+        %   true   - if not defined yet and the observation is signed
+        %   false  - if any observations are false
+        %
+        %   Why would these not be internally consistent????
         if ~isempty(addData{i}.isSigned) && ~isnan(addData{i}.isSigned)
-            if isempty(isSigned)
+            if isempty(isSigned) %i.e. hasn't been defined yet ..
                 isSigned = addData{i}.isSigned;
             elseif ~addData{i}.isSigned
                 isSigned = false;
@@ -349,10 +407,17 @@ for i = 1:length(addData)
 end
 
 % Is there any data?
-
+% -> could be empty if any signed entries are empty or NaN
+%
+%????? - When would we have null data like this??
 if isempty(isSigned)
-    data = nanHistogram(numSets);
+    data = seg_worm.util.nanHistogram(numSets);
     data = rmfield(data, {'sets', 'allData', 'PDF', 'bins', 'resolution', 'isZeroBin'});
+    
+    %i.e. keep
+    %    .isSigned
+    %and .data (This contains stats)
+    
     return;
 end
 
@@ -371,14 +436,12 @@ for i = 1:length(addData)
         data.data.mean.all   = cat(1, data.data.mean.all, NaN);
         data.data.stdDev.all = cat(1, data.data.stdDev.all, NaN);
     else
-        data.data.samples = ...
-            cat(1, data.data.samples, addData{i}.data.samples);
-        data.data.mean.all = ...
-            cat(1, data.data.mean.all, addData{i}.data.mean.all);
-        data.data.stdDev.all = ...
-            cat(1, data.data.stdDev.all, addData{i}.data.stdDev.all);
+        data.data.samples    = cat(1, data.data.samples,    addData{i}.data.samples);
+        data.data.mean.all   = cat(1, data.data.mean.all,   addData{i}.data.mean.all);
+        data.data.stdDev.all = cat(1, data.data.stdDev.all, addData{i}.data.stdDev.all);
     end
 end
+
 if isSigned
     data.data.mean.abs   = [];
     data.data.stdDev.abs = [];
@@ -395,21 +458,16 @@ if isSigned
             data.data.mean.neg   = cat(1, data.data.mean.neg,   NaN);
             data.data.stdDev.neg = cat(1, data.data.stdDev.neg, NaN);
         else
-            data.data.mean.abs = ...
-                cat(1, data.data.mean.abs, addData{i}.data.mean.abs);
-            data.data.stdDev.abs = ...
-                cat(1, data.data.stdDev.abs, addData{i}.data.stdDev.abs);
-            data.data.mean.pos = ...
-                cat(1, data.data.mean.pos, addData{i}.data.mean.pos);
-            data.data.stdDev.pos = ...
-                cat(1, data.data.stdDev.pos, addData{i}.data.stdDev.pos);
-            data.data.mean.neg = ...
-                cat(1, data.data.mean.neg, addData{i}.data.mean.neg);
-            data.data.stdDev.neg = ...
-                cat(1, data.data.stdDev.neg, addData{i}.data.stdDev.neg);
+            data.data.mean.abs   = cat(1, data.data.mean.abs,   addData{i}.data.mean.abs);
+            data.data.stdDev.abs = cat(1, data.data.stdDev.abs, addData{i}.data.stdDev.abs);
+            data.data.mean.pos   = cat(1, data.data.mean.pos,   addData{i}.data.mean.pos);
+            data.data.stdDev.pos = cat(1, data.data.stdDev.pos, addData{i}.data.stdDev.pos);
+            data.data.mean.neg   = cat(1, data.data.mean.neg,   addData{i}.data.mean.neg);
+            data.data.stdDev.neg = cat(1, data.data.stdDev.neg, addData{i}.data.stdDev.neg);
         end
     end
 end
+
 end
 
 

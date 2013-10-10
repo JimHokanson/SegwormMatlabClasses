@@ -3,6 +3,8 @@ function data = setStructField(data, field, value)
 %
 %   DATA = SETSTRUCTFIELD(DATA, FIELD, VALUE)
 %
+%   seg_worm.util.setStructField
+%
 %   Inputs:
 %       data  - the structure
 %       field - the field to set (a period delimited string)
