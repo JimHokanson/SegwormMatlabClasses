@@ -5,6 +5,10 @@ classdef experiment_info < handle
     %
     %   I think I had wanted this class to be responsible for creating
     %   the 'info' structure ...
+    %
+    %   TODO: Methods for populating structures
+    %
+    %   First populate class ...
     
     properties
     end

@@ -16,6 +16,58 @@ function worm2StatsInfo(output_file_path, wormFiles, varargin)
 %                  PERMUTATIONS, 
 %                  ISVERBOSE)
 %
+%   TOOLBOX FUNCTIONS
+%   -----------------------------------------------------------------------
+%   mafdr - bioinformatics toolbox 
+%   
+%   Implements: [2] Storey, J.D. (2002). A
+%   direct approach to false discovery rates. Journal of the Royal
+%   Statistical Society 64(3), 479–498.
+%
+%   
+%
+%
+%   QUESTIONS
+%   -----------------------------------------------------------------------
+%   1) When only wormFiles are provided - no controls, what do the
+%   statistical values represent?
+%
+%
+%dataInfo = 
+% 
+% 726x1 struct array with fields:
+% 
+%     name
+%     unit
+%     title1
+%     title2
+%     title3
+%     title1I
+%     title2I
+%     title3I
+%     index
+%     field
+%     isMain
+%     category
+%     type
+%     subType
+%     sign
+%
+%wormData = 
+% 
+% 726x1 struct array with fields:
+% 
+%     zScore
+%     dataMeans
+%     dataStdDevs
+%     dataSamples
+%     mean
+%     stdDev
+%     samples
+%     pNormal
+%     qNormal
+%
+%
 %   Inputs:
 %       output_file_path - the file name for the worm statistics information;
 %                  a file containing a structure with fields:
@@ -163,10 +215,10 @@ function worm2StatsInfo(output_file_path, wormFiles, varargin)
 %                          the default is yes (true)
 %
 %   See also:
-%   WORM2HISTOGRAM, 
-%   WORM2STATS, 
+%   seg_worm.w.stats.worm2histogram, 
+%   seg_worm.w.stats.worm2stats, 
 %   FILTERWORMINFO, 
-%   WORMSTATSINFO
+%   seg_worm.w.stats.wormStatsInfo
 %
 %
 % © Medical Research Council 2012
@@ -326,6 +378,9 @@ if ~isempty(controlFiles)
 end
 
 % Initialize the worm file formats.
+%--------------------------------------------------------------------------
+%NOTE: This seems like it is a switch to allow the histogram file format or
+%the statistics file format ...
 histStr    = 'histogram';
 statStr    = 'statistics';
 isWormHist = cellfun(@(x) isfield(x.morphology.length, histStr), wormData);
@@ -616,7 +671,13 @@ pAllValues = [data.pNormal];
 pValues = pAllValues(~isnan(pAllValues));
 qNormal = [];
 if ~isempty(pValues)
-    [~, qNormal] = mafdr(pValues);
+    %Bioinformatics toolbox :/
+    %JAH TEMP FIX:
+    %-------------------------------
+    %???What are the defaults ????
+    
+    qNormal = pValues;
+    %[~, qNormal] = mafdr(pValues);
 end
 qAllValues = nan(length(data), 1);
 qAllValues(~isnan(pAllValues)) = qNormal;
@@ -651,9 +712,7 @@ switch zScoreMode
                 
             % Normalize the worm to its control.
             elseif controlData(i).stdDev > 0
-                wormData(i).zScore = ...
-                    (wormData(i).mean - controlData(i).mean) / ...
-                    controlData(i).stdDev;
+                wormData(i).zScore = (wormData(i).mean - controlData(i).mean) / controlData(i).stdDev;
             end
         end
         

@@ -32,6 +32,9 @@ function info = displayInfo()
 %              shortName  = a shortened feature name (for legends)
 %              unit       = the feature's measurement unit (for labels)
 %
+%   See Also:
+%   
+%
 %
 % © Medical Research Council 2012
 % You will not remove any copyright or other notices from the Software; 
@@ -43,7 +46,7 @@ function info = displayInfo()
 %% Organize the worm morphology display information.
 
 % Organize the morphology information.
-info.morphology.name = 'Morphology Features';
+info.morphology.name      = 'Morphology Features';
 info.morphology.shortName = 'Morphology';
 
 % Organize the length information.
@@ -55,7 +58,7 @@ info.morphology.length.shortName  = 'Length';
 info.morphology.length.unit       = 'Microns';
 
 % Organize the width information.
-info.morphology.width.name = 'Width';
+info.morphology.width.name      = 'Width';
 info.morphology.width.shortName = 'Width';
 fields = { ...
     'Head', ...
@@ -101,17 +104,17 @@ info.morphology.widthPerLength.unit       = 'No Units';
 %% Organize the worm posture display information.
 
 % Organize the posture information.
-info.posture.name = 'Posture Features';
+info.posture.name      = 'Posture Features';
 info.posture.shortName = 'Posture';
 
 % Organize the bend mean information.
-info.posture.bends.name = 'Bending Posture';
+info.posture.bends.name      = 'Bending Posture';
 info.posture.bends.shortName = 'Bends';
 fields = { ...
-    'Head', ...
-    'Neck', ...
-    'Midbody', ...
-    'Hips', ...
+    'Head',     ...
+    'Neck',     ...
+    'Midbody',  ...
+    'Hips',     ...
     'Tail'};
 for i = 1:length(fields)
     
@@ -213,16 +216,16 @@ units = { ...
     'Seconds', ...
     'Microns'};
 resolutions = { ...
-    0.1, ...
-    5, ...
+    0.1,        ...
+    5,          ...
     100};
 for i = 1:length(fields)
-    info.posture.coils.(fields{i}).resolution = resolutions{i};
-    info.posture.coils.(fields{i}).isZeroBin = false;
-    info.posture.coils.(fields{i}).isSigned = false;
-    info.posture.coils.(fields{i}).name = names{i};
-    info.posture.coils.(fields{i}).shortName = shortNames{i};
-    info.posture.coils.(fields{i}).unit = units{i};
+    info.posture.coils.(fields{i}).resolution   = resolutions{i};
+    info.posture.coils.(fields{i}).isZeroBin    = false;
+    info.posture.coils.(fields{i}).isSigned     = false;
+    info.posture.coils.(fields{i}).name         = names{i};
+    info.posture.coils.(fields{i}).shortName    = shortNames{i};
+    info.posture.coils.(fields{i}).unit         = units{i};
 end
 statFields = { ...
     'frequency', ...
@@ -237,8 +240,7 @@ for i = 1:length(statFields)
     info.posture.coils.(statFields{i}).resolution = 0.001;
     info.posture.coils.(statFields{i}).isZeroBin  = false;
     info.posture.coils.(statFields{i}).isSigned   = false;
-    info.posture.coils.(statFields{i}).name = ...
-        [info.posture.coils.shortName ' ' statNames{i}];
+    info.posture.coils.(statFields{i}).name       = [info.posture.coils.shortName ' ' statNames{i}];
     info.posture.coils.(statFields{i}).shortName  = statNames{i};
     info.posture.coils.(statFields{i}).unit       = statUnits{i};
 end
@@ -290,7 +292,7 @@ info.posture.skeleton.unit       = 'Microns';
 %% Organize the worm locomotion display information.
 
 % Organize the locomotion information.
-info.locomotion.name = 'Locomotion Features';
+info.locomotion.name      = 'Locomotion Features';
 info.locomotion.shortName = 'Locomotion';
 
 % Organize the motion information.
@@ -302,7 +304,7 @@ info.locomotion.mode.shortName  = 'Motion';
 info.locomotion.mode.unit       = 'No Units';
 
 % Organize the forward/paused/backward information.
-info.locomotion.motion.name = 'Motion';
+info.locomotion.motion.name      = 'Motion';
 info.locomotion.motion.shortName = 'Motion';
 fields = { ...
     'Forward', ...
@@ -337,8 +339,7 @@ for i = 1:length(fields)
     
     % Organize the motion information.
     field = lower(fields{i});
-    info.locomotion.motion.(field).name = ...
-        [fields{i} ' ' info.locomotion.motion.name];
+    info.locomotion.motion.(field).name      = [fields{i} ' ' info.locomotion.motion.name];
     info.locomotion.motion.(field).shortName = fields{i};
     
     % Organize the motion event information.
@@ -381,25 +382,24 @@ end
 
 % Organize the speed and direction information.
 %--------------------------------------------------------------------------
-info.locomotion.velocity.name = 'Velocity';
+info.locomotion.velocity.name      = 'Velocity';
 info.locomotion.velocity.shortName = 'Velocity';
 fields = { ...
-    'headTip', ...
-    'head', ...
-    'midbody', ...
-    'tail', ...
+    'headTip',  ...
+    'head',     ...
+    'midbody',  ...
+    'tail',     ...
     'tailTip'};
-shortNames = { ...
+shortNames = {  ...
     'Head Tip', ...
-    'Head', ...
-    'Midbody', ...
-    'Tail', ...
+    'Head',     ...
+    'Midbody',  ...
+    'Tail',     ...
     'Tail Tip'};
 for i = 1:length(fields)
 
     % Organize the velocity information.
-    info.locomotion.velocity.(fields{i}).name = ...
-        [shortNames{i} ' ' info.locomotion.velocity.name];
+    info.locomotion.velocity.(fields{i}).name      = [shortNames{i} ' ' info.locomotion.velocity.name];
     info.locomotion.velocity.(fields{i}).shortName = shortNames{i};
     
     % Organize the speed information.
@@ -420,7 +420,7 @@ for i = 1:length(fields)
 end
 
 % Organize the bend information.
-info.locomotion.bends.name = 'Crawling Motion';
+info.locomotion.bends.name      = 'Crawling Motion';
 info.locomotion.bends.shortName = 'Crawling';
 fields = { ...
     'Head', ...
@@ -430,50 +430,46 @@ for i = 1:length(fields)
     
     % Organize the bend information.
     field = lower(fields{i});
-    info.locomotion.bends.(field).name = ...
-        [fields{i} ' ' info.locomotion.bends.name];
-    info.locomotion.bends.(field).shortName = ...
-        [fields{i} ' ' info.locomotion.bends.shortName];
+    info.locomotion.bends.(field).name      = [fields{i} ' ' info.locomotion.bends.name];
+    info.locomotion.bends.(field).shortName = [fields{i} ' ' info.locomotion.bends.shortName];
     
     % Organize the bend amplitude information.
     info.locomotion.bends.(field).amplitude.resolution = 1;
-    info.locomotion.bends.(field).amplitude.isZeroBin = true;
-    info.locomotion.bends.(field).amplitude.isSigned = true;
-    info.locomotion.bends.(field).amplitude.name = ...
-        [fields{i} ' Crawling Amplitude (+/- = D/V Inside)'];
-    info.locomotion.bends.(field).amplitude.shortName = fields{i};
-    info.locomotion.bends.(field).amplitude.unit = 'Degrees';
+    info.locomotion.bends.(field).amplitude.isZeroBin  = true;
+    info.locomotion.bends.(field).amplitude.isSigned   = true;
+    info.locomotion.bends.(field).amplitude.name       = [fields{i} ' Crawling Amplitude (+/- = D/V Inside)'];
+    info.locomotion.bends.(field).amplitude.shortName  = fields{i};
+    info.locomotion.bends.(field).amplitude.unit       = 'Degrees';
     
     % Organize the bend frequency information.
     info.locomotion.bends.(field).frequency.resolution = 0.1;
-    info.locomotion.bends.(field).frequency.isZeroBin = true;
-    info.locomotion.bends.(field).frequency.isSigned = true;
-    info.locomotion.bends.(field).frequency.name = ...
-        [fields{i} ' Crawling Frequency (+/- = D/V Inside)'];
-    info.locomotion.bends.(field).frequency.shortName = fields{i};
-    info.locomotion.bends.(field).frequency.unit = 'Hz';
+    info.locomotion.bends.(field).frequency.isZeroBin  = true;
+    info.locomotion.bends.(field).frequency.isSigned   = true;
+    info.locomotion.bends.(field).frequency.name       = [fields{i} ' Crawling Frequency (+/- = D/V Inside)'];
+    info.locomotion.bends.(field).frequency.shortName  = fields{i};
+    info.locomotion.bends.(field).frequency.unit       = 'Hz';
 end
 
 % Organize the foraging information.
-info.locomotion.bends.foraging.name = 'Foraging (+/- = Toward D/V)';
-info.locomotion.bends.foraging.shortName = 'Foraging';
-info.locomotion.bends.foraging.amplitude.resolution = 1;
-info.locomotion.bends.foraging.amplitude.isZeroBin = true;
-info.locomotion.bends.foraging.amplitude.isSigned = true;
-info.locomotion.bends.foraging.amplitude.name = ...
-    'Foraging Amplitude (+/- = Toward D/V)';
-info.locomotion.bends.foraging.amplitude.shortName = 'Amplitude';
-info.locomotion.bends.foraging.amplitude.unit = 'Microns';
+info.locomotion.bends.foraging.name                  = 'Foraging (+/- = Toward D/V)';
+info.locomotion.bends.foraging.shortName             = 'Foraging';
+
+info.locomotion.bends.foraging.amplitude.resolution  = 1;
+info.locomotion.bends.foraging.amplitude.isZeroBin   = true;
+info.locomotion.bends.foraging.amplitude.isSigned    = true;
+info.locomotion.bends.foraging.amplitude.name        = 'Foraging Amplitude (+/- = Toward D/V)';
+info.locomotion.bends.foraging.amplitude.shortName   = 'Amplitude';
+info.locomotion.bends.foraging.amplitude.unit        = 'Microns';
+
 info.locomotion.bends.foraging.angleSpeed.resolution = 10;
-info.locomotion.bends.foraging.angleSpeed.isZeroBin = true;
-info.locomotion.bends.foraging.angleSpeed.isSigned = true;
-info.locomotion.bends.foraging.angleSpeed.name = ...
-    'Foraging Speed (+/- = Toward D/V)';
-info.locomotion.bends.foraging.angleSpeed.shortName = 'Speed';
-info.locomotion.bends.foraging.angleSpeed.unit = 'Degrees/Seconds';
+info.locomotion.bends.foraging.angleSpeed.isZeroBin  = true;
+info.locomotion.bends.foraging.angleSpeed.isSigned   = true;
+info.locomotion.bends.foraging.angleSpeed.name       = 'Foraging Speed (+/- = Toward D/V)';
+info.locomotion.bends.foraging.angleSpeed.shortName  = 'Speed';
+info.locomotion.bends.foraging.angleSpeed.unit       = 'Degrees/Seconds';
 
 % Organize the omega turn information.
-info.locomotion.turns.omegas.name = 'Omega Turn Events';
+info.locomotion.turns.omegas.name      = 'Omega Turn Events';
 info.locomotion.turns.omegas.shortName = 'Omega Turns';
 fields = { ...
     'time', ...
@@ -501,11 +497,11 @@ isSigned = { ...
     true};
 for i = 1:length(fields)
     info.locomotion.turns.omegas.(fields{i}).resolution = resolutions{i};
-    info.locomotion.turns.omegas.(fields{i}).isZeroBin = false;
-    info.locomotion.turns.omegas.(fields{i}).isSigned = isSigned{i};
-    info.locomotion.turns.omegas.(fields{i}).name = names{i};
-    info.locomotion.turns.omegas.(fields{i}).shortName = shortNames{i};
-    info.locomotion.turns.omegas.(fields{i}).unit = units{i};
+    info.locomotion.turns.omegas.(fields{i}).isZeroBin  = false;
+    info.locomotion.turns.omegas.(fields{i}).isSigned   = isSigned{i};
+    info.locomotion.turns.omegas.(fields{i}).name       = names{i};
+    info.locomotion.turns.omegas.(fields{i}).shortName  = shortNames{i};
+    info.locomotion.turns.omegas.(fields{i}).unit       = units{i};
 end
 statFields = { ...
     'frequency', ...
@@ -518,16 +514,15 @@ statUnits = { ...
     'No Units'};
 for i = 1:length(statFields)
     info.locomotion.turns.omegas.(statFields{i}).resolution = 0.001;
-    info.locomotion.turns.omegas.(statFields{i}).isZeroBin = false;
-    info.locomotion.turns.omegas.(statFields{i}).isSigned = false;
-    info.locomotion.turns.omegas.(statFields{i}).name = ...
-        [info.locomotion.turns.omegas.shortName ' ' statNames{i}];
-    info.locomotion.turns.omegas.(statFields{i}).shortName = statNames{i};
-    info.locomotion.turns.omegas.(statFields{i}).unit = statUnits{i};
+    info.locomotion.turns.omegas.(statFields{i}).isZeroBin  = false;
+    info.locomotion.turns.omegas.(statFields{i}).isSigned   = false;
+    info.locomotion.turns.omegas.(statFields{i}).name       = [info.locomotion.turns.omegas.shortName ' ' statNames{i}];
+    info.locomotion.turns.omegas.(statFields{i}).shortName  = statNames{i};
+    info.locomotion.turns.omegas.(statFields{i}).unit       = statUnits{i};
 end
 
 % Organize the upsilon turn information.
-info.locomotion.turns.upsilons.name = 'Upsilon Turn Events';
+info.locomotion.turns.upsilons.name      = 'Upsilon Turn Events';
 info.locomotion.turns.upsilons.shortName = 'Upsilon Turns';
 fields = { ...
     'time', ...
@@ -555,11 +550,11 @@ isSigned = { ...
     true};
 for i = 1:length(fields)
     info.locomotion.turns.upsilons.(fields{i}).resolution = resolutions{i};
-    info.locomotion.turns.upsilons.(fields{i}).isZeroBin = false;
-    info.locomotion.turns.upsilons.(fields{i}).isSigned = isSigned{i};
-    info.locomotion.turns.upsilons.(fields{i}).name = names{i};
-    info.locomotion.turns.upsilons.(fields{i}).shortName = shortNames{i};
-    info.locomotion.turns.upsilons.(fields{i}).unit = units{i};
+    info.locomotion.turns.upsilons.(fields{i}).isZeroBin  = false;
+    info.locomotion.turns.upsilons.(fields{i}).isSigned   = isSigned{i};
+    info.locomotion.turns.upsilons.(fields{i}).name       = names{i};
+    info.locomotion.turns.upsilons.(fields{i}).shortName  = shortNames{i};
+    info.locomotion.turns.upsilons.(fields{i}).unit       = units{i};
 end
 statFields = { ...
     'frequency', ...
@@ -572,12 +567,11 @@ statUnits = { ...
     'No Units'};
 for i = 1:length(statFields)
     info.locomotion.turns.upsilons.(statFields{i}).resolution = 0.001;
-    info.locomotion.turns.upsilons.(statFields{i}).isZeroBin = false;
-    info.locomotion.turns.upsilons.(statFields{i}).isSigned = false;
-    info.locomotion.turns.upsilons.(statFields{i}).name = ...
-        [info.locomotion.turns.upsilons.shortName ' ' statNames{i}];
-    info.locomotion.turns.upsilons.(statFields{i}).shortName = statNames{i};
-    info.locomotion.turns.upsilons.(statFields{i}).unit = statUnits{i};
+    info.locomotion.turns.upsilons.(statFields{i}).isZeroBin  = false;
+    info.locomotion.turns.upsilons.(statFields{i}).isSigned   = false;
+    info.locomotion.turns.upsilons.(statFields{i}).name       = [info.locomotion.turns.upsilons.shortName ' ' statNames{i}];
+    info.locomotion.turns.upsilons.(statFields{i}).shortName  = statNames{i};
+    info.locomotion.turns.upsilons.(statFields{i}).unit       = statUnits{i};
 end
 
 
@@ -585,27 +579,27 @@ end
 %% Organize the worm path display information.
 
 % Organize the path information.
-info.path.name = 'Path Features';
+info.path.name      = 'Path Features';
 info.path.shortName = 'Path';
 
 % Organize the curvature information.
 info.path.curvature.resolution = 0.005;
-info.path.curvature.isZeroBin = true;
-info.path.curvature.isSigned = true;
-info.path.curvature.name = 'Path Curvature (+/- = D/V Inside)';
-info.path.curvature.shortName = 'Curvature';
-info.path.curvature.unit = 'Radians/Microns';
+info.path.curvature.isZeroBin  = true;
+info.path.curvature.isSigned   = true;
+info.path.curvature.name       = 'Path Curvature (+/- = D/V Inside)';
+info.path.curvature.shortName  = 'Curvature';
+info.path.curvature.unit       = 'Radians/Microns';
 
 % Organize the range information.
 info.path.range.resolution = 10;
-info.path.range.isZeroBin = false;
-info.path.range.isSigned = false;
-info.path.range.name = 'Path Range';
-info.path.range.shortName = 'Range';
-info.path.range.unit = 'Microns';
+info.path.range.isZeroBin  = false;
+info.path.range.isSigned   = false;
+info.path.range.name       = 'Path Range';
+info.path.range.shortName  = 'Range';
+info.path.range.unit       = 'Microns';
 
 % Organize the duration information.
-info.path.duration.name = 'Path Dwelling';
+info.path.duration.name      = 'Path Dwelling';
 info.path.duration.shortName = 'Dwelling';
 fields = { ...
     'Worm', ...
@@ -613,25 +607,25 @@ fields = { ...
     'Midbody', ...
     'Tail'};
 resolutions = { ...
-    1, ...
-    0.5, ...
-    1, ...
+    1,      ...
+    0.5,    ...
+    1,      ...
     0.5};
 for i = 1:length(fields)
     field = lower(fields{i});
     info.path.duration.(field).resolution = resolutions{i};
-    info.path.duration.(field).isZeroBin = false;
-    info.path.duration.(field).isSigned = false;
-    info.path.duration.(field).name = [fields{i} ' Dwelling'];
-    info.path.duration.(field).shortName = fields{i};
-    info.path.duration.(field).unit = 'Seconds';
+    info.path.duration.(field).isZeroBin  = false;
+    info.path.duration.(field).isSigned   = false;
+    info.path.duration.(field).name       = [fields{i} ' Dwelling'];
+    info.path.duration.(field).shortName  = fields{i};
+    info.path.duration.(field).unit       = 'Seconds';
 end
 
 % Organize the centroid information.
 info.path.coordinates.resolution = [];
-info.path.coordinates.isZeroBin = [];
-info.path.coordinates.isSigned = [];
-info.path.coordinates.name = 'Centroid Location';
-info.path.coordinates.shortName = 'Centroid';
-info.path.coordinates.unit = 'Microns';
+info.path.coordinates.isZeroBin  = [];
+info.path.coordinates.isSigned   = [];
+info.path.coordinates.name       = 'Centroid Location';
+info.path.coordinates.shortName  = 'Centroid';
+info.path.coordinates.unit       = 'Microns';
 end

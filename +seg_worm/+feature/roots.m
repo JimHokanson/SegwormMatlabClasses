@@ -10,7 +10,7 @@ function info = roots()
 %   seg_worm.w.stats.wormStatsInfo <- This seems like a wrapper around
 %   this function ...
 %
-%
+%   seg_worm.feature.displayInfo
 %
 %   Called by:
 %   filterWormHist
@@ -70,9 +70,9 @@ function info = roots()
 %
 %   See also:
 %   seg_worm.feature.displayInfo
-%   WORM2HISTOGRAM, 
+%   seg_worm.w.stats.worm2histogram, 
 %   ADDWORMHISTOGRAMS, 
-%   WORM2STATS,
+%   seg_worm.w.stats.worm2stats,
 %   WORM2NORMTIMES, 
 %   WORM2CSV
 %
@@ -234,10 +234,10 @@ locomotion_motion_fields = {
     'locomotion.velocity.tail.direction'
     'locomotion.velocity.tailTip.direction'
     'locomotion.bends.foraging.amplitude'
+    'locomotion.bends.foraging.angleSpeed'
     'locomotion.bends.head.amplitude'
     'locomotion.bends.midbody.amplitude'
     'locomotion.bends.tail.amplitude'
-    'locomotion.bends.foraging.angleSpeed'
     'locomotion.bends.head.frequency'
     'locomotion.bends.midbody.frequency'
     'locomotion.bends.tail.frequency'};

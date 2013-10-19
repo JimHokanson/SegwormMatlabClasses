@@ -5,6 +5,12 @@ function [vulvaContours, nonVulvaContours, skeletons, angles, inOutTouches, ...
 %
 %   seg_worm.w.util.normWorms
 %
+%   NOTE: The coordinates are note transformed into real world coordinates
+%   until this file.
+%
+%   Called by:
+%   normWormProcess -> SegWorm/Pipeline/normWormProcess.m
+%
 %
 %   [VULVACONTOURS NONVULVACONTOURS SKELETONS ANGLES TOUCHINOUTS LENGTHS
 %      WIDTHS HEADAREAS TAILAREAS VULVAAREAS NONVULVAAREAS ISNORMED] =
@@ -40,7 +46,7 @@ function [vulvaContours, nonVulvaContours, skeletons, angles, inOutTouches, ...
 %       verbose           - verbose mode shows the results in a figure
 %
 %   Outputs:
-%
+%       -------------------------------------------------------------------
 %       Note 1: all outputs are oriented head to tail.
 %       Note 2: all coordinates are oriented as (x,y); in contrast, in the
 %       worm structure, coordinates are oriented as (row,column) = (y,x).
@@ -64,6 +70,9 @@ function [vulvaContours, nonVulvaContours, skeletons, angles, inOutTouches, ...
 %                          1+ = the contour is touching itself to form the
 %                               coil; the specific number represents the
 %                               contraposed skeleton index being touched
+%
+%                           THIS ISN'T ACTUALLY SET YET ... (NYI)
+%
 %       lengths          - the worms' skeletons' chain-code pixel lengths
 %       widths           - the worms' contours downsampled widths
 %       headAreas        - the worms' head areas
@@ -204,16 +213,14 @@ for i = 1:length(worms)
     % Side2 always goes from head to tail in negative, index increments.
     if cHeadI <= cTailI
         side1 = (cHeadI:cTailI)';
-        ccl1 = cCCLengths(cHeadI:cTailI) - cCCLengths(cHeadI);
+        ccl1  = cCCLengths(cHeadI:cTailI) - cCCLengths(cHeadI);
         side2 = [cTailI:size(cPixels,1), 1:cHeadI]';
-        ccl2 = [cCCLengths(cTailI:end) - cCCLengths(cTailI); ...
-            cCCLengths(1:cHeadI) + cCCLengths(end) - cCCLengths(cTailI)];
+        ccl2  = [cCCLengths(cTailI:end) - cCCLengths(cTailI); cCCLengths(1:cHeadI) + cCCLengths(end) - cCCLengths(cTailI)];
     else % cHeadI > cTailI
         side1 = [cHeadI:size(cPixels,1), 1:cTailI]';
-        ccl1 = [cCCLengths(cHeadI:end) - cCCLengths(cHeadI); ...
-            cCCLengths(1:cTailI) + cCCLengths(end) - cCCLengths(cHeadI)];
+        ccl1  = [cCCLengths(cHeadI:end) - cCCLengths(cHeadI); cCCLengths(1:cTailI) + cCCLengths(end) - cCCLengths(cHeadI)];
         side2 = (cTailI:cHeadI)';
-        ccl2 = cCCLengths(cTailI:cHeadI) - cCCLengths(cTailI);
+        ccl2  = cCCLengths(cTailI:cHeadI) - cCCLengths(cTailI);
     end
 
     % Compute the clockwise and anti-clockwise sides from the head.
@@ -231,14 +238,14 @@ for i = 1:length(worms)
         
     % Compute the vulval and non-vulval sides' contours.
     if isVulvaClockwiseFromHead
-        vIndices = clockSide;
-        vCCLengths = clockCCL;
-        nvIndices = antiSide;
+        vIndices    = clockSide;
+        vCCLengths  = clockCCL;
+        nvIndices   = antiSide;
         nvCCLengths = antiCCL;
     else
-        vIndices = antiSide;
-        vCCLengths = antiCCL;
-        nvIndices = clockSide;
+        vIndices    = antiSide;
+        vCCLengths  = antiCCL;
+        nvIndices   = clockSide;
         nvCCLengths = clockCCL;
     end
     
@@ -260,21 +267,22 @@ for i = 1:length(worms)
     end
     
     % Downsample the contours.
-    normVPixels = downSamplePoints(cPixels(vIndices,:), n_samples, vCCLengths);
+    normVPixels  = downSamplePoints(cPixels(vIndices,:), n_samples, vCCLengths);
     normNVPixels = downSamplePoints(cPixels(nvIndices,:), n_samples, nvCCLengths);
     
     % Convert the contours to absolute coordinates.
-    vulvaContours(:,:,i) = pixels2Microns(origins(j,:), fliplr(normVPixels), pixel2MicronScale, rotation);
+    vulvaContours(:,:,i)    = pixels2Microns(origins(j,:), fliplr(normVPixels), pixel2MicronScale, rotation);
     nonVulvaContours(:,:,i) = pixels2Microns(origins(j,:), fliplr(normNVPixels), pixel2MicronScale, rotation);
     
     % Downsample the skeleton and convert it to absolute coordinates.
     [normSPixels,normSIndices,normSLengths] = downSamplePoints(sPixels, n_samples, sCCLengths);
     skeletons(:,:,i) = pixels2Microns(origins(j,:), fliplr(normSPixels), pixel2MicronScale, rotation);
+    
     lengths(i) = sCCLengths(end) * pixel2MicronMagnitude;
     if isHeadFlipped
         skeletons(:,:,i) = flipud(skeletons(:,:,i));
-        normSLengths = flipud(normSLengths);
-        normSIndices = flipud(normSIndices);
+        normSLengths     = flipud(normSLengths);
+        normSIndices     = flipud(normSIndices);
     end
     
     % Downsample the skeleton angles.
@@ -287,8 +295,7 @@ for i = 1:length(worms)
     
     % Downsample the widths and convert them to absolute coordinates.
     % Note: the lengths represent the head-to-tail order.
-    widths(:,i) = chainCodeLengthInterp(sWidths, normSLengths, ...
-        sCCLengths, normSIndices) * pixel2MicronMagnitude;
+    widths(:,i) = chainCodeLengthInterp(sWidths, normSLengths, sCCLengths, normSIndices) * pixel2MicronMagnitude;
     
     % Convert the areas to absolute coordinates.
     if isHeadFlipped

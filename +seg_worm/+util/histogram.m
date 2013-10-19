@@ -171,8 +171,9 @@ end
 
 % Compute the data range.
 minDataLength = min(cellfun('length', data));
-minData       = min(cellfun(@min, data));
-maxData       = max(cellfun(@max, data));
+minDataLength = max(minDataLength,1);
+minData = min(allData);
+maxData = max(allData);
 
 % Compute the data resolution.
 if isempty(resolution)
@@ -270,11 +271,11 @@ if length(data) == 1
 % Compute the normalized histogram for the data sets.
 else
     counts = zeros(length(data), length(edges));
-    pdfs = zeros(length(data), length(edges));
+    pdfs   = zeros(length(data), length(edges));
     for i = 1:length(data)
         if ~empty(i)
             counts(i,:) = histc(data{i}, edges);
-            pdfs(i,:) = counts(i,:) ./ sum(counts(i,:));
+            pdfs(i,:)   = counts(i,:) ./ sum(counts(i,:));
         end
     end
     pdfs = mean(pdfs, 1);

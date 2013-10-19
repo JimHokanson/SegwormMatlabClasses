@@ -1,4 +1,4 @@
-function [pAll pMean] = hotT2(data1, data2)
+function [pAll, pMean] = hotT2(data1, data2)
 %HOTT2 Use Hoteling T2 (unpaired & unequal variance) to compute p-values
 %      comparing 2 normally distributed data sets.
 %

@@ -1,8 +1,7 @@
-function [eventStats summaryStats] = events2stats(frames, fps, data, ...
-    name, interName)
+function [eventStats, summaryStats] = events2stats(frames, fps, data, name, interName)
 %EVENTS2STATS Compute the event statistics.
 %
-%   [EVENTSTATS SUMMARYSTATS] = EVENTS2STATS(FRAMES, FPS, DATA)
+%   [eventStats,summaryStats] = seg_worm.events.events2stats(frames, fps, data, name, interName)
 %
 %   Inputs:
 %       frames    - the event frames (see findEvent)
@@ -10,8 +9,7 @@ function [eventStats summaryStats] = events2stats(frames, fps, data, ...
 %       data      - the data values
 %       name      - the struct field name for the event's data sum;
 %                   if empty, this value is neither computed nor included
-%       interName - the struct field name for the data sum till the next
-%                   event;
+%       interName - the struct field name for the data sum till the next event;
 %                   if empty, this value is neither computed nor included
 %
 %   Outputs:
@@ -36,7 +34,12 @@ function [eventStats summaryStats] = events2stats(frames, fps, data, ...
 %                                  <name> = the ratio of data
 %                                           (event data / total data)
 %
-% See also FINDEVENT
+%   See also:
+%   FINDEVENT
+%
+%   EXAMPLE CALLS:
+%   %coiled statistics
+%   [coilEventStats, coiledStats] = events2stats(coilFrames, fps, distance, [], 'interDistance');
 %
 %
 % © Medical Research Council 2012
@@ -64,11 +67,11 @@ if isempty(frames)
     end
     
     % Create the summary statistics.
-    summaryStats = struct( ...
-        'frequency', frequency, ...
-        'ratio', ratios);
+    summaryStats = struct('frequency', frequency,'ratio', ratios);
     return;
 end
+
+%--------------------------------------------------------------------------
 
 % Fix the data.
 data = data(:);
@@ -82,12 +85,12 @@ end
 
 % Organize the event information.
 eventStats = struct( ...
-    'start', [], ...
-    'end', [], ...
-    'time', [], ...
-    name, [], ...
-    'interTime', [], ...
-    interName, []);
+    'start',        [], ...
+    'end',          [], ...
+    'time',         [], ...
+    name,           [], ...
+    'interTime',    [], ...
+    interName,      []);
 if ~isName
     eventStats = rmfield(eventStats, name);
 end
@@ -107,19 +110,18 @@ for i = 1:length(frames)
     
     % The last inter- time and sum are unknown.
     interTime = NaN;
-    interSum = NaN;
+    interSum  = NaN;
     if i < length(frames)
         interTime = (frames(i + 1).start - frames(i).end - 1) / fps;
         if isInterName
-            interSum = ...
-                nansum(data((frames(i).end + 2):(frames(i + 1).start)));
+            interSum = nansum(data((frames(i).end + 2):(frames(i + 1).start)));
         end
     end
     
     % Organize the event information.
     eventStats(i).start = frames(i).start;
-    eventStats(i).end = frames(i).end;
-    eventStats(i).time = eventTime;
+    eventStats(i).end   = frames(i).end;
+    eventStats(i).time  = eventTime;
     if isName
         eventStats(i).(name) = eventSum;
     end
@@ -145,13 +147,13 @@ timeRatio = nansum([eventStats.time]) / totalTime;
 if isName
     dataRatio = nansum([eventStats.(name)]) / nansum(data);
     ratios = struct( ...
-        'time', timeRatio, ...
-        name, dataRatio);
+        'time',     timeRatio, ...
+        name,       dataRatio);
 else
     ratios = struct('time', timeRatio);
 end
 summaryStats = struct( ...
     'frequency', frequency, ...
-    'ratio', ratios);
+    'ratio',     ratios);
 end
 

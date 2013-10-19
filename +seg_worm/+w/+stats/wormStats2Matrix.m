@@ -91,6 +91,12 @@ function wormStats2Matrix(filename, wormFiles, isVerbose)
 %                                   per feature, correcting per strain
 %
 %       wormFiles - the worm statistics information files
+%
+%           ??? which statistics files?? 
+%           from worm2stats or worm2StatsInfo???
+%
+%           ANSWER: the latter: worm2StatsInfo
+%
 %       isVerbose - verbose mode displays the progress;
 %                   the default is yes (true)
 %
@@ -153,8 +159,7 @@ worm.sig.qWValue.all      = nan(length(wormFiles), length(dataInfo));
 for i = 1:length(wormFiles)
     
     if isVerbose
-        disp(['Adding ' num2str(i) '/' num2str(length(wormFiles)) ' "' ...
-            wormFiles{i} '" ...']);
+        disp(['Adding ' num2str(i) '/' num2str(length(wormFiles)) ' "' wormFiles{i} '" ...']);
     end
     
     % Load the data.

@@ -3,17 +3,17 @@ function worm2stats(stats_output_file_path, wormFiles, varargin)
 %
 %   seg_worm.w.stats.worm2stats(stats_output_file_path, wormFiles, *CONTROLFILES, *ISOLDCONTROL, *VERBOSE)
 %
-%
-%   Called by:
-%   Seems to be a top level file ...
-%
-%
-%   NOTE: The stats are basically a subset of the histogram. For
+%   The stats are basically a subset of the histogram. For
 %   non-histogram data (summary statstics for events), the data are
 %   maintained, otherwise 'histogram' structures are replaced with
-%   'statistics' structures
+%   'statistics' structures.
+%
+%   The function that computes statistics (worm2StatsInfo) can use
+%   either the histogram or statistics file. As such I think this file
+%   MIGHT BE KIND OF USELESS.
 %
 %   Inputs:
+%   =======================================================================
 %       stats_output_file_path     - the file name for the statistics;
 %                      the file includes:
 %
