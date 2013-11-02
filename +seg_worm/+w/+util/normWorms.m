@@ -5,8 +5,8 @@ function [vulvaContours, nonVulvaContours, skeletons, angles, inOutTouches, ...
 %
 %   seg_worm.w.util.normWorms
 %
-%   NOTE: The coordinates are note transformed into real world coordinates
-%   until this file.
+%   NOTE: The coordinates are not transformed into real world coordinates
+%   until this file. The worm is also downsampled to 49 points.
 %
 %   Called by:
 %   normWormProcess -> SegWorm/Pipeline/normWormProcess.m
@@ -123,6 +123,7 @@ nonVulvaAreas     = nan_1_by_worms;
 isNormed          = false(1,n_worms);
 
 % Downsample the worms and convert them to absolute coordinates.
+%--------------------------------------------------------------------------
 j = 1;
 for i = 1:length(worms)
     

@@ -11,7 +11,9 @@ classdef feature_calculator < sl.obj.handle_light
     properties
     end
     
-    methods
+    methods (Static)
+        morphology = get_morphology_features(nw)
+        get_features_rewritten(norm_folder)
     end
     
 end

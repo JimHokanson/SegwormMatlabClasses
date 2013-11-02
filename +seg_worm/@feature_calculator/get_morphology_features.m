@@ -1,4 +1,16 @@
-%get_morphology_features
+function morphology = get_morphology_features(nw)
+
+
+keyboard
+
+%TODO: Do I need to replace some with NaN where not segmented
+%or has this already been done ?????
+%TODO: Update normalized_worm to indicate the result of the question above
+morphology.length = nw.lengths;
+
+
+
+
 
 % worm.morphology.length
 % worm.morphology.width.head

@@ -2,7 +2,7 @@
 
 %Norm Blocks ...
 
-
+%datNameIn - see documentation folder for segNormInfo.mat documentation
 
 % -----------------------------------------------------
 %% Start calculating the features
