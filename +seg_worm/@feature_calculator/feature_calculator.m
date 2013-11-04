@@ -12,7 +12,10 @@ classdef feature_calculator < sl.obj.handle_light
     end
     
     methods (Static)
-        morphology = get_morphology_features(nw)
+        morphology = getMorphologyFeatures(nw)
+        posture    = getPostureFeatures(nw)
+        locomotion = getLocomotionFeatures(nw)
+        path       = getPathFeatuers(nw)
         get_features_rewritten(norm_folder)
     end
     

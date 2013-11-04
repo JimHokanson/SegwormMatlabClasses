@@ -84,6 +84,7 @@ classdef normalized_worm < sl.obj.handle_light
         widths               %[49 n] double
         head_areas           %[1  n] double
         tail_areas           %[1  n] double
+        vulva_areas          %[1  n] double
         non_vulva_areas      %[1  n] double
     end
     
@@ -93,11 +94,19 @@ classdef normalized_worm < sl.obj.handle_light
             %   seg_worm.normalized_worm.getObject(norm_folder)
             %   
             
-            %   TODO: Make creation happen on non-exist
-            %
-            %   Make creation hidden ...
+           file_path = fullfile(norm_folder,'norm_obj.mat');
+           
+           if ~exist(file_path,'file')
+               %NOTE: Assumption being made here as to format ...
+              norm_partial = fullfile(norm_folder,'normBlock1.mat');
+              if exist(norm_partial,'file')
+                  seg_worm.normalized_worm.createObjectFromFiles(norm_folder)
+              else
+                  error('Normalized worm object and partial objects not found')
+              end
+           end
             
-           h = load(fullfile(norm_folder,'norm_obj.mat'));
+           h = load(file_path);
            
            obj  = seg_worm.normalized_worm;
            
@@ -153,6 +162,7 @@ classdef normalized_worm < sl.obj.handle_light
                         'widths' 
                         'head_areas'
                         'tail_areas' 
+                        'vulva_areas'
                         'non_vulva_areas'};
                 
                 
@@ -171,7 +181,7 @@ classdef normalized_worm < sl.obj.handle_light
                 
             end
             
-            s = sl.obj.toStruct(obj);
+            s = sl.obj.toStruct(obj); %#ok<NASGU>
         
             save(fullfile(norm_folder,'norm_obj.mat'),'s');
             

@@ -22,4 +22,5 @@ nw = seg_worm.normalized_worm.getObject(norm_folder);
 %Class: seg_worm.normalized_worm
 
 worm = struct;
-morphology = seg_worm.feature_calculator.get_morphology_features(nw);
+morphology = seg_worm.feature_calculator.getMorphologyFeatures(nw);
+posture = seg_worm.feature_calculator.getPostureFeatures(nw);
