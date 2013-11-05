@@ -31,26 +31,8 @@ function posture = getPostureFeatures(nw)
 
 N_ECCENTRICITY = 50;
 
-NUM_SEGMENTS = 48;
-NUM_POINTS   = 49;
-
-%               bends: [1x1 struct]
-%           amplitude: [1x1 struct]
-%          wavelength: [1x1 struct]
-%         tracklength: [1x4642 double]
-%        eccentricity: [1x4642 double]
-%               kinks: [1x4642 double]
-%               coils: [1x1 struct]
-%          directions: [1x1 struct]
-%            skeleton: [1x1 struct]
-%     eigenProjection: [6x4642 double]
-
-%worm.posture.bends.head.mean
-%
 
 %{
-
-
 worm.posture.amplitude.max
 worm.posture.amplitude.ratio
 
@@ -67,14 +49,9 @@ worm.posture.directions.tail2head
 worm.posture.directions.head
 worm.posture.directions.tail
 
-worm.posture.skeleton
+DONE worm.posture.skeleton
+DONE worm.posture.eigenProjection
 
-worm.posture.eigenProjection
-worm.posture.eigenProjection
-worm.posture.eigenProjection
-worm.posture.eigenProjection
-worm.posture.eigenProjection
-worm.posture.eigenProjection
 %}
 
 
@@ -86,15 +63,11 @@ worm.posture.eigenProjection
 %in schaferFeatures_process.m
 %I've changed them, although it might be good to push these up a level
 %to the calculator class as constants ... (or even higher)
-HEAD_INDICES = 1:8;
-NECK_INDICES = 9:16;
-MID_INDICES  = 17:32;
-HIP_INDICES  = 33:40;
-TAIL_INDICES = 41:49;
 
-ALL_INDICES = {HEAD_INDICES NECK_INDICES MID_INDICES HIP_INDICES TAIL_INDICES};
 
-FIELDS = {'head' 'neck' 'midbody' 'hips' 'tail'};
+SI          = seg_worm.skeleton_indices;
+ALL_INDICES = SI.ALL_NORMAL_INDICES;
+FIELDS      = SI.ALL_NORMAL_NAMES;
 
 n_fields = length(FIELDS);
 
@@ -114,12 +87,19 @@ posture.bends = bends;
 %--------------------------------------------------------------------------
 %This essentially reconstructs the contour from the side contours
 %This should probably just be a dependent method on the object ...
-x = squeeze([nw.vulva_contours(:,1,:); nw.non_vulva_contours(end-1:-1:2,1,:);]);
-y = squeeze([nw.vulva_contours(:,2,:); nw.non_vulva_contours(end-1:-1:2,2,:);]);
+%
+%   The concatentation order doesn't matter
+contour_x = squeeze([nw.vulva_contours(:,1,:); nw.non_vulva_contours(end-1:-1:2,1,:);]);
+contour_y = squeeze([nw.vulva_contours(:,2,:); nw.non_vulva_contours(end-1:-1:2,2,:);]);
 
 %x,y - > 96 x n (assuming 49*2 - 2)
 
-[posture.eccentricity, worm_orientation] = seg_worm.feature_helpers.getEccentricity(x, y, 50);
+
+%THIS IS REALLY SLOW !!!!!!
+%
+%   Requires filling in the worm
+%
+%[posture.eccentricity, worm_orientation] = seg_worm.feature_helpers.posture.getEccentricity(contour_x, contour_y, N_ECCENTRICITY);
 %??? How would pca compare to the algorithm used???
 
 
@@ -128,9 +108,8 @@ y = squeeze([nw.vulva_contours(:,2,:); nw.non_vulva_contours(end-1:-1:2,2,:);]);
 %Amplitude, Wavelengths, TrackLength, Amplitude Ratio
 %--------------------------------------------------------------------------
 %
+%   STATUS: This requires a function which I am missing
 %
-%   Yields:
-%   -
 
 %From Sternberg code, might use:
 %tracks.m           - ampt, wavelnth
@@ -168,11 +147,11 @@ worm.posture.tracklength = trackLen;
 
 %}
 
-%Kinks
+%Kinks - CODE NOT YET EXAMINED ... (But it works)
 %--------------------------------------------------------------------------
-posture.kinks = seg_worm.feature_helpers.wormKinks(nw.angles);
+posture.kinks = seg_worm.feature_helpers.posture.wormKinks(nw.angles);
 
-%Coils
+%Coils - NOT YET FINISHED ...
 %--------------------------------------------------------------------------
 %   worm.posture.coils
 %
@@ -223,30 +202,16 @@ coils = struct( ...
 
 %Directions
 %--------------------------------------------------------------------------
-%TODO: Determine inputs
-%posture.directions = seg_worm.feature_helpers.posture.getDirections();
-
+posture.directions = seg_worm.feature_helpers.posture.getDirections(nw.skeletons);
 
 %Skeleton
 %--------------------------------------------------------------------------
-posture.skeleton.x = squeeze(nw.skeletons(:,1,:));
-posture.skeleton.y = squeeze(nw.skeletons(:,2,:));
+posture.skeleton.x = nw.x;
+posture.skeleton.y = nw.y;
 
 %EigenProjection
 %--------------------------------------------------------------------------
-% % % Calculate eigenWorms
-% % % Make the tangent angle array
-% % [eigenAngles, eigenMeanAngles] = makeAngleArray(dataBlock{4}(:,1,:), dataBlock{4}(:,2,:));
-% % % project the angle array onto eigenWorms
-% % numEigWorms = 6;
-% % interpNaN = 0;
-% % [projectedAmps, ~] = eigenWormProject(eigenWorms, eigenAngles, numEigWorms, interpNaN);
-% % 
-% % eigenAngles = eigenAngles';
-% % eigenMeanAngles = eigenMeanAngles';
-% % projectedAmps = projectedAmps';
-
-
+posture.eigenProjection = seg_worm.feature_helpers.posture.getEigenWorms(nw);
 
 
 

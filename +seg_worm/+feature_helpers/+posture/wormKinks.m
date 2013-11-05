@@ -38,6 +38,11 @@ function [numKinks, kinkAngles, kinkIndices] = wormKinks(wormAngles, varargin)
 % you must reproduce all copyright notices and other proprietary 
 % notices on any copies of the Software.
 
+
+%JAH NOTE: I have not yet looked at this function ...
+
+
+
 % Determine the bend segment length threshold.
 lengthThr = round(size(wormAngles, 1) / 12);
 if ~isempty(varargin) && ~isempty(varargin{1})

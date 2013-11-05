@@ -72,13 +72,20 @@ classdef normalized_worm < sl.obj.handle_light
         before we need to
     %}
     
+    properties (Constant,Hidden)
+       %TODO: Eventually move this to a options file ...
+       EIGENWORM_PATH = 'F:\worm_data\masterEigenWorms_N2.mat'
+    end
     
     properties
         segmentation_status  %[1 n],char
         vulva_contours       %[49 2 n] double
         non_vulva_contours   %[49 2 n] double
         skeletons            %[49 2 n] double
-        angles               %[49 n] double
+        angles               %[49 n] double, degrees
+        %??? Why are angles at edge undefined ??????
+        %??? - NaN values ...
+        %First and last 5 of 49 values ...
         in_out_touches       %[49 n] double
         lengths              %[1  n] double
         widths               %[49 n] double
@@ -86,6 +93,31 @@ classdef normalized_worm < sl.obj.handle_light
         tail_areas           %[1  n] double
         vulva_areas          %[1  n] double
         non_vulva_areas      %[1  n] double
+    end
+    
+    properties
+       eigen_worms 
+    end
+    
+    properties (Dependent)
+       x
+       y
+    end
+    
+    methods 
+        function value = get.x(obj)
+           value = squeeze(obj.skeletons(:,1,:)); 
+        end
+        function value = get.y(obj)
+           value = squeeze(obj.skeletons(:,2,:));
+        end
+        function value = get.eigen_worms(obj)
+           if isempty(obj.eigen_worms)
+              h = load(obj.EIGENWORM_PATH);
+              obj.eigen_worms = h.eigenWorms;
+           end
+           value = obj.eigen_worms;
+        end
     end
     
     methods (Static)

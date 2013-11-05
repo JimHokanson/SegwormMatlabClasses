@@ -1,56 +1,33 @@
-function getDirections
+function directions = getDirections(skeleton_XY)
 %
 %
 %   seg_worm.feature_helpers.posture.getDirections
+%
+%   INPUTS
+%   ===========================================================
+%   skeleton_x : [49 n frames]
+%   skeleton_y : [49 n frames]
+%
+%   skeleton_XY : [49 (x y) frames]
+%
+%   OUTPUTS
+%   ===========================================================
+%   directions : (struct)
+%  
 
-% Head and tail centroids
-headCentroid = mean(skCoords(1:round(1/6*NUMBER_OF_POINTS),:));
-tailCentroid = mean(skCoords(round(5/6*NUMBER_OF_POINTS)+1:NUMBER_OF_POINTS,:));
+SI = seg_worm.skeleton_indices;
 
-% Compute tail direction
-tailToHeadDirectionFrame   = atan2(headCentroid(1, 2) - tailCentroid(1,2), headCentroid(1,1) - tailCentroid(1,1));
-tailToHeadDirection(frame) = tailToHeadDirectionFrame * 180/pi;
+TIP_INDICES  = {SI.HEAD_INDICES SI.HEAD_TIP_INDICES  SI.TAIL_TIP_INDICES};
+TAIL_INDICES = {SI.TAIL_INDICES SI.HEAD_BASE_INDICES SI.TAIL_BASE_INDICES};
 
-% Compute head and tail direction
-headEnd           = 1:round(1/18*NUMBER_OF_POINTS);
-headBegin         = round(1/6*NUMBER_OF_POINTS)+1 - headEnd;
-headBegin         = fliplr(headBegin);
-headEndCentroid   = mean(skCoords(headEnd,:));
-headBeginCentroid = mean(skCoords(headBegin,:));
+NAMES = {'tail2head' 'head' 'tail'};
 
-% Tail
-tailEnd           = round(17/18*NUMBER_OF_POINTS) + 1:NUMBER_OF_POINTS;
-tailBegin         = round(5/6*NUMBER_OF_POINTS) + 1:round(16/18*NUMBER_OF_POINTS);
-tailEndCentroid   = mean(skCoords(tailEnd,:));
-tailBeginCentroid = mean(skCoords(tailBegin,:));
+directions = struct;
+for iVector = 1:3
+   %Take mean over segments (dim 1)
+   tip_centroid  = squeeze(mean(skeleton_XY(TIP_INDICES{iVector},:,:),1));
+   tail_centroid = squeeze(mean(skeleton_XY(TAIL_INDICES{iVector},:,:),1));
+   directions.(NAMES{iVector}) = 180/pi*atan2(tip_centroid(2,:) - tail_centroid(2,:), tip_centroid(1,:) - tip_centroid(1,:));
+end
 
-% Direction for head
-headDirectionFrame   = atan2(headEndCentroid(2) - headBeginCentroid(2), headEndCentroid(1) - headBeginCentroid(1));
-headDirection(frame) = headDirectionFrame * 180/pi;
-
-% Direction for tail
-tailDirectionFrame   = atan2(tailEndCentroid(2) - tailBeginCentroid(2), tailEndCentroid(1) - tailBeginCentroid(1));
-tailDirection(frame) = tailDirectionFrame * 180/pi;
-
-
-
-
-
-% featureData.tailToHeadDirection = tailToHeadDirection;
-% featureData.headDirection       = headDirection;
-% featureData.tailDirection       = tailDirection;
-
-% tailToHeadDirection = featureData.tailToHeadDirection;
-% headPosDirection    = featureData.headDirection;
-% tailPosDirection    = featureData.tailDirection;
-
-
-% postureDirections = struct( ...
-%     'tail2head',    tailToHeadDirection, ...
-%     'head',         headPosDirection, ...
-%     'tail',         tailPosDirection);
-
-
-worm.posture.directions.tail2head
-worm.posture.directions.head
-worm.posture.directions.tail
+end
