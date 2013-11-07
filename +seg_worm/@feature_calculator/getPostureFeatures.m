@@ -8,6 +8,10 @@ function posture = getPostureFeatures(nw)
 %   NOTES:
 %   - Indices were inconsistently defined for bends relative to other code
 %   - stdDev for bends is signed as well, based on means ...
+%
+%
+%   MISSING INPUTS - framecodes when parsing ...
+
 
 %MISSING FILE
 %-------------------------------
@@ -153,6 +157,20 @@ posture.kinks = seg_worm.feature_helpers.posture.wormKinks(nw.angles);
 
 %Coils - NOT YET FINISHED ...
 %--------------------------------------------------------------------------
+
+%{
+
+This is really complicated because it relies on parsing errors to detect
+coiling events:
+
+wormTouchFrames - main function
+
+
+%}
+
+
+
+
 %   worm.posture.coils
 %
 %        frames: [1x5 struct]
@@ -177,7 +195,69 @@ posture.kinks = seg_worm.feature_helpers.posture.wormKinks(nw.angles);
 %{
 
 % Compute the coiled frames.
-coilFrames = wormTouchFrames(frameCodes, fps);
+%
+%   Is this run on a frame by frame basis????
+
+
+frameLabels = [frameLabels, data{1}]; %#ok<AGROW>
+
+% This section will compute warning frame labels
+failedFrames = [];
+load(fileInfo.expList.failedFramesFile, 'failedFrames');
+
+% Older version <3 of segmentation had a bug in saving the failed frames.
+% They have been indexed starting 0 not 1 (because of frame number being
+% generated from time stamp rather than globalFrameCounter). To counter act
+% it the indices for the frames that failed need to be added 1 to shift the
+% failed frames by one and re-allign them. Here we will make a check for
+% that and will raise a flag to add 1 in the upcoming loop
+shiftFailedFrames = 0;
+if ~isempty(failedFrames) && length(failedFrames(:,1)) > 2
+    if sum(frameLabels(failedFrames(2:end,1))~='f') ~= 0
+        shiftFailedFrames = 1;
+    end
+end
+
+for i=1:length(failedFrames(:,1))
+    % Here for each failed frame we add a warning id, this warning ID will
+    % always strat from a value 101 and end 1000. Everything greater than
+    % 100 is a failed frame. If 100 is subtracted then the number
+    % corresponds to the array element in handles.warningList
+    
+    if shiftFailedFrames
+        failedFrameIndex = failedFrames(i,1) + 1;
+    else
+        failedFrameIndex = failedFrames(i,1);
+    end
+    
+    if failedFrameIndex > 0 && failedFrameIndex < length(numFrameLabel)
+        numFrameLabel(failedFrameIndex) = failedFrames(i,2) + 100;
+    else
+        warningStr = strcat('Failed frame index is:', {' '}, num2str(failedFrameIndex), {' '},'and the length of the video is:', {' '}, num2str(numFrameLabel),'.');
+        warning('features:failedFrameLabel',warningStr{1});
+    end
+end
+
+% We have three kinds of labels each of them will have a number value assigned.
+% 1. from 1-10 general labels
+% 2. from 11-100 normWorm labels
+% 3. from 101-1000 segmentation labels
+
+numFrameLabel = zeros(1, length(frameLabels));
+
+numFrameLabel(frameLabels == 's') = 1;
+numFrameLabel(frameLabels == 'm') = 2;
+numFrameLabel(frameLabels == 'd') = 3;
+numFrameLabel(frameLabels == 'n') = 1001;
+
+
+numFrameLabel
+
+coilFrames = seg_worm.feature_helpers.posture.wormTouchFrames(frameCodes, fps);
+
+
+%coilFrames (struct array)
+%.start - start frame index
 
 % Compute the coiled statistics.
 [coilEventStats, coiledStats] = events2stats(coilFrames, fps, distance, [], 'interDistance');
