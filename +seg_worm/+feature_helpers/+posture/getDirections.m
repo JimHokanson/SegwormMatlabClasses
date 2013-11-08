@@ -17,9 +17,12 @@ function directions = getDirections(skeleton_XY)
 
 SI = seg_worm.skeleton_indices;
 
-TIP_INDICES  = {SI.HEAD_INDICES SI.HEAD_TIP_INDICES  SI.TAIL_TIP_INDICES};
-TAIL_INDICES = {SI.TAIL_INDICES SI.HEAD_BASE_INDICES SI.TAIL_BASE_INDICES};
+%For each set of indices, compute the centroids of the tip and tail then
+%compute a direction vector between them (tip - tail)
+TIP_INDICES  = {SI.HEAD_INDICES     SI.HEAD_TIP_INDICES     SI.TAIL_TIP_INDICES};
+TAIL_INDICES = {SI.TAIL_INDICES     SI.HEAD_BASE_INDICES    SI.TAIL_BASE_INDICES};
 
+%These are the names of the final fields
 NAMES = {'tail2head' 'head' 'tail'};
 
 directions = struct;

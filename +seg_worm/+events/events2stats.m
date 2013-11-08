@@ -103,7 +103,7 @@ for i = 1:length(frames)
 
     % Compute the event information.
     eventTime = (frames(i).end - frames(i).start + 1) / fps;
-    eventSum = [];
+    eventSum  = [];
     if isName
         eventSum = nansum(data((frames(i).start + 1):(frames(i).end + 1)));
     end

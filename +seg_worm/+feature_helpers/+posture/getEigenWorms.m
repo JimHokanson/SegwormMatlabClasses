@@ -1,16 +1,19 @@
-function projectedAmps = getEigenWorms(nw)
+function projected_amps = getEigenWorms(nw)
 %
-%   seg_worm.feature_helpers.posture.getEigenWorms(nw);
+%   projected_amps = seg_worm.feature_helpers.posture.getEigenWorms(nw);
 %
+%   OUTPUTS
+%   =====================================================
+%   projected_amps : [6 n]
 
 NUMBER_EIGENWORMS_USE = 6;
-INTERP_NAN = false;
+INTERP_NAN = false; %Whether to interpolate over missing frames ...
 
 eigenAngles = helper__getAngleArray(nw.x,nw.y);
 
-[projectedAmps, ~] = helper__eigenWormProject(nw.eigen_worms, eigenAngles, NUMBER_EIGENWORMS_USE, INTERP_NAN);
+[projected_amps, ~] = helper__eigenWormProject(nw.eigen_worms, eigenAngles, NUMBER_EIGENWORMS_USE, INTERP_NAN);
 
-projectedAmps = projectedAmps';
+projected_amps = projected_amps';
 
 end
 
@@ -42,12 +45,14 @@ function angles = helper__getAngleArray(x,y)
 %   OLD ANGLES
 %        
 %    2   
-%   1 3   - angle is computed with 2 as the vertex
+%   1 3   - angle is computed with 2 as the vertex, value might be 90 here
+%   ...
 %
 %   NEW ANGLES
 %
 %    2
-%   1     - angle is from 1 to 2, relative to x-y coordinates
+%   1     - angle is from 1 to 2, relative to x-y coordinates, angle would
+%   be 45 (although later it is mean subtracted)
 
 angles = atan2(diff(y,1,1),diff(x,1,1));
 

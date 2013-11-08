@@ -24,27 +24,18 @@ classdef normalized_worm < sl.obj.handle_light
     %
     %
     %    createObjectFromFiles
+    %
+    %   IMPROVEMENTS
+    %   ===================================================================
+    %   1) Ensure that non-segmented frames have NaN values ...
     
     
     %{
-    
-    normBlock1 =
-
-    [ 1x500   char  ]
-    [49x2x500 double]
-    [49x2x500 double]
-    [49x2x500 double]
-    [49x500   double]
-    [49x500   double]
-    [ 1x500   double]
-    [49x500   double]
-    [ 1x500   double]
-    [ 1x500   double]
-    [ 1x500   double]
-    [ 1x500   double]
-    %}
-    
-    
+    %
+    %   OLD FORMAT: This is a reference for when I recode things
+    %
+    %   i.e. references to blockN{5} should be replaced with obj.angles
+    %   
     %       blockN{1}  = status:
     %                    s = segmented
     %                    f = segmentation failed
@@ -61,7 +52,7 @@ classdef normalized_worm < sl.obj.handle_light
     %       blockN{10} = tailAreas
     %       blockN{11} = vulvaAreas
     %       blockN{12} = nonVulvaAreas
-    
+    %}
     
     %{
     Memory Considerations:
@@ -79,6 +70,21 @@ classdef normalized_worm < sl.obj.handle_light
     
     properties
         segmentation_status  %[1 n],char
+        %    s = segmented
+        %    f = segmentation failed
+        %    m = stage movement
+        %    d = dropped frame
+        %    n??? - there is reference in some old code to this which 
+        frame_codes         %see comments in seg_worm.parsing.frame_errors
+        %near the bottom, I haven't yet coded in the values as constants
+        %... :/
+        %ex.
+        %1    = ok
+        %2    = stage movement
+        %101  = no worm found
+        %
+        %   NOTE: This is needed for processing coils ...
+        %   
         vulva_contours       %[49 2 n] double
         non_vulva_contours   %[49 2 n] double
         skeletons            %[49 2 n] double
@@ -102,9 +108,17 @@ classdef normalized_worm < sl.obj.handle_light
     properties (Dependent)
        x
        y
+       contour_x
+       contour_y
     end
     
-    methods 
+    methods
+        function value = get.contour_x(obj)
+           value = squeeze([obj.vulva_contours(:,1,:); obj.non_vulva_contours(end-1:-1:2,1,:);]); 
+        end
+        function value = get.contour_y(obj)
+           value = squeeze([obj.vulva_contours(:,2,:); obj.non_vulva_contours(end-1:-1:2,2,:);]);
+        end
         function value = get.x(obj)
            value = squeeze(obj.skeletons(:,1,:)); 
         end
@@ -145,7 +159,7 @@ classdef normalized_worm < sl.obj.handle_light
            sl.struct.toObject(obj,h.s);
            
         end
-        function createObjectFromFiles(norm_folder)
+        function createObjectFromFiles(norm_folder,failed_frame_path)
             %
             %
             %    seg_worm.normalized_worm.createObjectFromFiles(norm_folder)
@@ -185,9 +199,9 @@ classdef normalized_worm < sl.obj.handle_light
                 %NOTE: These are aligned to the order
                 %in the files ...
                 FIELDS = {'segmentation_status'
-                        'vulva_contours'   %3
-                        'non_vulva_contours'  %3
-                        'skeletons'        %3
+                        'vulva_contours'        %3rd dimension concatenate
+                        'non_vulva_contours'    %3
+                        'skeletons'             %3
                         'angles'           
                         'in_out_touches'      
                         'lengths'
@@ -201,7 +215,7 @@ classdef normalized_worm < sl.obj.handle_light
                 n_fields = length(FIELDS);
                 
                 for iField = 1:n_fields
-                    cur_field = FIELDS{iField};
+                   cur_field = FIELDS{iField};
                    if iField >= 2 && iField <= 4
                        cat_dim = 3;
                    else
@@ -209,9 +223,14 @@ classdef normalized_worm < sl.obj.handle_light
                    end
                        obj.(cur_field) = cat(cat_dim,obj.(cur_field),file_values{iField});
                 end
-                
-                
             end
+            
+            % :/ The failed frames are saved to disk ...
+            h = load(failed_frame_path);
+            failed_frames = h.failedFrames; %Format:
+
+            obj.frame_codes = seg_worm.parsing.frame_errors.segmentationStatusToCodes(...
+                obj.segmentation_status,failed_frames);
             
             s = sl.obj.toStruct(obj); %#ok<NASGU>
         

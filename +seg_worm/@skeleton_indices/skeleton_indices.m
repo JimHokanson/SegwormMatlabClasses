@@ -15,10 +15,13 @@ classdef skeleton_indices < sl.obj.handle_light
         MID_INDICES  = 17:33;
         HIP_INDICES  = 34:41;
         TAIL_INDICES = 42:49;
+        
         HEAD_TIP_INDICES  = 1:4;
         HEAD_BASE_INDICES = 5:8;
         TAIL_BASE_INDICES = 41:45;
-        TAIL_TIP_INDICES  = 41:49;
+        TAIL_TIP_INDICES  = 46:49;
+        
+        BODY_INDICES = 9:41;
     end
     
     properties (Dependent)
