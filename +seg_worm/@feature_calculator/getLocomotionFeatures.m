@@ -45,11 +45,14 @@ locomotion.turns.upsilons
 %1 - clockwise
 %2 - anticlockwise
 
-keyboard
+FPS = 20;
 
-[locomotion.velocity,locomotion.motion] = ...
-    feature_helpers.locomotion.getWormVelocity(...
-    x,y,fps,ventralMode);
+ventralMode = 1;
 
+locomotion.velocity = ...
+    seg_worm.feature_helpers.locomotion.getWormVelocity(...
+    nw.x,nw.y,FPS,ventralMode);
+
+%,locomotion.motion]
 
 end

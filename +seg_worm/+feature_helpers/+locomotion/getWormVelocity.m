@@ -80,7 +80,8 @@ for iField = 1:length(FIELD_NAMES)
    cur_field_name = FIELD_NAMES{iField};
    cur_indices    = INDICES_LIST{iField};
    cur_scale      = SCALE_VALUES(iField);
-   velocity.(cur_field_name) = h__computeVelocity(x, y, bodyAngle, cur_indices, fps, cur_scale, ventralMode);
+   velocity.(cur_field_name)  = h__computeVelocity(x, y, bodyAngle, cur_indices, fps, cur_scale, ventralMode);
+   velocity2.(cur_field_name) = h__computeVelocity2(x, y, bodyAngle, cur_indices, fps, cur_scale, ventralMode);
 end
 
 % Compute the velocity.
@@ -123,20 +124,131 @@ if scale > size(x, 2)
 end
 
 % Compute the body part direction.
-diffX = nanmean(diff(x(pointsI,:), 1, 1), 1);
-diffY = nanmean(diff(y(pointsI,:), 1, 1), 1);
+diffX      = nanmean(diff(x(pointsI,:), 1, 1), 1);
+diffY      = nanmean(diff(y(pointsI,:), 1, 1), 1);
 pointAngle = atan2(diffY, diffX) * (180 / pi);
 
 % Compute the coordinates.
 x = mean(x(pointsI,:), 1);
 y = mean(y(pointsI,:), 1);
 
-% Compute the speed using back/front nearest neighbors bounded at twice
-% the scale.
+% Compute the speed using back/front nearest neighbors bounded at twice the scale.
 scaleMinus1 = scale - 1;
-halfScale = scaleMinus1 / 2;
-diff1 = 1;
-diff2 = scale;
+halfScale   = scaleMinus1 / 2;
+diff1       = 1;
+diff2       = scale;
+
+
+
+for i = (1 + halfScale):(length(speed) - halfScale)
+    
+    % Advance the indices for the derivative.
+    newDiff1 = i - halfScale;
+    if ~isnan(x(newDiff1))
+        diff1 = newDiff1;
+    elseif i - diff1 >= scale
+        diff1 = i - scale + 1;
+    end
+    
+    newDiff2 = i + halfScale;
+    if ~isnan(x(newDiff2)) || newDiff2 > diff2
+        diff2 = newDiff2;
+    end
+    
+    % Find usable indices for the derivative.
+    while isnan(x(diff1)) && diff1 > 1 && i - diff1 < scaleMinus1
+        diff1 = diff1 - 1;
+    end
+    
+    while isnan(x(diff2)) && diff2 < length(speed) && ...
+            diff2 - i < scaleMinus1
+        diff2 = diff2 + 1;
+    end
+    
+    % Compute the speed.
+    if ~isnan(x(diff1)) && ~isnan(x(diff2))
+        diffX    = x(diff2) - x(diff1);
+        diffY    = y(diff2) - y(diff1);
+        distance = sqrt(diffX ^ 2 + diffY ^ 2);
+        time     = (diff2 - diff1) / fps;
+        speed(i) = distance / time;
+        
+        % Compute the direction.
+        direction(i) = pointAngle(diff2) - pointAngle(diff1);
+        if direction(i) < -180
+            direction(i) = direction(i) + 360;
+        elseif direction(i) > 180
+            direction(i) = direction(i) - 360;
+        end
+        direction(i) = direction(i) / fps;
+        
+        % Sign the speed.
+        %--------------------------------------------------------
+        motionDirection = atan2(diffY, diffX) * (180 / pi);
+        bodyDirection   = motionDirection - bodyAngle(diff1);
+        
+        if bodyDirection < -180
+            bodyDirection = bodyDirection + 360;
+        elseif bodyDirection > 180
+            bodyDirection = bodyDirection - 360;
+        end
+        
+        if abs(bodyDirection) > 90
+            speed(i) = -speed(i);
+        end
+    end
+end
+
+% Sign the direction for dorsal/ventral locomtoion.
+if ventralMode < 2 % + = dorsal direction
+    direction = -direction;
+end
+
+% Organize the velocity.
+velocity.speed     = speed;
+velocity.direction = direction;
+end
+
+function velocity = h__computeVelocity2(x, y, bodyAngle, pointsI, fps, scale, ventralMode)
+
+%What is scale ????
+
+% The scale must be odd.
+scale = scale * fps;
+
+%???? 
+if rem(floor(scale), 2)
+    scale = floor(scale);
+elseif rem(ceil(scale), 2)
+    scale = ceil(scale);
+else
+    scale = round(scale + 1);
+end
+
+% Do we have enough coordinates?
+speed     = nan(1, size(x, 2));
+direction = nan(1, length(speed));
+if scale > size(x, 2)
+    velocity.speed     = speed;
+    velocity.direction = direction;
+    return;
+end
+
+% Compute the body part direction.
+diffX      = nanmean(diff(x(pointsI,:), 1, 1), 1);
+diffY      = nanmean(diff(y(pointsI,:), 1, 1), 1);
+pointAngle = atan2(diffY, diffX) * (180 / pi);
+
+% Compute the coordinates.
+x = mean(x(pointsI,:), 1);
+y = mean(y(pointsI,:), 1);
+
+% Compute the speed using back/front nearest neighbors bounded at twice the scale.
+scaleMinus1 = scale - 1;
+halfScale   = scaleMinus1 / 2;
+diff1       = 1;
+diff2       = scale;
+
 for i = (1 + halfScale):(length(speed) - halfScale)
     
     % Advance the indices for the derivative.
@@ -155,17 +267,16 @@ for i = (1 + halfScale):(length(speed) - halfScale)
     while isnan(x(diff1)) && diff1 > 1 && i - diff1 < scaleMinus1
         diff1 = diff1 - 1;
     end
-    while isnan(x(diff2)) && diff2 < length(speed) && ...
-            diff2 - i < scaleMinus1
+    while isnan(x(diff2)) && diff2 < length(speed) && diff2 - i < scaleMinus1
         diff2 = diff2 + 1;
     end
     
     % Compute the speed.
     if ~isnan(x(diff1)) && ~isnan(x(diff2))
-        diffX = x(diff2) - x(diff1);
-        diffY = y(diff2) - y(diff1);
+        diffX    = x(diff2) - x(diff1);
+        diffY    = y(diff2) - y(diff1);
         distance = sqrt(diffX ^ 2 + diffY ^ 2);
-        time = (diff2 - diff1) / fps;
+        time     = (diff2 - diff1) / fps;
         speed(i) = distance / time;
         
         % Compute the direction.
@@ -178,8 +289,10 @@ for i = (1 + halfScale):(length(speed) - halfScale)
         direction(i) = direction(i) / fps;
         
         % Sign the speed.
+        %--------------------------------------------------------
         motionDirection = atan2(diffY, diffX) * (180 / pi);
-        bodyDirection = motionDirection - bodyAngle(diff1);
+        bodyDirection   = motionDirection - bodyAngle(diff1);
+        
         if bodyDirection < -180
             bodyDirection = bodyDirection + 360;
         elseif bodyDirection > 180
@@ -197,6 +310,6 @@ if ventralMode < 2 % + = dorsal direction
 end
 
 % Organize the velocity.
-velocity.speed = speed;
+velocity.speed     = speed;
 velocity.direction = direction;
 end
