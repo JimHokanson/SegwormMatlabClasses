@@ -60,10 +60,11 @@ bends = struct;
 for iField = 1:n_fields
     cur_indices = ALL_INDICES{iField};
     cur_name    = FIELDS{iField};
-    bends.(cur_name).mean = nanmean(nw.angles(cur_indices,:));
+    bends.(cur_name).mean   = nanmean(nw.angles(cur_indices,:));
     bends.(cur_name).stdDev = nanstd(nw.angles(cur_indices,:));
     
     %Sign the standard deviation ...
+    %----------------------------------------------------------------------
     mask = bends.(cur_name).mean < 0;
     bends.(cur_name).stdDev(mask) = -1*bends.(cur_name).stdDev(mask);
 end

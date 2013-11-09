@@ -28,7 +28,7 @@ function [eventStats, summaryStats] = events2stats(frames, fps, data, name, inte
 %                      frequency = the event frequency (excluding partial
 %                                  events at the start and end)
 %                      ratio     = a structure with fields:
-%                      
+%
 %                                  time   = the ratio of time
 %                                           (event time / total time)
 %                                  <name> = the ratio of data
@@ -43,8 +43,8 @@ function [eventStats, summaryStats] = events2stats(frames, fps, data, name, inte
 %
 %
 % © Medical Research Council 2012
-% You will not remove any copyright or other notices from the Software; 
-% you must reproduce all copyright notices and other proprietary 
+% You will not remove any copyright or other notices from the Software;
+% you must reproduce all copyright notices and other proprietary
 % notices on any copies of the Software.
 
 % Are we computing/including the event's data sum.
@@ -79,7 +79,7 @@ data = data(:);
 % Are we computing/including the data sum till the next event?
 isInterName = true;
 if isempty(interName)
-    isName = false;
+    isName    = false;
     interName = 'tmpInterName';
 end
 
@@ -91,30 +91,37 @@ eventStats = struct( ...
     name,           [], ...
     'interTime',    [], ...
     interName,      []);
+
 if ~isName
     eventStats = rmfield(eventStats, name);
 end
+
 if ~isInterName
     eventStats = rmfield(eventStats, interName);
 end
 
 % Compute the event information.
 for i = 1:length(frames)
-
+    
     % Compute the event information.
     eventTime = (frames(i).end - frames(i).start + 1) / fps;
     eventSum  = [];
     if isName
-        eventSum = nansum(data((frames(i).start + 1):(frames(i).end + 1)));
+        eventSum = nansum(data(frames(i).start:frames(i).end));
     end
     
     % The last inter- time and sum are unknown.
     interTime = NaN;
     interSum  = NaN;
     if i < length(frames)
+        %1 2 3 4 5 6 7
+        %x x     x x x
+        %
+        %   5 - 2 - 1
+        %
         interTime = (frames(i + 1).start - frames(i).end - 1) / fps;
         if isInterName
-            interSum = nansum(data((frames(i).end + 2):(frames(i + 1).start)));
+            interSum = nansum(data((frames(i).end + 1):(frames(i + 1).start-1)));
         end
     end
     
@@ -133,10 +140,10 @@ end
 
 % Compute the number of events, excluding the partially recorded ones.
 numEvents = length(frames);
-if numEvents > 1 && frames(1).start == 0
+if numEvents > 1 && frames(1).start == 1
     numEvents = numEvents - 1;
 end
-if numEvents > 1 && frames(end).end == length(data) - 1
+if numEvents > 1 && frames(end).end == length(data)
     numEvents = numEvents - 1;
 end
 

@@ -1,113 +1,120 @@
-function events = getWormMotionCodes(lengths,fps)
+function events = getWormMotionCodes(midbody_speed, lengths,fps)
 %
-%   seg_worm.feature_helpers.locomotion.getWormMotionCodes(lengths)
+%   seg_worm.feature_helpers.locomotion.getWormMotionCodes()
 %
+%
+%   %       events   - the locomotion events; a struct with event fields:
+%
+%                  forward  = forward locomotion
+%                  paused   = no locomotion (the worm is paused)
+%                  backward = backward locomotion
+%                  mode     = the locomotion mode:
+%
+%                             -1 = backward locomotion
+%                              0 = no locomotion (the worm is paused)
+%                              1 = forward locomotion
 
-%JAH: Code unfinished ...
+%These are a percentage of the length ...
+SPEED_THRESHOLD_PCT   = 0.05;
+DISTANCE_THRSHOLD_PCT = 0.05;
+PAUSE_THRESHOLD_PCT   = 0.025;
 
 %% Compute the locomotion events.
 %--------------------------------------------------------------------------
-events = [];
 
 % Initialize the worm speed and video frames.
-speed = velocity.midbody.speed;
-totalFrames = length(speed);
+totalFrames = length(midbody_speed);
 
 % Compute the distance.
-distance = abs(speed / fps);
+distance = abs(midbody_speed / fps);
 
 % Interpolate the missing lengths.
 isNotData = isnan(lengths);
-isData = ~isNotData;
-dataI = find(isData);
-interpI = find(isNotData);
+isData    = ~isNotData;
+dataI     = find(isData);
+interpI   = find(isNotData);
 if ~isempty(interpI) && length(dataI) > 1
     lengths(interpI) = interp1(dataI, lengths(dataI), interpI, 'linear');
 end
 
-
-
-%% Find the forward motion.
-%--------------------------------------------------------------------------
-wormSpeedThr               = lengths * 0.05; % 5 percent of its length
-wormDistanceThr            = lengths * 0.05; % 5 percent of its length
+%==========================================================================
+wormSpeedThr               = lengths * SPEED_THRESHOLD_PCT;
+wormDistanceThr            = lengths * DISTANCE_THRSHOLD_PCT; 
 wormEventFramesThr         = 0.5 * fps;
 wormEventMinInterFramesThr = 0.25 * fps;
+
+%Forward stuffs
+%--------------------------------------------------------------------------
 minForwardSpeed            = wormSpeedThr;
 minForwardDistance         = wormDistanceThr;
-forwardFrames = findEvent(speed, minForwardSpeed, [], true, ...
-    wormEventFramesThr, [], false, ...
-    minForwardDistance, [], true, distance, wormEventMinInterFramesThr);
 
-% Compute the forward statistics.
-[forwardEventStats, forwardStats] = events2stats(forwardFrames, fps, distance, 'distance', 'interDistance');
-
-% Organize the forward motion.
-events.forward.frames = forwardEventStats;
-events.forward.frequency = [];
-events.forward.ratio = [];
-if ~isempty(forwardStats)
-    events.forward.frequency = forwardStats.frequency;
-    events.forward.ratio = forwardStats.ratio;
-end
-
-
-
-%% Find the backward motion.
+%Backward stuffs
+%--------------------------------------------------------------------------
 maxBackwardSpeed    = -wormSpeedThr;
 minBackwardDistance = wormDistanceThr;
-backwardFrames = findEvent(speed, [], maxBackwardSpeed, true, ...
-    wormEventFramesThr, [], false, ...
-    minBackwardDistance, [], true, distance, wormEventMinInterFramesThr);
 
-% Compute the backward statistics.
-[backwardEventStats, backwardStats] = events2stats(backwardFrames, fps, ...
-    distance, 'distance', 'interDistance');
-
-% Organize the backward motion.
-events.backward.frames    = backwardEventStats;
-events.backward.frequency = [];
-events.backward.ratio     = [];
-if ~isempty(backwardStats)
-    events.backward.frequency = backwardStats.frequency;
-    events.backward.ratio = backwardStats.ratio;
-end
-
-
-
-%% Find the paused motion.
-wormPauseThr   = lengths * 0.025; % 2.5 percent of its length
+%Paused stuffs
+%--------------------------------------------------------------------------
+wormPauseThr   = lengths * PAUSE_THRESHOLD_PCT; % 2.5 percent of its length
 minPausedSpeed = -wormPauseThr;
 maxPausedSpeed = wormPauseThr;
-pausedFrames = findEvent(speed, minPausedSpeed, maxPausedSpeed, true, ...
-    wormEventFramesThr, [], false, ...
-    [], [], true, distance, wormEventMinInterFramesThr);
 
-% Compute the paused statistics.
-[pausedEventStats, pausedStats] = events2stats(pausedFrames, fps, distance, 'distance', 'interDistance');
+min_speeds   = {minForwardSpeed    []                  minPausedSpeed};
+max_speeds   = {[]                 maxBackwardSpeed    maxPausedSpeed};
+min_distance = {minForwardDistance minBackwardDistance []};
 
-% Organize the paused motion.
-events.paused.frames    = pausedEventStats;
-events.paused.frequency = [];
-events.paused.ratio     = [];
-if ~isempty(pausedStats)
-    events.paused.frequency = pausedStats.frequency;
-    events.paused.ratio = pausedStats.ratio;
+frames = cell(1,3);
+
+events = struct;
+
+FIELD_NAMES = {'forward' 'backward' 'paused'};
+
+for iType = 1:3
+   
+    %TODO: This will all be moved into the event class for better
+    %encapsulation
+    
+    frames{iType} = seg_worm.feature.event.findEvent( ...
+    midbody_speed, ...      1
+    min_speeds{iType}, ...  2
+    max_speeds{iType}, ...  3
+    true, ...               4
+    wormEventFramesThr, ... 5
+    [], ...                 6
+    false, ...              7
+    min_distance{iType}, ...8
+    [], ...                 9
+    true, ...               10
+    distance, ...           11
+    wormEventMinInterFramesThr); %12
+    
+    % Compute the statistics.
+    [event_stats, stats] = seg_worm.events.events2stats(frames{iType}, fps, distance, 'distance', 'interDistance');
+
+    % Organize the output ...
+    cur_field_name = FIELD_NAMES{iType};
+    events.(cur_field_name).frames = event_stats;
+    if isempty(stats)
+        events.(cur_field_name).frequency = [];
+        events.(cur_field_name).ratio     = [];
+    else
+        events.(cur_field_name).frequency = stats.frequency;
+        events.(cur_field_name).ratio     = stats.ratio;
+    end
+
 end
 
-
-
 %% Compute the motion mode.
-
-% Translate the events to logical arrays.
-isForwardFrame  = events2array(forwardFrames, totalFrames);
-isBackwardFrame = events2array(backwardFrames, totalFrames);
-isPausedFrame   = events2array(pausedFrames, totalFrames);
-
+%--------------------------------------------------------------------------
 % Set forward = 1, backward = -1, paused = 0, and unknown = NaN.
-events.mode = nan(1,totalFrames);
-events.mode(isForwardFrame) = 1;
-events.mode(isBackwardFrame) = -1;
-events.mode(isPausedFrame) = 0;
+events.mode  = nan(1,totalFrames);
+frame_values = [1 -1 0];
+for iType = 1:3
+   %Didn't look at this function, might make static from event ...
+   % Translate the events to logical arrays.
+   mask = seg_worm.events.events2array(frames{iType},  totalFrames);
+   events.mode(mask) = frame_values(iType); 
+end
+
 
 end

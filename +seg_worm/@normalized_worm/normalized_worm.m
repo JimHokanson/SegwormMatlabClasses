@@ -74,7 +74,7 @@ classdef normalized_worm < sl.obj.handle_light
         %    f = segmentation failed
         %    m = stage movement
         %    d = dropped frame
-        %    n??? - there is reference in some old code to this which 
+        %    n??? - there is reference in some old code to this type
         frame_codes         %see comments in seg_worm.parsing.frame_errors
         %near the bottom, I haven't yet coded in the values as constants
         %... :/
@@ -83,22 +83,42 @@ classdef normalized_worm < sl.obj.handle_light
         %2    = stage movement
         %101  = no worm found
         %
-        %   NOTE: This is needed for processing coils ...
-        %   
+        %   Uses:
+        %   seg_worm.feature_helpers.posture.wormTouchFrames
+        
+        %------------------------------------------------------------------
         vulva_contours       %[49 2 n] double
         non_vulva_contours   %[49 2 n] double
+        %
+        %   Uses:
+        %   seg_worm.feature_helpers.posture.getEccentricity
+        
+        
         skeletons            %[49 2 n] double
         angles               %[49 n] double, degrees
-        %??? Why are angles at edge undefined ??????
-        %??? - NaN values ...
-        %First and last 5 of 49 values ...
+        %? Why are the first and last 5 values of each frame NaN?
+        %
+        %   Uses:
+        %   ------------------------------------------
+        %   seg_worm.feature_helpers.posture.wormKinks
+        
+        
         in_out_touches       %[49 n] double
+        %
+        %   - it doesn't look like this is used ...
+        
         lengths              %[1  n] double
         widths               %[49 n] double
+        
+        
+        %----------------------------------------------------------
         head_areas           %[1  n] double
         tail_areas           %[1  n] double
         vulva_areas          %[1  n] double
         non_vulva_areas      %[1  n] double
+        %- seg_worm.feature_calculator.getMorphologyFeatures
+       
+        ventral_mode %NYI, needed for locomotion ...
     end
     
     properties
@@ -168,6 +188,12 @@ classdef normalized_worm < sl.obj.handle_light
             %Get files and order
             %--------------------------------------------------------------
             x = dir(fullfile(norm_folder,'normBlock*'));
+            
+            %NOTE: I am assuming the files go from:
+            %normBlock1
+            %normBlock2
+            % ... to
+            %normBlockN
             
             names = {x.name};
             

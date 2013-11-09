@@ -16,14 +16,15 @@ classdef event < sl.obj.handle_light
            %TODO: This will be from event2stats
         end
         function getStruct(obj)
-            
+           %This will be to get the structure for saving ... 
         end
     end
     
     methods (Static)
-        function frames = findEvent(varargin)
-           %TODO: Copy over findEvent 
-        end
+        frames = findEvent(data, minThr, maxThr, varargin)
+        %function frames = findEvent(varargin)
+        %   %TODO: Copy over findEvent 
+        %end
     end
     
 end

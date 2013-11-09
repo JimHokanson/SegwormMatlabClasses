@@ -1,7 +1,9 @@
 function morphology = getMorphologyFeatures(nw)
 %
+%   morphology = seg_worm.feature_calculator.getMorphologyFeatures(nw)
+%
 %   INPUTS
-%   ===========================================================
+%   =======================================================================
 %   nw : seg_worm.normalized_worm
 
 %Old files that served as a reference ...

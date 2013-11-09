@@ -1,70 +1,42 @@
-function locomotion = getLocomotionFeatures(nw)
+function getOmegaTurns()
 %
-%   locomotion = seg_worm.feature_calculator.getLocomotionFeatures(nw)
+%   JAH: I'm still working on this function ...
 %
 
-%{
-locomotion.bends.foraging.amplitude
-locomotion.bends.foraging.angleSpeed
+%Apparently I need to go even further back ...
+%frontBlock ????
 
-locomotion.bends.head.amplitude
-locomotion.bends.midbody.amplitude
-locomotion.bends.tail.amplitude
-locomotion.bends.head.frequency
-locomotion.bends.midbody.frequency
-locomotion.bends.tail.frequency
+lastBlock = midBlock;
+clear('midBlock');
+secondLastBlock = frontBlock;
+clear('frontBlock');
+lenMid = length(secondLastBlock{1});
+lenEnd = length(lastBlock{1});
 
-locomotion.turns.omegas
-locomotion.turns.upsilons
+% Define the part of mainBlock to be saved in the result file
+dataSize = [lenMid-featureWindow+1, featureWindow+lenEnd];
+% Get frame class
+frameClass = [secondLastBlock{1}(lenMid-featureWindow+1:end), lastBlock{1}];
+stageFlag = frameClass == 'm';
 
-%}
-
-%[velocity, motionEvents] = wormVelocity(postureXSkeletons, postureYSkeletons, fps, featureData.wormLength,  ventralMode);
-
-%NOTE: I might break this up into multiple functions depending on what I
-%see when I parse the function
-
-%ventralMode:
-%0 - unknown
-%1 - clockwise
-%2 - anticlockwise
-
-FPS = 20;
-
-ventralMode = 1;
-
-locomotion.velocity = seg_worm.feature_helpers.locomotion.getWormVelocity(nw.x,nw.y,FPS,ventralMode);
-
-%Almost done, needs a little more refactoring ...
-locomotion.motion   = seg_worm.feature_helpers.locomotion.getWormMotionCodes(midbody_speed, lengths,fps);
+% Find omega upsilon bends
+angleArray         = [secondLastBlock{5}(:,lenMid-featureWindow+1:end),lastBlock{5}];
 
 
 
 
-%locomotion.turns.omegas
-%--------------------------------------------------------------------------
-    lastBlock = midBlock;
-    clear('midBlock');
-    secondLastBlock = frontBlock;
-    clear('frontBlock');
-    lenMid = length(secondLastBlock{1});
-    lenEnd = length(lastBlock{1});
-    
-    % Define the part of mainBlock to be saved in the result file
-    dataSize = [lenMid-featureWindow+1, featureWindow+lenEnd];
-    % Get frame class
-    frameClass = [secondLastBlock{1}(lenMid-featureWindow+1:end), lastBlock{1}];
-    stageFlag = frameClass == 'm';
-  
-    % Find omega upsilon bends
-    angleArray         = [secondLastBlock{5}(:,lenMid-featureWindow+1:end),lastBlock{5}];
-    [omegaFramesBlock, upsilonFramesBlock] = omegaUpsilonDetectCurvature(angleArray, stageFlag);
-    omegaFramesBlock   = omegaFramesBlock(dataSize(1):dataSize(2))';
-    upsilonFramesBlock = upsilonFramesBlock(dataSize(1):dataSize(2))';
-    
-    % save data
-    featureData.omegaFrames   = [featureData.omegaFrames, omegaFramesBlock];
-    featureData.upsilonFrames = [featureData.upsilonFrames, upsilonFramesBlock]; 
+
+[omegaFramesBlock, upsilonFramesBlock] = omegaUpsilonDetectCurvature(angleArray, stageFlag);
+
+
+
+
+omegaFramesBlock   = omegaFramesBlock(dataSize(1):dataSize(2))';
+upsilonFramesBlock = upsilonFramesBlock(dataSize(1):dataSize(2))';
+
+% save data
+featureData.omegaFrames   = [featureData.omegaFrames, omegaFramesBlock];
+featureData.upsilonFrames = [featureData.upsilonFrames, upsilonFramesBlock]; 
 
 % Ommega turns based on direction
 %--------------------------------------------------------------------------
@@ -223,87 +195,3 @@ omegas = struct( ...
     'frames', omegaFrames, ...
     'frequency', omegaFrequency, ...
     'timeRatio', omegaTimeRatio);
-
-
-%locomotion.turns.upsilons
-%--------------------------------------------------------------------------
-    lastBlock = midBlock;
-    clear('midBlock');
-    secondLastBlock = frontBlock;
-    clear('frontBlock');
-    lenMid = length(secondLastBlock{1});
-    lenEnd = length(lastBlock{1});
-    
-    % Define the part of mainBlock to be saved in the result file
-    dataSize = [lenMid-featureWindow+1, featureWindow+lenEnd];
-    % Get frame class
-    frameClass = [secondLastBlock{1}(lenMid-featureWindow+1:end), lastBlock{1}];
-    stageFlag = frameClass == 'm';
-  
-    % Find omega upsilon bends
-    angleArray         = [secondLastBlock{5}(:,lenMid-featureWindow+1:end),lastBlock{5}];
-    [omegaFramesBlock, upsilonFramesBlock] = omegaUpsilonDetectCurvature(angleArray, stageFlag);
-    omegaFramesBlock   = omegaFramesBlock(dataSize(1):dataSize(2))';
-    upsilonFramesBlock = upsilonFramesBlock(dataSize(1):dataSize(2))';
-    
-    % save data
-    featureData.omegaFrames   = [featureData.omegaFrames, omegaFramesBlock];
-    featureData.upsilonFrames = [featureData.upsilonFrames, upsilonFramesBlock];
-
-
-
-upsilonFrames = featureData.upsilonFrames;
-
-
-% Compute the upsilon frames.
-upsilonFramesDorsal  = findEvent(upsilonFrames, 1, [], true);
-upsilonFramesVentral = findEvent(upsilonFrames, [], -1, true);
-
-% Unify the ventral and dorsal turns.
-upsilonFrames = cat(2, upsilonFramesVentral, upsilonFramesDorsal);
-isUpsilonVentral = [true(1, length(upsilonFramesVentral)), ...
-    false(1, length(upsilonFramesDorsal))];
-if ~isempty(upsilonFramesVentral) && ~isempty(upsilonFramesDorsal)
-    [~, orderI] = sort([upsilonFrames.start]);
-    upsilonFrames = upsilonFrames(orderI);
-    isUpsilonVentral = isUpsilonVentral(orderI);
-end
-
-% Compute the upsilon statistics.
-[upsilonEventStats, upsilonStats] = events2stats(upsilonFrames, fps, distance, [], 'interDistance');
-
-% Add the turns ventral/dorsal side.
-upsilonFrames = upsilonEventStats;
-if ~isempty(upsilonFrames)
-    upsilonCells = squeeze(struct2cell(upsilonFrames));
-    upsilonCells{end+1,1} = [];
-    for i = 1:size(upsilonCells, 2)
-        upsilonCells{end, i} = isUpsilonVentral(i);
-    end
-    upsilonFieldNames = fieldnames(upsilonFrames);
-    upsilonFieldNames{end + 1} = 'isVentral';
-    upsilonFrames = cell2struct(upsilonCells, upsilonFieldNames, 1);
-end
-
-upsilonFrequency = [];
-upsilonTimeRatio = [];
-if ~isempty(upsilonStats)
-    upsilonFrequency = upsilonStats.frequency;
-    upsilonTimeRatio = upsilonStats.ratio.time;
-end
-upsilons = struct( ...
-    'frames', upsilonFrames, ...
-    'frequency', upsilonFrequency, ...
-    'timeRatio', upsilonTimeRatio);
-
-
-
-
-
-
-
-
-
-
-
-end
