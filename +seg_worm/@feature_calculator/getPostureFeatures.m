@@ -131,6 +131,21 @@ posture.kinks = seg_worm.feature_helpers.posture.wormKinks(nw.angles);
 
 %Coils - NOT YET FINISHED ...
 %--------------------------------------------------------------------------
+
+% Coils. Worm coiling (touching) events are found by scanning the video frame 
+% annotations. During segmentation, every frame that cannot be segmented is 
+% annotated with a cause for failure. Two of these annotations reflect coiling events. 
+% First, if we find fewer than two sharp ends on the contour (reflecting the head and 
+% tail) then the head and/or tail are obscured in a coiling event. Second, if the length 
+% between the head and tail on one side of the contour is more than double that of 
+% the other side, the worm has either assumed an omega bend or is crossed like a 
+% wreath. Empirically, less than 1/5 of a second is a very fast touch and not usually 
+% reflective of coiling. Therefore, when a period of unsegmented video frames 
+% exceeds 1/5 of a second, and either of the coiling annotations are found, we label 
+% the event coiling. 
+
+
+
 coiled_frames = seg_worm.feature_helpers.posture.wormTouchFrames(nw.frame_codes, FPS);
 
 keyboard

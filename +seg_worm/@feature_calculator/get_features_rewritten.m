@@ -10,7 +10,10 @@ function get_features_rewritten(norm_folder)
 TESTING CODE
 
 NORM_PATH = 'F:\worm_data\segworm_data\video\testing_with_GUI\.data\mec-4 (u253) off food x_2010_04_21__17_19_20__1_seg\normalized';
+NORM_PATH = '/Users/jameshokanson/Dropbox/worm_data/video/testing_with_GUI/.data/mec-4 (u253) off food x_2010_04_21__17_19_20__1_seg/normalized'
 seg_worm.feature_calculator.get_features_rewritten(NORM_PATH)
+
+
 
 %}
 
@@ -27,10 +30,10 @@ nw = seg_worm.normalized_worm.getObject(norm_folder);
 worm       = struct;
 %worm.morphology = seg_worm.feature_calculator.getMorphologyFeatures(nw);
 
-worm.locomotion = seg_worm.feature_calculator.getLocomotionFeatures(nw);
+%worm.locomotion = seg_worm.feature_calculator.getLocomotionFeatures(nw);
 
 %NOTE: Also needs velocity as an input
 %This is currently incomplete, I was waiting on some code
 %from the MRC. They seem to have lost it. I'll probably need to rewrite
 %it ...
-%worm.posture    = seg_worm.feature_calculator.getPostureFeatures(nw);
+worm.posture    = seg_worm.feature_calculator.getPostureFeatures(nw);

@@ -325,14 +325,14 @@ if ~(isempty(minSumThr) && isempty(maxSumThr))
     % Compute the event sums.
     eventSums = nan(length(startFrames), 1);
     for i = 1:length(eventSums)
-        eventSums(i) = nansum(sumData((startFrames(i) + 1):(endFrames(i) + 1)));
+        eventSums(i) = nansum(sumData((startFrames(i)):(endFrames(i))));
     end
     
     % Compute the event sum thresholds.
     if length(minSumThr) > 1
         newMinSumThr = nan(size(eventSums));
         for i = 1:length(newMinSumThr)
-            newMinSumThr(i) = nanmean(minSumThr((startFrames(i) + 1):(endFrames(i) + 1)));
+            newMinSumThr(i) = nanmean(minSumThr((startFrames(i)):(endFrames(i))));
         end
         minSumThr = newMinSumThr;
     end
@@ -340,7 +340,7 @@ if ~(isempty(minSumThr) && isempty(maxSumThr))
     if length(maxSumThr) > 1
         newMaxSumThr = nan(size(eventSums));
         for i = 1:length(newMaxSumThr)
-            newMaxSumThr(i) = nanmean(maxSumThr((startFrames(i) + 1):(endFrames(i) + 1)));
+            newMaxSumThr(i) = nanmean(maxSumThr((startFrames(i)):(endFrames(i))));
         end
         maxSumThr = newMaxSumThr;
     end
