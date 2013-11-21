@@ -135,7 +135,10 @@ middle_indices     = (start_index:end_index) + half_scale;
 %
 %   e.g.
 %   scale = 5
-%   start = 3
+%   start = 3 - this means we grab +/- 2, so we need to have our indices
+%       padded by 2 when we grab, or alternatively do a filter (i.e. if statement
+%   and removal of indices, which I think is slower)
+%
 %   NaN NaN 1 2 3
 %   1   2   3 4 5  <- temporary indices
 %

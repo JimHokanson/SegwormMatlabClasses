@@ -50,6 +50,10 @@ stage_flag  = nw.segmentation_status == 'm';
 tailToHeadDirectionChangeOmega = h__getDChangeOmega(FPS,tailToHeadDirection);
 
 
+
+%I'm still working on rewriting/understanding this code ...
+
+
 keyboard
 
 featureData.omegaFrames = featureData.omegaFrames | tailToHeadDirectionChangeOmega;

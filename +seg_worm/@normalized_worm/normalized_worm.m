@@ -126,6 +126,7 @@ classdef normalized_worm < sl.obj.handle_light
     end
     
     properties (Dependent)
+       n_frames
        x
        y
        contour_x
@@ -133,6 +134,9 @@ classdef normalized_worm < sl.obj.handle_light
     end
     
     methods
+        function value = get.n_frames(obj)
+           value = length(obj.segmentation_status); 
+        end
         function value = get.contour_x(obj)
            value = squeeze([obj.vulva_contours(:,1,:); obj.non_vulva_contours(end-1:-1:2,1,:);]); 
         end

@@ -1,10 +1,15 @@
-function [eventStats, summaryStats] = events2stats(frames, fps, data, name, interName)
+function [eventStats, summaryStats] = events2stats(event_ss, fps, data, name, interName)
 %EVENTS2STATS Compute the event statistics.
 %
-%   [eventStats,summaryStats] = seg_worm.events.events2stats(frames, fps, data, name, interName)
+%   [eventStats,summaryStats] = seg_worm.events.events2stats(event_ss, fps, data, name, interName)
+%
+%
 %
 %   Inputs:
-%       frames    - the event frames (see findEvent)
+%       event_ss  - the event frames (see findEvent)
+%                    .start
+%                    .end
+%   
 %       fps       - the video's frames/second
 %       data      - the data values
 %       name      - the struct field name for the event's data sum;
@@ -47,17 +52,13 @@ function [eventStats, summaryStats] = events2stats(frames, fps, data, name, inte
 % you must reproduce all copyright notices and other proprietary
 % notices on any copies of the Software.
 
-% Are we computing/including the event's data sum.
-isName = true;
-if isempty(name)
-    isName = false;
-    name = 'tmpName';
-end
+n_events     = length(event_ss);
+n_vid_frames = length(data);
 
 % Are there any event frames?
-eventStats = [];
-if isempty(frames)
+if n_events == 0
     
+    eventStats = [];
     % There are no events.
     frequency = 0;
     if isName
@@ -72,93 +73,62 @@ if isempty(frames)
 end
 
 %--------------------------------------------------------------------------
-
 % Fix the data.
 data = data(:);
 
-% Are we computing/including the data sum till the next event?
-isInterName = true;
-if isempty(interName)
-    isName    = false;
-    interName = 'tmpInterName';
-end
+start_Is = [event_ss.start];
+end_Is   = [event_ss.end];
 
-% Organize the event information.
+elapsed_times = (end_Is - start_Is + 1)./fps;
+inter_times   = [end_Is(2:end) - start_Is(1:end-1) - 1 NaN]./fps;
+
 eventStats = struct( ...
-    'start',        [], ...
-    'end',          [], ...
-    'time',         [], ...
-    name,           [], ...
-    'interTime',    [], ...
-    interName,      []);
+    'start',        num2cell(start_Is), ...
+    'end',          num2cell(end_Is), ...
+    'time',         num2cell(elapsed_times), ...
+    'interTime',    num2cell(inter_times));
 
-if ~isName
-    eventStats = rmfield(eventStats, name);
+%Data statistics if requested
+%--------------------------------------------------------------------------
+if ~isempty(name)
+   for iEvent = 1:n_events
+      eventStats(iEvent).(name) = nansum(data(start_Is(iEvent):end_Is(iEvent))); 
+   end
 end
 
-if ~isInterName
-    eventStats = rmfield(eventStats, interName);
+if ~isempty(interName)
+   for iEvent = 1:(n_events-1)
+      start_frame = end_Is(iEvent)+1;
+      end_frame   = start_Is(iEvent+1)-1;
+      eventStats(iEvent).(interName) = nansum(data(start_frame:end_frame));  
+   end
+   eventStats(end).(interName) = NaN;
 end
 
-% Compute the event information.
-for i = 1:length(frames)
-    
-    % Compute the event information.
-    eventTime = (frames(i).end - frames(i).start + 1) / fps;
-    eventSum  = [];
-    if isName
-        eventSum = nansum(data(frames(i).start:frames(i).end));
-    end
-    
-    % The last inter- time and sum are unknown.
-    interTime = NaN;
-    interSum  = NaN;
-    if i < length(frames)
-        %1 2 3 4 5 6 7
-        %x x     x x x
-        %
-        %   5 - 2 - 1
-        %
-        interTime = (frames(i + 1).start - frames(i).end - 1) / fps;
-        if isInterName
-            interSum = nansum(data((frames(i).end + 1):(frames(i + 1).start-1)));
-        end
-    end
-    
-    % Organize the event information.
-    eventStats(i).start = frames(i).start;
-    eventStats(i).end   = frames(i).end;
-    eventStats(i).time  = eventTime;
-    if isName
-        eventStats(i).(name) = eventSum;
-    end
-    eventStats(i).interTime = interTime;
-    if isInterName
-        eventStats(i).(interName) = interSum;
-    end
-end
 
 % Compute the number of events, excluding the partially recorded ones.
-numEvents = length(frames);
-if numEvents > 1 && frames(1).start == 1
-    numEvents = numEvents - 1;
-end
-if numEvents > 1 && frames(end).end == length(data)
-    numEvents = numEvents - 1;
+
+n_events_for_stats = n_events;
+
+if n_events_for_stats > 1
+    if start_Is(1) == 1
+        n_events_for_stats = n_events_for_stats - 1;
+    end
+    if end_Is(end) == n_vid_frames
+        n_events_for_stats = n_events_for_stats - 1;
+    end
 end
 
 % Compute the event statistics.
-totalTime = length(data) / fps;
-frequency = numEvents / totalTime;
+totalTime = n_vid_frames / fps;
+frequency = n_events_for_stats / totalTime;
 timeRatio = nansum([eventStats.time]) / totalTime;
-if isName
-    dataRatio = nansum([eventStats.(name)]) / nansum(data);
-    ratios = struct( ...
-        'time',     timeRatio, ...
-        name,       dataRatio);
-else
-    ratios = struct('time', timeRatio);
+
+ratios.time = timeRatio;
+if ~isempty(name)
+   ratios.(name) = nansum([eventStats.(name)])/nansum(data); 
 end
+
 summaryStats = struct( ...
     'frequency', frequency, ...
     'ratio',     ratios);

@@ -1,4 +1,4 @@
-function get_features_rewritten(norm_folder)
+function worm = get_features_rewritten(norm_folder)
 %
 %
 %
@@ -28,12 +28,19 @@ nw = seg_worm.normalized_worm.getObject(norm_folder);
 %Class: seg_worm.normalized_worm
 
 worm       = struct;
-%worm.morphology = seg_worm.feature_calculator.getMorphologyFeatures(nw);
 
+%Morphology
+%--------------------------------------------------------------------------
+worm.morphology = seg_worm.feature_calculator.getMorphologyFeatures(nw);
+
+%Locomotion
+%--------------------------------------------------------------------------
 %worm.locomotion = seg_worm.feature_calculator.getLocomotionFeatures(nw);
 
 %NOTE: Also needs velocity as an input
 %This is currently incomplete, I was waiting on some code
 %from the MRC. They seem to have lost it. I'll probably need to rewrite
 %it ...
-worm.posture    = seg_worm.feature_calculator.getPostureFeatures(nw);
+%Posture
+%--------------------------------------------------------------------------
+worm.posture = seg_worm.feature_calculator.getPostureFeatures(nw);

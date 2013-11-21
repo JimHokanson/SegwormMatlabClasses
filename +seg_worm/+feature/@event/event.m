@@ -2,40 +2,105 @@ classdef event < sl.obj.handle_light
     %
     %   Class:
     %   seg_worm.feature.event
+    %
+    %   See Also:
+    %   seg_worm.events.events2stats
+    
+    %Events
+    %NOTE: At some point later
+    %----------------------------------------------------------------------
+    %posture.coils
+    %
+    %   seg_worm.feature_calculator.getPostureFeatures
+    %
+    %   .frames - e
+    %
+    %
+    %locomotion.turns.omegas
+    %locomotion.turns.upsilons
+    %locomotion.motion.forward
+    %locomotion.motion.backward
+    %locomotion.motion.paused
+    
+    %.frames    - event_stats (from event2stats)
+    %.frequency -
+    
+    %Final outputs
+    %{
+    
+    .frames
+        .start
+        .end
+        .time
+        .interTime
+        .(data_sum_name) - if specified
+        .(inter_data_sum_name) - if specified
+    .frequency
+    %
+    %}
     
     properties
         fps
-        n_samples
-        starts %[1 n_samples]
-        ends   %[1 n_samples]
-        times  %????
-        inter_times    %[1 n_samples]
+        n_video_frames
         
+        %INPUTS
+        %------------------------------------------------------------------
+        start_Is %[1 n_events]
+        end_Is   %[1 n_events]
+        data_sum_name %[1 n_events]
+        inter_data_sum_name %[1 n_events], last value is NaN
+        
+        %Outputs - see events2stats
+        %------------------------------------------------------------------
+        event_durations %[1 n_events]
+        inter_event_durations %[1 n_events], last value is NaN
+        
+        %These two properties are missing if the input names
+        %are empty
+        data_sum_values
+        inter_data_sum_values
+        
+        total_time
+        frequency
+        time_ratio
+        data_ratio %[1 1] might not exist if .data_sum_name is not specified
+        
+        
+        
+        %I WILL BE REMOVING THIS STUFF ...
+        %{
         inter_distance %
         %posture.coils
         %locomotion.turns.omegas
         %locomotion.turns.upsilons
         
+        %Maybe replace with sign_value_mask
+        %- this would indicate how to sign the result if needed
         is_ventral %
         %locomotion.turns.omegas
         %locomotion.turns.upsilons
         
         inter_names  %[1 n_samples]
+        %}
     end
     
     properties (Dependent)
-        n_full_events
+        n_events
+        n_events_for_stats
     end
     
     methods
-        function value = get.n_full_events(obj)
+        function value = get.n_events(obj)
+            value = length(obj.start_Is);
+        end
+        function value = get.n_events_for_stats(obj)
             % Compute the number of events, excluding the partially recorded ones.
-            value = length(obj.starts);
+            value = obj.n_events;
             if value > 1
-                if obj.starts == 1
+                if obj.start_Is(1) == 1
                     value = value - 1;
                 end
-                if obj.ends(end) == obj.n_samples
+                if obj.end_Is(end) == obj.n_events
                     value = value - 1;
                 end
             end
@@ -43,76 +108,96 @@ classdef event < sl.obj.handle_light
     end
     
     methods
-        function obj = event()
+        function obj = event(event_ss,fps,data,name,interName)
             %TODO: This will be from event2stats
+            
+            obj.fps      = fps;
+            obj.n_video_frames = length(data);
+            obj.start_Is = [event_ss.start];
+            obj.end_Is   = [event_ss.end];
+            obj.data_sum_name       = name;
+            obj.inter_data_sum_name = interName;
+            
+            %Now populate the outputs ...
+            %--------------------------------------------------------------
+            if obj.n_events == 0
+                return
+            end
+
+            %---------------------------
+            obj.event_durations       = (obj.end_Is - obj.start_Is + 1)./obj.fps;
+            obj.inter_event_durations = [obj.end_Is(2:end) - obj.start_Is(1:end-1) - 1 NaN]./fps;
+            
+            %---------------------------
+            if ~isempty(obj.data_sum_name)
+                temp = zeros(1,obj.n_events);
+                for iEvent = 1:n_events
+                    temp(iEvent) = nansum(data(obj.start_Is(iEvent):obj.end_Is(iEvent)));
+                end
+                obj.data_sum_values = temp;
+            end
+            
+            %---------------------------
+            if ~isempty(interName)
+                temp = NaN(1,obj.n_events);
+                for iEvent = 1:(obj.n_events-1)
+                    start_frame = obj.end_Is(iEvent)+1;
+                    end_frame   = obj.start_Is(iEvent+1)-1;
+                    temp(iEvent) = nansum(data(start_frame:end_frame));
+                end
+                obj.inter_data_sum_values = temp;
+            end
+            
+            %----------------------------
+            obj.total_time = obj.n_video_frames/obj.fps;
+            obj.frequency  = obj.n_events_for_stats/obj.total_time;
+            obj.time_ratio = nansum(obj.event_durations) / obj.total_time;
+            if ~isempty(obj.data_sum_name)
+               obj.data_ratio = nansum(obj.data_sum_values)/nansum(data); 
+            end
         end
-        function getStruct(obj)
+        function s = getStruct(obj)
             %This will be to get the structure for saving ...
             
+            %This bit of code is meant to replace all of the little
+            %extra stuff that was previously being done after getting
+            %the event frames and converting them to stats
+            
             s = struct;
-            f = struct;
             
-            %TODO: What does this look like ???
-            
-            keyboard
-            
-            s.frames = struct(...
-                'start',num2cell(obj.starts),...
-                'end',num2cell(obj.ends));
-            
-            %FORMAT 1 (coils)
-            %--------------------------------
-            %.
-            %.frequency
-            %.timeRatio
-            
-            
-            
-            
-            % Compute the event statistics.
-            %--------------------------------------------------------------
-            totalTime = length(data) / fps;
-            frequency = numEvents / totalTime;
-            timeRatio = nansum([eventStats.time]) / totalTime;
-            if isName
-                dataRatio = nansum([eventStats.(name)]) / nansum(data);
-                ratios = struct( ...
-                    'time',     timeRatio, ...
-                    name,       dataRatio);
-            else
-                ratios = struct('time', timeRatio);
+            if obj.n_events == 0
+               s = struct('frames',[],'frequency',[],'timeRatio',[]);
+               return
             end
-            summaryStats = struct( ...
-                'frequency', frequency, ...
-                'ratio',     ratios);
             
+            %--------------------------------------------------------------
+            f = struct(...
+                'start',        num2cell(obj.start_Is),...
+                'end',          num2cell(obj.end_Is), ...
+                'time',         num2cell(obj.event_durations),...
+                'interTime',    num2cell(obj.inter_event_durations));
             
-            % %Reorganize everything for the feature file.
-            % omegaFrequency = [];
-            % omegaTimeRatio = [];
-            % if ~isempty(omegaStats)
-            %     omegaFrequency = omegaStats.frequency;
-            %     omegaTimeRatio = omegaStats.ratio.time;
-            % end
-            % omegas = struct( ...
-            %     'frames', omegaFrames, ...
-            %     'frequency', omegaFrequency, ...
-            %     'timeRatio', omegaTimeRatio);
+            if ~isempty(obj.data_sum_name)
+               temp = num2cell(obj.data_sum_values);
+               [f.(obj.data_sum_name)] = deal(temp{:});
+            end
             
+            if ~isempty(obj.inter_data_sum_name)
+               temp = num2cell(obj.inter_data_sum_values);
+               [f.(obj.inter_data_sum_name)] = deal(temp{:});
+            end
             
+            %This is correct for coiled events, not sure about others ...
+            %--------------------------------------------------------------
+            s.frames    = f;
+            s.frequency = obj.frequency;
+            s.timeRatio = obj.time_ratio;
             
         end
         function new_obj = mergeEvents(obj1,obj2)
             
         end
-    end
-    
-    methods (Static)
-        %This is in another file, I want this to lead
-        %to
-        frames = findEvent(data, minThr, maxThr, varargin)
-    end
-    
+    end    
 end
 
 %{
