@@ -2,6 +2,10 @@ function locomotion = getLocomotionFeatures(nw)
 %
 %   locomotion = seg_worm.feature_calculator.getLocomotionFeatures(nw)
 %
+%   UNFINISHED STATUS
+%   --------------------------
+%   - bends not started
+%   - turns started, but I need to incorporate new event code
 
 %{
 locomotion.bends.foraging.amplitude
@@ -41,7 +45,7 @@ lengths       = nw.lengths;
 locomotion.motion   = seg_worm.feature_helpers.locomotion.getWormMotionCodes(midbody_speed, lengths, FPS);
 
 %Bends
-%-----------------------------------
+%--------------------------------------------------------------------------
 
 
 %Turns

@@ -9,11 +9,8 @@ function posture = getPostureFeatures(nw)
 %   - Indices were inconsistently defined for bends relative to other code
 %   - stdDev for bends is signed as well, based on means ...
 %
-%   STATUS:
-%   - eccentricity calculation is really slow, commented out
+%   UNFINISHED STATUS:
 %   - seg_worm.feature_helpers.posture.wormKinks - not yet examined
-%   - seg_worm.feature_helpers.posture.getAmplitudeAndWavelength - not yet
-%   implemented, this code is missing
 %   - distance - missing input to function, need to process locomotion
 %   first
 %
@@ -48,20 +45,14 @@ posture.bends = bends;
 
 %Eccentricity & Orientation
 %--------------------------------------------------------------------------
-%THIS IS REALLY SLOW !!!!!!
-%
-%   Requires filling in the worm
-%
-%I've temporarily commented this out ...
+%This is relatively slow ...
+[posture.eccentricity, worm_orientation] = seg_worm.feature_helpers.posture.getEccentricity(nw.contour_x, nw.contour_y, N_ECCENTRICITY);
 
-%[posture.eccentricity, worm_orientation] = seg_worm.feature_helpers.posture.getEccentricity(nw.contour_x, nw.contour_y, N_ECCENTRICITY);
-%??? How would pca compare to the algorithm used???
 
 %Amplitude, Wavelengths, TrackLength, Amplitude Ratio
 %--------------------------------------------------------------------------
-%NOT YET IMPLEMENTED
-%[posture.amplitude,posture.wavelength,posture.trackLength] = ...
-%   seg_worm.feature_helpers.posture.getAmplitudeAndWavelength
+[posture.amplitude,posture.wavelength,posture.trackLength] = ...
+  seg_worm.feature_helpers.posture.getAmplitudeAndWavelength(worm_orientation,nw.x,nw.y,nw.lengths);
 
 %Kinks - CODE NOT YET EXAMINED ... (But it works)
 %--------------------------------------------------------------------------
@@ -78,11 +69,9 @@ distance = rand(1,nw.n_frames); %This is temporary ...
 coiled_frames = seg_worm.feature_helpers.posture.wormTouchFrames(nw.frame_codes, FPS);
 
 %TODO: I might want to create a static method of the class so I can merge
-%these lines ...
+%these two lines ...
 coiled_events = seg_worm.feature.event(coiled_frames,FPS,distance,[],'interDistance');
 posture.coils = coiled_events.getStruct;
-
-%--------------------------------------------------------------------------
 
 %Directions
 %--------------------------------------------------------------------------

@@ -9,3 +9,8 @@
 %   sum data thresholding not implemented correctly
 %   removeEvents using || should be |
 %   off by 1 on start and end when event encompasses start or end
+%
+%getAmpWavelength
+%   - power instead of magnitude is used for comparison
+%   - primary and secondary wavelength may be switched ...
+%   - primary and secondary both capped? - drop secondary in that case?

@@ -5,6 +5,12 @@ function [omegas,upsilons] = getOmegaAndUpsilonTurns(nw,tail_to_head_direction)
 %   [omegas,upsilons] =
 %   seg_worm.feature_helpers.locomotion.getOmegaAndUpsilonTurns(nw,tail_to_head_direction)
 
+%TODO: How does the non-straight test work out?
+% i.e. does worms skeleton increase or decrease continuosly after rotation?
+%see getAmplitudeAndWavelength
+%
+%Frames:
+%3610        4514        4515        4516        4517        4518        4519        4520        4521
 
 % %From supplemental of Nature Methods paper
 % Turns. Omega and upsilon turn events are computed similarly to a previously 

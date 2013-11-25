@@ -2,7 +2,7 @@ function [peaks,indices] = peaksCircDist(x, dist,use_max,value_cutoff,chain_code
 %peaksCircDist  Find the maximum peaks in a circular vector. The peaks
 %are separated by, at least, the given distance.
 %
-%   [peaks,indices] = seg_worm.util.peaksCircDist(x, dist, *chain_code_lengths)
+%   [peaks,indices] = seg_worm.util.peaksCircDist(x, dist, use_max, value_cutoff, *chain_code_lengths)
 %
 %   This algorithm grabs the best peaks, starting with the first, then
 %   grabbing the 2nd (if we can), then the 3rd, etc ...
@@ -11,9 +11,11 @@ function [peaks,indices] = peaksCircDist(x, dist,use_max,value_cutoff,chain_code
 %   window in which it is operating
 %
 %   Inputs:
+%   -----------------------------------------------------------------------
 %       x                - the vector of values, I think these are
 %                       generally angles
 %       dist             - the minimum distance between peaks
+%       use_max - if true looks for maximums, otherwise minimums
 %       chain_code_lengths - the chain-code length at each index;
 %                          if empty, the array indices are used instead
 %

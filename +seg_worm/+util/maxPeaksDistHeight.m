@@ -23,6 +23,10 @@ function [peaks,indices] = maxPeaksDistHeight(x, dist, height)
 
 %JAH: Code not examined
 
+%NOTE: I think this is a silly function, and should really just 
+%wrap the other function ...
+%maxPeaksDist
+
 
 % Is the vector larger than the search window?
 winSize = 2 * dist + 1;
