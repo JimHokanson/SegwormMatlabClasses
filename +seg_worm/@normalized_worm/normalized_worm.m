@@ -60,7 +60,7 @@ classdef normalized_worm < sl.obj.handle_light
         20 fps - 25 seconds per file
         2.4 MB per minute
         These files need to get REALLY long
-        before we need to
+        before we need to worry about processing things in chunks
     %}
     
     properties (Constant,Hidden)
@@ -75,7 +75,7 @@ classdef normalized_worm < sl.obj.handle_light
         %    m = stage movement
         %    d = dropped frame
         %    n??? - there is reference in some old code to this type
-        frame_codes         %see comments in seg_worm.parsing.frame_errors
+        frame_codes         %[1 n], see comments in seg_worm.parsing.frame_errors
         %near the bottom, I haven't yet coded in the values as constants
         %... :/
         %ex.
@@ -109,6 +109,9 @@ classdef normalized_worm < sl.obj.handle_light
         
         lengths              %[1  n] double
         widths               %[49 n] double
+        %
+        %   seg_worm.feature_helpers.path.getDurationInfo
+        %
         
         
         %----------------------------------------------------------
@@ -122,15 +125,18 @@ classdef normalized_worm < sl.obj.handle_light
     end
     
     properties
-       eigen_worms 
+       eigen_worms %[7 x 48] NOTE: It is one less than 49 because
+       %the values are calculated from paired values, and the # of pairs is
+       %one less than the # of samples
     end
     
     properties (Dependent)
-       n_frames
-       x
-       y
-       contour_x
-       contour_y
+       n_frames %[1]
+       x    %[49 x n]
+       y    %[49 x n]
+       contour_x  %[49 x n] Produced by concatenating the vulva and
+       %non-vulva contours together
+       contour_y  %[49 x n]
     end
     
     methods
@@ -138,6 +144,9 @@ classdef normalized_worm < sl.obj.handle_light
            value = length(obj.segmentation_status); 
         end
         function value = get.contour_x(obj)
+            %NOTE: The first and last points are duplicates, so we omit
+            %those on the second set. We also reverse the contour so that
+            %it encompasses an "out and back" contour
            value = squeeze([obj.vulva_contours(:,1,:); obj.non_vulva_contours(end-1:-1:2,1,:);]); 
         end
         function value = get.contour_y(obj)

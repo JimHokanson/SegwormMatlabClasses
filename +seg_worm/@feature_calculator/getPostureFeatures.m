@@ -43,16 +43,21 @@ end
 
 posture.bends = bends;
 
+
+
 %Eccentricity & Orientation
 %--------------------------------------------------------------------------
 %This is relatively slow ...
 [posture.eccentricity, worm_orientation] = seg_worm.feature_helpers.posture.getEccentricity(nw.contour_x, nw.contour_y, N_ECCENTRICITY);
 
 
+
 %Amplitude, Wavelengths, TrackLength, Amplitude Ratio
 %--------------------------------------------------------------------------
 [posture.amplitude,posture.wavelength,posture.trackLength] = ...
   seg_worm.feature_helpers.posture.getAmplitudeAndWavelength(worm_orientation,nw.x,nw.y,nw.lengths);
+
+
 
 %Kinks - CODE NOT YET EXAMINED ... (But it works)
 %--------------------------------------------------------------------------
@@ -73,15 +78,20 @@ coiled_frames = seg_worm.feature_helpers.posture.wormTouchFrames(nw.frame_codes,
 coiled_events = seg_worm.feature.event(coiled_frames,FPS,distance,[],'interDistance');
 posture.coils = coiled_events.getStruct;
 
+
 %Directions
 %--------------------------------------------------------------------------
 %seg_worm.feature_helpers.posture.getDirections
 posture.directions = seg_worm.feature_helpers.posture.getDirections(nw.skeletons);
 
+
+
 %Skeleton
 %--------------------------------------------------------------------------
 posture.skeleton.x = nw.x;
 posture.skeleton.y = nw.y;
+
+
 
 %EigenProjection
 %--------------------------------------------------------------------------

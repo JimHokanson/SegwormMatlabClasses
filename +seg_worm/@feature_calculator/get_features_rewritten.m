@@ -29,6 +29,10 @@ nw = seg_worm.normalized_worm.getObject(norm_folder);
 
 worm       = struct;
 
+%Path
+%--------------------------------------------------------------------------
+worm.path = seg_worm.feature_calculator.getPathFeatures(nw);
+
 %Morphology
 %--------------------------------------------------------------------------
 worm.morphology = seg_worm.feature_calculator.getMorphologyFeatures(nw);

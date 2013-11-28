@@ -4,10 +4,19 @@ classdef skeleton_indices < sl.obj.handle_light
     %   seg_worm.skeleton_indices
     %
     %   This was originally created for feature processing. I found a lot
-    %   of off by 1 errors in the feature processing
+    %   of off by 1 errors in the feature processing.
     %
+    %   Used in: (list is not comprehensive)
+    %   --------------------------------------------------------
     %   - posture bends
     %   - posture directions
+    %
+    %   NOTE: These are hardcoded for now. I didn't find much use in trying
+    %   to make this dynamic based on some maximum value.
+    %
+    %   Typical Usage:
+    %   --------------------------------------------------------
+    %   SI = seg_worm.skeleton_indices;
     
     properties (Constant)
         HEAD_INDICES = 1:8;
@@ -20,6 +29,8 @@ classdef skeleton_indices < sl.obj.handle_light
         HEAD_BASE_INDICES = 5:8;
         TAIL_BASE_INDICES = 41:45;
         TAIL_TIP_INDICES  = 46:49;
+        
+        ALL_INDICES = 1:49
         
         BODY_INDICES = 9:41;
     end
