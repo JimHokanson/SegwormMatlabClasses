@@ -1,28 +1,18 @@
 function duration_struct = getDurationInfo(sx, sy, widths, fps)
-%WORMPATHTIME Compute the time spent at each point along the worm path.
+%getDurationInfo  Compute the time spent at each point along the worm path.
 %
-%   
-%   duration_struct = seg_worm.feature_helpers.path.getDurationInfo(sx, sy, fps)
+%   duration_struct = seg_worm.feature_helpers.path.getDurationInfo(sx, sy, widths, fps)
 %
-%   [ARENA TIMES] = WORMPATHTIME(SKELETON, POINTS, SCALE, FPS)
+%   Various parts of the worm are discretized into grid locations. The
+%   discretization is based on the average worm width (excludes neck and
+%   hips :/ ). Once the worm skeletons have been scaled based on the width,
+%   they are rounded to integer values. For each frame, all unique location
+%   values increment a counter at those locations by 1. The end result is
+%   that for each unit in the "arena" there is a count of how many frames
+%   some part of the worm was in that location.
+%
 %
 %   Inputs:
-%       skeletonX - the worm skeleton's x coordinates per frame
-%                   (x-coordinates x frames)
-%       skeletonY - the worm skeleton's y coordinates per frame
-%                   (y-coordinates x frames)
-%       points    - the skeleton points (cell array) to use; each set of
-%                   skeleton points delineates a separate path
-%       scale     - the coordinate scale for the path
-%                   Note: if the path time is integrated at the standard
-%                   micron scale, the matrix will be too large and the
-%                   worm's width will be too skinny. Therefore, I suggest
-%                   using an a scale of 1/width to match the worm's width
-%                   to a pixel edge; or, if you want to account for the
-%                   long diagonal axis in the taxi-cab metric of pixels,
-%                   use sqrt(2)/width to match the worm's width to a
-%                   pixel's diagonal length
-%       fps       - the frames/seconds
 %
 %   Output:
 %       arena - a struct of the arena/path size with subfields:
@@ -42,55 +32,22 @@ function duration_struct = getDurationInfo(sx, sy, widths, fps)
 %
 %       times - a struct(s) of the time(s) spent, per path, with subfields:
 %
-%               indices = the indices for the non-zero time points in the
-%                         arena matrix
-%               times   = the non-zero time point values (in seconds)
-%                         corresponding to the arena matrix indices
-%
-%
-% © Medical Research Council 2012
-% You will not remove any copyright or other notices from the Software; 
-% you must reproduce all copyright notices and other proprietary 
-% notices on any copies of the Software.
+%               indices = [1  n_non_zero] the indices for the non-zero time
+%                       points in the arena matrix
+%               times   = [1  n_non_zero] how long some part of the worm
+%                       body was at each of the indices
+
 
 
 %Compute the scale
 %--------------------------------------------------------------------------
-
-
-% % % % headWidths    = featureData.widthsAtTips(1,:);
-% % % % midbodyWidths = featureData.width;
-% % % % tailWidths    = featureData.widthsAtTips(2,:);
-% % % % 
-% % % % headWidth = nanmean(headWidths);
-% % % % midWidth  = nanmean(midbodyWidths);
-% % % % tailWidth = nanmean(tailWidths);
-% % % % meanWidth = (headWidth + midWidth + tailWidth) / 3;
-% % % % scale = sqrt(2) / meanWidth;
-
-
-%Compute the skeleton points
-% % % 
-% % % headI = 1;
-% % % tailI = 49;
-% % % wormSegSize = round(tailI / 6);
-% % % headIs      = headI:(headI + wormSegSize - 1);
-% % % midbodyIs   = (headI + wormSegSize):(tailI - wormSegSize);
-% % % tailIs      = (tailI - wormSegSize + 1):tailI;
-
-% % % %     headI:tailI, ...
-% % % %     headIs, ...
-% % % %     midbodyIs, ...
-% % % %     tailIs};
-
-
 SI = seg_worm.skeleton_indices;
 
 % Compute the skeleton points.
 s_points = {SI.ALL_INDICES SI.HEAD_INDICES SI.MID_INDICES SI.TAIL_INDICES};
 n_points = length(s_points);
 
-%??? - why scale this ????
+%??? - why scale this ????, why not just use microns?
 mean_width = nanmean(mean(widths([s_points{2:4}],:),1),2);
 scale = sqrt(2)/mean_width;
 %NOTE: The old code omitted the widths at the neck and hips, I'm also doing
@@ -98,6 +55,8 @@ scale = sqrt(2)/mean_width;
 %instead of just taking the mean of the widths. This distinction seems not
 %functionally useful but I'll keep it for now ...
 
+NAN_cell = repmat({NaN},1,n_points);
+durations = struct('indices',NAN_cell,'times',NAN_cell);
 
 % The skeletons are empty.
 if isempty(sx) || all(isnan(sx(:)))
@@ -108,9 +67,6 @@ if isempty(sx) || all(isnan(sx(:)))
     arena.max.x = NaN;
     arena.max.y = NaN;
     
-    NAN_cell = repmat({NaN},1,n_points);
-    
-    durations = struct('indices',NAN_cell,'times',NAN_cell);
     duration_struct = h__buildOutput(arena,durations);
     return;
 end
@@ -143,89 +99,62 @@ arena.max.x  = max(sx(:));
 arena.max.y  = max(sy(:));
 %--------------------------------------------------------------------------
 
+%NOTE: All points have been rounded to integer values for assignment to the
+%matrix based on their values being treated as indices
 
-zeroArena = zeros(arenaSize);
-arenas    = cell(length(s_points),1);
-for iPoint = 1:n_points
-    arenas{iPoint} = zeroArena;
-end
+%Here we convert to linear indices for assignment as Matlab treats pairs
+%of indices as combinations of the dimensions, i.e. (1:5,1:5) is not (1,1),
+%(2,2), (3,3) but rather a 5 x 5 set of values
+all_worm_I   = sub2ind(arenaSize, sys, sxs);
+frames_run   = find(any(all_worm_I));
+n_frames_run = length(frames_run);
 
-n_frames = size(sxs,2);
+arenas    = cell(n_points,1);
 
-
-%JAH TODO: I'm at this point rewriting the code ...
-%
-%NOTE: Instead of sorting, just do assignments
-%
-%   i.e.
-%   
-%   temp([1 3 5 5 3]) = 1;
-%
-%   temp => [1 0 1 0 1] - then add this to the current counts
-%
-
-arenas2 = arenas;
-
-all_worm_I = sub2ind(arenaSize, sys, sxs);
-
-temp = zeroArena;
-
-
-
-
-tic
-% Compute the time spent at each point for the path(s).
-for i = 1:n_frames
-
-    % Is there a skeleton for this frame?
-    if isnan(sxs(1,i))
-        continue;
-    end
-
-    % Compute the worm.
-    wormI = sub2ind(arenaSize, sys(:,i), sxs(:,i));
-    
-    % Compute the time at each point for the worm points path(s).
-    for j = 1:length(arenas)
-        
-        % Compute the unique worm points.
-        wormPointsI = unique(wormI(s_points{j}));
-        
-        % Integrate the path.
-        arenas{j}(wormPointsI) = arenas{j}(wormPointsI) + 1;
-    end
-end
-toc
-
-%Start of new code ...
-%--------------------------------------------------------------------------
-frames_run = any(all_worm_I);
-
-tic
 for iPoint = 1:n_points
    
-    s_indices = s_points{iPoint};
+    temp_arena = zeros(arenaSize);
+    s_indices  = s_points{iPoint};
     
-    
-    
-    for iFrame
-    
-end
-toc
+    for iFrame = 1:n_frames_run
+       cur_frame   = frames_run(iFrame);
+       cur_indices = all_worm_I(s_indices,cur_frame);
+       
 
-keyboard
-
-% Correct the y-axis (from image space).
-for i = 1:length(arenas)
-    arenas{i} = flipud(arenas{i});
+       %Approach: we only want to increment 1 for each unique value, but
+       %assuming that the right hand side is done before any assigments are
+       %made, redundant assignments result in only having each unique value
+       %incremented by 1
+       %
+       %i.e. a = [0 0 0 0 0]
+       %     b = [1 3 1 3 5] %NOTE: We have 2 each of 1 & 3
+       %
+       %     a(b) = a(b) + 1 => [1 0 1 0 1]
+       %
+       %    I assume the computer does the assignment:
+       %    a(1) = 1 twice (
+       %
+       %    and not a(1) = a(1) + 1 twice
+       %    
+       %    same for 3:
+       %    a(3) = 1 , NOT a(3) = a(3) + 1
+       %
+       %    This allows us to avoid computing the unique set of indices
+       %    before doing the calculation:
+       %    i.e., we avoid b = unique(b)
+       %
+       temp_arena(cur_indices) = temp_arena(cur_indices) + 1;
+    end
+    % Correct the y-axis (from image space).
+    arenas{iPoint} = temp_arena(end:-1:1,:);
 end
+
 
 % Organize the arena/path time(s).
-durations(length(arenas)).indices = [];
-durations(length(arenas)).times = [];
-for i = 1:length(arenas)
-    durations(i).indices = find(arenas{i} > 0);
-    durations(i).times = double(arenas{i}(durations(i).indices)) / fps;
+for iPoint = 1:n_points
+    non_empty_arena_indices   = find(arenas{iPoint} > 0);
+    durations(iPoint).indices = non_empty_arena_indices;
+    durations(iPoint).times   = arenas{iPoint}(non_empty_arena_indices) / fps;
 end
 
 duration_struct = h__buildOutput(arena,durations);
