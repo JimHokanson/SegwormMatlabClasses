@@ -16,9 +16,17 @@ classdef frame_errors < sl.obj.handle_light
     %   NOTE: I don't think I am going to use this to hold values
     %   instead I think I am just going to hold the numeric value and
     %   build an interface 
+    %
+    %   NOTE: In general the handling of errors seems like a bit of an
+    %   afterthought in the code. It would be good at some point to design
+    %   it from the beginning so that it all makes sense and is well
+    %   encapsulated
     
     properties
       %TODO: Replace with IDs ???
+      %
+      % See comments at end of file 
+      %
        %frame_numbers
        %id
     end
@@ -60,7 +68,7 @@ classdef frame_errors < sl.obj.handle_light
             
             %Set the rest ...
             %--------------------------------------------------------------
-            mask_char  = 'smd';
+            mask_char  = 'smd';   %s - segmented, m - movement, d - dropped
             mask_value = [1 2 3];
             
             for iVar = 1:3

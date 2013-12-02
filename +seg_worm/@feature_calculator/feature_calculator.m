@@ -6,6 +6,9 @@ classdef feature_calculator < sl.obj.handle_light
     %   I might get rid of this class. It would be nice if features could
     %   calculate themselves.
     %
+    %   
+    %
+    %
     %   I'm just throwing some processing code in here for now.
     
     properties

@@ -10,6 +10,11 @@ function range = getRange(nw)
 % heatmap. A single location of dwelling dominates faint traces of the
 % worm’s path during motion.
 
+%TODO: Change the code so that only the contours are passed in, I was 
+%passing in the object to use the skeletons as well, but I'll stick with
+%the contours for now ...
+
+
 %NOTE: This code uses the contours, but the skeleton is probably just as
 %good and is only slightly different ...
 contour_x = nw.contour_x;

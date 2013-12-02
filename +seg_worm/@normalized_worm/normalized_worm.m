@@ -68,13 +68,15 @@ classdef normalized_worm < sl.obj.handle_light
        EIGENWORM_PATH = 'F:\worm_data\masterEigenWorms_N2.mat'
     end
     
+    %NOTE: Some of these are redundant and could be calculated rather
+    %easily from the other ones.
     properties
         segmentation_status  %[1 n],char
         %    s = segmented
         %    f = segmentation failed
         %    m = stage movement
         %    d = dropped frame
-        %    n??? - there is reference in some old code to this type
+        %    n??? - there are references in some old code to this type
         frame_codes         %[1 n], see comments in seg_worm.parsing.frame_errors
         %near the bottom, I haven't yet coded in the values as constants
         %... :/
@@ -95,8 +97,12 @@ classdef normalized_worm < sl.obj.handle_light
         
         
         skeletons            %[49 2 n] double
-        angles               %[49 n] double, degrees
-        %? Why are the first and last 5 values of each frame NaN?
+        angles               %[49 n] double, degrees (Redundant?) How is this calculated?
+        %   - is this the low frequency body angle, the high frequency body
+        %   angles, the smoothed body angles, or the paired angles
+        %   like those used with the eigenworms?
+        %
+        %   ? Why are the first and last 5 values of each frame NaN?
         %
         %   Uses:
         %   ------------------------------------------

@@ -1,12 +1,20 @@
 function frames = findEvent(data, minThr, maxThr, varargin)
 %FINDEVENT Find an event within an array of data.
-% Note: if the first/last event are solely preceded/followed by NaN frames,
-% these frames are swallowed into the respective event.
-%
-%   frames = seg_worm.feature.event.findEvent();
 %
 %
-%   YIKES! This needs to be cleaned up ...
+%   Note: if the first/last event are solely preceded/followed by NaN
+%   frames, these frames are swallowed into the respective event.
+%
+%   frames = seg_worm.feature.event.findEvent(data, minThr, maxThr, varargin);
+%
+%
+%
+%   ******************************************************
+%       YIKES! This needs to be cleaned up ...
+%   ******************************************************
+%
+%
+%
 %
 %
 %   Rows are functional groups of inputs ...
@@ -139,7 +147,8 @@ function frames = findEvent(data, minThr, maxThr, varargin)
     %wormEventMinInterFramesThr);
 
 
-
+%This is for verification that we're doing things right, will be removed
+%...
 frames2 = h__findEvent_old(data, minThr, maxThr, varargin{:});
 
 %==========================================================================
@@ -396,19 +405,19 @@ function [startFrames,endFrames] = h__unifyEvents(startFrames,endFrames,minInter
 % Unify small time gaps.
 if ~isempty(minInterFramesThr)
     if isAtInterFramesThr
-        [startFrames,endFrames] = h__removeGaps(startFrames,endFrames,minInterFramesThr,@le); %,=
+        [startFrames,endFrames] = h__removeGaps(startFrames,endFrames,minInterFramesThr,@le); %  <=
     else % the threshold is exclusive
-        [startFrames,endFrames] = h__removeGaps(startFrames,endFrames,minInterFramesThr,@lt); %<
+        [startFrames,endFrames] = h__removeGaps(startFrames,endFrames,minInterFramesThr,@lt); %  <
     end
 end
 
 % Unify large time gaps.
 if ~isempty(maxInterFramesThr)
     if isAtInterFramesThr
-        [startFrames,endFrames] = h__removeGaps(startFrames,endFrames,maxInterFramesThr,@ge); %>=
+        [startFrames,endFrames] = h__removeGaps(startFrames,endFrames,maxInterFramesThr,@ge); %  >=
     else
         % the threshold is exclusive
-        [startFrames,endFrames] = h__removeGaps(startFrames,endFrames,maxInterFramesThr,@gt); %>=
+        [startFrames,endFrames] = h__removeGaps(startFrames,endFrames,maxInterFramesThr,@gt); %  >=
     end
 end
 

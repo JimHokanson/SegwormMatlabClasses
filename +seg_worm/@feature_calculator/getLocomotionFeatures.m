@@ -30,12 +30,12 @@ locomotion.turns.upsilons
 %2 - anticlockwise
 
 FPS = 20;
+VENTRAL_MODE = 1;  %??? How is this computed ????
 
-ventralMode = 1;
-
-%Velocity
+%Velocity - DONE
 %--------------------------------------------------------------------------
-locomotion.velocity = seg_worm.feature_helpers.locomotion.getWormVelocity(nw.x,nw.y,FPS,ventralMode);
+locomotion.velocity = seg_worm.feature_helpers.locomotion.getWormVelocity(nw.x,nw.y,FPS,VENTRAL_MODE);
+
 
 %Motion
 %--------------------------------------------------------------------------
@@ -43,6 +43,8 @@ midbody_speed = locomotion.velocity.midbody.speed;
 lengths       = nw.lengths;
 %Almost done, needs a little more refactoring ...
 locomotion.motion   = seg_worm.feature_helpers.locomotion.getWormMotionCodes(midbody_speed, lengths, FPS);
+
+keyboard
 
 %Bends
 %--------------------------------------------------------------------------

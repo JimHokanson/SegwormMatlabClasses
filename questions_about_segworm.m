@@ -17,5 +17,6 @@ if ~isempty(failedFrames) && length(failedFrames(:,1)) > 2
 end
 %--------------------------------------------------------------------------
 
+%In computing the worm velocity, the direction is divided by fps, why?
 
 %}

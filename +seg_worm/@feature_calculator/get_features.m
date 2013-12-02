@@ -1,5 +1,9 @@
 %This code was originally copied from SegWorm/Pipeline/featureProcess.m
 %
+%   This is the old code for getting feature data. We are rewriting this to
+%   make the code alot easier to follow.
+%
+%
 % © Medical Research Council 2012
 % You will not remove any copyright or other notices from the Software; 
 % you must reproduce all copyright notices and other proprietary 

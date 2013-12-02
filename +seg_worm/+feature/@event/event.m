@@ -5,20 +5,26 @@ classdef event < sl.obj.handle_light
     %
     %   See Also:
     %   seg_worm.events.events2stats
+    %
+    %
+    %   General Notes:
+    %   -------------------------------------------------------------------
+    %   - This is still very much a work in progress. The events are quite
+    %   complicated and messy
+    %   - An event can optionally contain
     
-    %Events
-    %NOTE: At some point later
+    %Known Uses:
     %----------------------------------------------------------------------
-    %posture.coils
-    %
-    %   seg_worm.feature_calculator.getPostureFeatures
-    %
-    %   .frames - e
-    %
+    %posture.coils - seg_worm.feature_helpers.posture.getCoils
     %
     %locomotion.turns.omegas
     %locomotion.turns.upsilons
-    %locomotion.motion.forward
+    %
+    %
+    %Uses findEvent ...
+    %----------------------------------------------------------------------
+    %  in seg_worm.feature_helpers.locomotion.getWormMotionCodes
+    %locomotion.motion.forward  
     %locomotion.motion.backward
     %locomotion.motion.paused
     
@@ -65,23 +71,6 @@ classdef event < sl.obj.handle_light
         time_ratio
         data_ratio %[1 1] might not exist if .data_sum_name is not specified
         
-        
-        
-        %I WILL BE REMOVING THIS STUFF ...
-        %{
-        inter_distance %
-        %posture.coils
-        %locomotion.turns.omegas
-        %locomotion.turns.upsilons
-        
-        %Maybe replace with sign_value_mask
-        %- this would indicate how to sign the result if needed
-        is_ventral %
-        %locomotion.turns.omegas
-        %locomotion.turns.upsilons
-        
-        inter_names  %[1 n_samples]
-        %}
     end
     
     properties (Dependent)
@@ -107,16 +96,58 @@ classdef event < sl.obj.handle_light
         end
     end
     
+    methods (Static)
+       %This is temporary, I'll probably create an event finder class ...
+       %
+       %    Used by:
+       %    locomotion.motion.forward  
+       %    locomotion.motion.backward
+       %    locomotion.motion.paused
+       %
+       %    in seg_worm.feature_helpers.locomotion.getWormMotionCodes
+       frames = findEvent(data, minThr, maxThr, varargin); 
+    end
+    
     methods
-        function obj = event(event_ss,fps,data,name,interName)
-            %TODO: This will be from event2stats
+        function obj = event(event_ss,fps,data,data_sum_name,inter_data_sum_name)
+            %
+            %   obj = seg_worm.feature.event(event_ss,fps,data,data_sum_name,inter_data_sum_name)
+            %
+            %
+            %   Inputs
+            %   ===========================================================
+            %   event_ss : (structure array) Event Start & Stop Structure
+            %          .start - frame number in which event starts
+            %          .end   - frame number in which event ends
+            %
+            %   fps      : (scalar) frames per second
+            %   data     : This data is used for computations, it is
+            %               either:
+            %             1) distance
+            %
+            %               From: worm.locomotion.velocity.midbody.speed
+            %               distance = abs(speed / fps);
+            %
+            %               Known users:
+            %               seg_worm.feature_helpers.posture.getCoils
+            %               seg_worm.feature_helpers.locomotion.getWormMotionCodes
+            %
+            %             2) ????
+            %
+            %   data_sum_name : (char) When retrieving the final structure
+            %         this is the name given to the field that contains the
+            %         sum of the input data during the event
+            %   inter_data_sum_name : (char) "          " sum of the input
+            %         data between events
+            %
+            %Some of this code is based on event2stats
             
-            obj.fps      = fps;
+            obj.fps            = fps;
             obj.n_video_frames = length(data);
-            obj.start_Is = [event_ss.start];
-            obj.end_Is   = [event_ss.end];
-            obj.data_sum_name       = name;
-            obj.inter_data_sum_name = interName;
+            obj.start_Is       = [event_ss.start];
+            obj.end_Is         = [event_ss.end];
+            obj.data_sum_name       = data_sum_name;
+            obj.inter_data_sum_name = inter_data_sum_name;
             
             %Now populate the outputs ...
             %--------------------------------------------------------------
@@ -131,14 +162,14 @@ classdef event < sl.obj.handle_light
             %---------------------------
             if ~isempty(obj.data_sum_name)
                 temp = zeros(1,obj.n_events);
-                for iEvent = 1:n_events
+                for iEvent = 1:obj.n_events
                     temp(iEvent) = nansum(data(obj.start_Is(iEvent):obj.end_Is(iEvent)));
                 end
                 obj.data_sum_values = temp;
             end
             
             %---------------------------
-            if ~isempty(interName)
+            if ~isempty(inter_data_sum_name)
                 temp = NaN(1,obj.n_events);
                 for iEvent = 1:(obj.n_events-1)
                     start_frame = obj.end_Is(iEvent)+1;
@@ -151,13 +182,29 @@ classdef event < sl.obj.handle_light
             %----------------------------
             obj.total_time = obj.n_video_frames/obj.fps;
             obj.frequency  = obj.n_events_for_stats/obj.total_time;
+            
+            
+            %??? - why the difference, how to know ????
+            %- for motion codes
+            %ratio.time
+            %ratio.distance
+            %
+            %- for coils
+            %timeRatio - no ratio field
+            
             obj.time_ratio = nansum(obj.event_durations) / obj.total_time;
             if ~isempty(obj.data_sum_name)
                obj.data_ratio = nansum(obj.data_sum_values)/nansum(data); 
             end
         end
-        function s = getStruct(obj)
-            %This will be to get the structure for saving ...
+        function s = getFeatureStruct(obj)
+            %   
+            %   This function returns the structure that matches the form
+            %   seen in the feature files
+            %
+            %   JAH TODO: Describe format of structure ...
+            %
+            %   
             
             %This bit of code is meant to replace all of the little
             %extra stuff that was previously being done after getting

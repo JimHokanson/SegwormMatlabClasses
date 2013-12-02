@@ -14,3 +14,7 @@
 %   - power instead of magnitude is used for comparison
 %   - primary and secondary wavelength may be switched ...
 %   - primary and secondary both capped? - drop secondary in that case?
+%
+%
+%seg_worm.feature_helpers.computeVelocity - description in supplemental
+%doesn't match reality ...

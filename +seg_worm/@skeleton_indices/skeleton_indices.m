@@ -17,7 +17,7 @@ classdef skeleton_indices < sl.obj.handle_light
     %   Typical Usage:
     %   --------------------------------------------------------
     %   SI = seg_worm.skeleton_indices;
-    
+        
     properties (Constant)
         HEAD_INDICES = 1:8;
         NECK_INDICES = 9:16;
@@ -30,9 +30,9 @@ classdef skeleton_indices < sl.obj.handle_light
         TAIL_BASE_INDICES = 41:45;
         TAIL_TIP_INDICES  = 46:49;
         
-        ALL_INDICES = 1:49
+        ALL_INDICES = 1:49   %Same as 1:end,
         
-        BODY_INDICES = 9:41;
+        BODY_INDICES = 9:41; %Indices excluding the head and tail
     end
     
     properties (Dependent)

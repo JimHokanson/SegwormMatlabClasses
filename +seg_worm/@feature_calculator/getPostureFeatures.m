@@ -63,20 +63,9 @@ posture.bends = bends;
 %--------------------------------------------------------------------------
 posture.kinks = seg_worm.feature_helpers.posture.wormKinks(nw.angles);
 
-%Coils - NOT YET FINISHED ...
+%Coils - NOT YET FINISHED ... - needs distance from locomotion ...
 %--------------------------------------------------------------------------
-
-%NOTE: we need distance!, moving onto locomotion to get it ...
-
-distance = rand(1,nw.n_frames); %This is temporary ...
-
-%NOTE: Output is zero based currently :/
-coiled_frames = seg_worm.feature_helpers.posture.wormTouchFrames(nw.frame_codes, FPS);
-
-%TODO: I might want to create a static method of the class so I can merge
-%these two lines ...
-coiled_events = seg_worm.feature.event(coiled_frames,FPS,distance,[],'interDistance');
-posture.coils = coiled_events.getStruct;
+posture.coils = seg_worm.feature_helpers.posture.getCoils(nw.n_frames,nw.frame_codes);
 
 
 %Directions
