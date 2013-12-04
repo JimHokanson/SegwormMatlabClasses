@@ -3,8 +3,9 @@ function data = worm2func(func, state, wormFile, startFrame, endFrame, backScale
 %
 %
 %   This function is called by:
-%   catWormData
-%   wormBends
+%   catWormData - called by noone
+%   wormBends - rewritten as seg_worm.feature_helpers.locomotion.getLocomotionBends
+%   
 %
 %   DATA = WORM2FUNC(FUNC, STATE, WORMFILE, STARTFRAME, ENDFRAME, BACKSCALE, FRONTSCALE)
 %
@@ -302,7 +303,7 @@ for i = startBlockI:endBlockI
         + firstFrame - 1;
     
     % Load the data.
-    backScaleFrames = min(backScale, startDataBlockFrame);
+    backScaleFrames  = min(backScale, startDataBlockFrame);
     frontScaleFrames = min(frontScale, lastFrame - endDataBlockFrame);
     [dataInfo,blockInfo] = loadData(wormFile, fps, ...
         startDataBlockFrame, endDataBlockFrame, backScaleFrames, ...

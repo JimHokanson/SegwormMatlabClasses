@@ -26,6 +26,10 @@ function velocity = getWormVelocity(x, y, fps, ventralMode)
 %                  tail    = the tail (1/6 the worm at 0.5s)
 %                  tailTip = the tip of the tail (1/12 the worm at 0.25s)
 %
+%   Nature Methods Description
+%   =======================================================================
+%
+%
 
 SI        = seg_worm.skeleton_indices;
 TIP_DIFF  = 0.25;

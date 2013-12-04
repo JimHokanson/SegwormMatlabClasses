@@ -17,49 +17,38 @@ function posture = getPostureFeatures(nw)
 
 
 
-FPS = 20; %TODO: get this from higher up ...
-N_ECCENTRICITY = 50;
+FPS = 20; %TODO: get these from higher up ...
+N_ECCENTRICITY = 50; %grid size for estimating eccentricity, this is the
+%max # of points that will fill the wide dimension
 
 %Bends
 %---------------------------------------------------------------------
-SI          = seg_worm.skeleton_indices;
-ALL_INDICES = SI.ALL_NORMAL_INDICES;
-FIELDS      = SI.ALL_NORMAL_NAMES;
-
-n_fields = length(FIELDS);
-
-bends = struct;
-for iField = 1:n_fields
-    cur_indices = ALL_INDICES{iField};
-    cur_name    = FIELDS{iField};
-    bends.(cur_name).mean   = nanmean(nw.angles(cur_indices,:));
-    bends.(cur_name).stdDev = nanstd(nw.angles(cur_indices,:));
-    
-    %Sign the standard deviation ...
-    %----------------------------------------------------------------------
-    mask = bends.(cur_name).mean < 0;
-    bends.(cur_name).stdDev(mask) = -1*bends.(cur_name).stdDev(mask);
-end
-
-posture.bends = bends;
+posture.bends = seg_worm.feature_helpers.posture.getPostureBends(nw.angles);
 
 
+%Bend Counts???? - where is this in the structure???
 
-%Eccentricity & Orientation
+
+%Eccentricity & Orientation - needs documentation
 %--------------------------------------------------------------------------
 %This is relatively slow ...
-[posture.eccentricity, worm_orientation] = seg_worm.feature_helpers.posture.getEccentricity(nw.contour_x, nw.contour_y, N_ECCENTRICITY);
+[posture.eccentricity, worm_orientation] = ...
+    seg_worm.feature_helpers.posture.getEccentricity(...
+    nw.contour_x, nw.contour_y, N_ECCENTRICITY);
 
 
 
-%Amplitude, Wavelengths, TrackLength, Amplitude Ratio
+%Amplitude
+%Wavelengths 
+%TrackLength
 %--------------------------------------------------------------------------
 [posture.amplitude,posture.wavelength,posture.trackLength] = ...
-  seg_worm.feature_helpers.posture.getAmplitudeAndWavelength(worm_orientation,nw.x,nw.y,nw.lengths);
+  seg_worm.feature_helpers.posture.getAmplitudeAndWavelength(...
+  worm_orientation,nw.x,nw.y,nw.lengths);
 
 
 
-%Kinks - CODE NOT YET EXAMINED ... (But it works)
+%Kinks (aka bend counts) - CODE NOT YET EXAMINED ... (But it works)
 %--------------------------------------------------------------------------
 posture.kinks = seg_worm.feature_helpers.posture.wormKinks(nw.angles);
 
@@ -68,7 +57,7 @@ posture.kinks = seg_worm.feature_helpers.posture.wormKinks(nw.angles);
 posture.coils = seg_worm.feature_helpers.posture.getCoils(nw.n_frames,nw.frame_codes);
 
 
-%Directions
+%Directions (aka orientation)
 %--------------------------------------------------------------------------
 %seg_worm.feature_helpers.posture.getDirections
 posture.directions = seg_worm.feature_helpers.posture.getDirections(nw.skeletons);
@@ -79,7 +68,6 @@ posture.directions = seg_worm.feature_helpers.posture.getDirections(nw.skeletons
 %--------------------------------------------------------------------------
 posture.skeleton.x = nw.x;
 posture.skeleton.y = nw.y;
-
 
 
 %EigenProjection

@@ -2,10 +2,7 @@ function locomotion = getLocomotionFeatures(nw)
 %
 %   locomotion = seg_worm.feature_calculator.getLocomotionFeatures(nw)
 %
-%   UNFINISHED STATUS
-%   --------------------------
-%   - bends not started
-%   - turns started, but I need to incorporate new event code
+%   Unfinished  Unfinished  Unfinished  Unfinished
 
 %{
 locomotion.bends.foraging.amplitude
@@ -17,9 +14,6 @@ locomotion.bends.tail.amplitude
 locomotion.bends.head.frequency
 locomotion.bends.midbody.frequency
 locomotion.bends.tail.frequency
-
-locomotion.turns.omegas
-locomotion.turns.upsilons
 
 %}
 
@@ -37,20 +31,31 @@ VENTRAL_MODE = 1;  %??? How is this computed ????
 locomotion.velocity = seg_worm.feature_helpers.locomotion.getWormVelocity(nw.x,nw.y,FPS,VENTRAL_MODE);
 
 
-%Motion
+%Motion - still refactoring events ...
 %--------------------------------------------------------------------------
-midbody_speed = locomotion.velocity.midbody.speed;
-lengths       = nw.lengths;
-%Almost done, needs a little more refactoring ...
-locomotion.motion   = seg_worm.feature_helpers.locomotion.getWormMotionCodes(midbody_speed, lengths, FPS);
+midbody_speed     = locomotion.velocity.midbody.speed;
+locomotion.motion = seg_worm.feature_helpers.locomotion.getWormMotionCodes(midbody_speed, nw.lengths, FPS);
 
 keyboard
 
 %Bends
 %--------------------------------------------------------------------------
+% % % locomotion.bends.foraging.amplitude
+% % % locomotion.bends.foraging.angleSpeed
+% % % 
+% % % locomotion.bends.head.amplitude
+% % % locomotion.bends.midbody.amplitude
+% % % locomotion.bends.tail.amplitude
+% % % locomotion.bends.head.frequency
+% % % locomotion.bends.midbody.frequency
+% % % locomotion.bends.tail.frequency
+
+locomotion.bends = seg_worm.feature_helpers.locomotion.getLocomotionBends(...
+    wormFile, motionEvents.mode, ventralMode);
 
 
-%Turns
+
+%Turns - still working on this ...
 %--------------------------------------------------------------------------
 [omegas,upsilons] = seg_worm.feature_helpers.locomotion.getOmegaAndUpsilonTurns(nw,1);
 

@@ -50,7 +50,7 @@ worm.locomotion = seg_worm.feature_calculator.getLocomotionFeatures(nw);
 
 %Posture
 %--------------------------------------------------------------------------
-worm.posture = seg_worm.feature_calculator.getPostureFeatures(nw);
+%worm.posture = seg_worm.feature_calculator.getPostureFeatures(nw);
 
 
 %Path

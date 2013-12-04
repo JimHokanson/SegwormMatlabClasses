@@ -1,50 +1,45 @@
 function [eccentricity, orientation] = getEccentricity(xOutline, yOutline, gridSize)
-% GETPOLYECCENTRICITY  Given x and y coordinates of the outline of a region
-% of interest, fill the outline with a grid of evenly spaced points and use
-% these to calculate the eccentricity and orientation of the equivalent
-% ellipse.
+% getEccentricity   
+%
+%   [eccentricity, orientation] = seggetEccentricity(xOutline, yOutline, gridSize)
 %
 %
-%   I think this could be sped up a bit ...
+%   Given x and y coordinates of the outline of a region
+%   of interest, fill the outline with a grid of evenly spaced points and use
+%   these to calculate the eccentricity and orientation of the equivalent
+%   ellipse.
 %
-% Input:
+%   TODO: Finish documentation
+%
+%   Inputs:
+%   =======================================================================
 %   xOutline - The x coordinates of the outline of the region of interest
 %   yOutline - The y coordinates of the outline of the region of interest
 %   gridSize - The side length of grid to be used to fill in the region of
 %              interest.  50 gives reasonable values quickly for our data.
 %
-% Output:
+%   Outputs:
+%   =======================================================================
 %   eccentricity - The eccentricity of the equivalent ellipse of the region
 %                  of interest.
 %   orientation  - The orientation angle of the equivalent ellipse of the
 %                  region of interest.
 %
-% NOTE: this function uses the eccentricity code from regionprops
-% essentially unchanged.
-% © Medical Research Council 2012
-% You will not remove any copyright or other notices from the Software;
-% you must reproduce all copyright notices and other proprietary
-% notices on any copies of the Software.
+%
+%   Nature Methods Description
+%   =======================================================================
+%   Eccentricity. 
+%   ------------------
+%   The eccentricity of the worm’s posture is measured using
+%   the eccentricity of an equivalent ellipse to the worm’s filled contour.
+%   The orientation of the major axis for the equivalent ellipse is used in
+%   computing the amplitude, wavelength, and track length (described
+%   below).
+
 
 MIDDLE_INDEX = 49;
 
 
-
-%OLD CODE
-%--------------------------------------------------------------------------
-
-%{
-xOutline_mc = bsxfun(@minus,xOutline,mean(xOutline,1)); %_mc - mean centered
-yOutline_mc = bsxfun(@minus,yOutline,mean(yOutline,1));
-
-xRange_all = max(xOutline_mc,[],1) - min(xOutline_mc,[],1);
-yRange_all = max(yOutline_mc,[],1) - min(yOutline_mc,[],1);
-gridAspectRatio_all = xRange_all./yRange_all;
-
-tic
-[eccentricity1,orientation1] = h__getEccentricityAndOrientationOld(xOutline_mc,yOutline_mc,xRange_all,yRange_all,gridAspectRatio_all,gridSize);
-toc
-%}
 
 %Rough time breakdown
 %--------------------------------------
@@ -100,7 +95,7 @@ xOutline_mc = xOutline_rot;
 yOutline_mc = yOutline_rot;
 
 %{
-
+%Debugging code ...
 %Examine the rotated worms 
 %-------------------------------------------------
 for iFrame = 1:10:size(xOutline_mc,2)
@@ -145,12 +140,16 @@ d = [diff(xOutline_mc,1,1); xOutline_mc(1,:) - xOutline_mc(end,:)];
 n_frames = size(xOutline,2);
 n_c = size(xOutline,1);
 
-y_interp_1 = NaN(gridSize,n_frames);
+y_interp_1 = NaN(gridSize,n_frames); %Tentatively the bottom of the worm, we'll
+%explicitly check this out later ...
 y_interp_2 = NaN(gridSize,n_frames);
-x_out_all  = NaN(gridSize,n_frames);
+x_interp   = NaN(gridSize,n_frames);
 
 
-%TODO: Could remove linspace
+%NOTE: The basic difference between these loops is in how x1 and x2 are
+%defined. For interpolation we must always go from a lower value to a
+%higher value (to use the quick method of interpolation). Note, the sign
+%on the comparison is also different.
 
 %--------------------------------------------------------------------------
 %x1: from negative to postive x
@@ -161,10 +160,10 @@ for iFrame = find(min_first_mask)
     
     if all(d(x1(1:end-1),iFrame) > 0)
         
-        x2 = [mx_x_I(iFrame):n_c 1:(mn_x_I(iFrame))];
+        x2 = [mx_x_I(iFrame):n_c    1:(mn_x_I(iFrame))];
         
         if all(d(x2(1:end-1),iFrame) < 0)
-            [y_interp_1(:,iFrame),y_interp_2(:,iFrame),x_out_all(:,iFrame)] = ...
+            [y_interp_1(:,iFrame),y_interp_2(:,iFrame),x_interp(:,iFrame)] = ...
                 h__getInterpValues(x1,x2,xOutline_mc,yOutline_mc,gridSize,iFrame,mn_x_I,mx_x_I);
         end
     end
@@ -177,10 +176,10 @@ for iFrame = find(min_last_mask)
     
     if all(d(x2(1:end-1),iFrame) < 0)
         
-        x1 = [mn_x_I(iFrame):n_c 1:(mx_x_I(iFrame))];
+        x1 = [mn_x_I(iFrame):n_c    1:(mx_x_I(iFrame))];
         
         if all(d(x1(1:end-1),iFrame) > 0)
-            [y_interp_1(:,iFrame),y_interp_2(:,iFrame),x_out_all(:,iFrame)] = ...
+            [y_interp_1(:,iFrame),y_interp_2(:,iFrame),x_interp(:,iFrame)] = ...
                 h__getInterpValues(x1,x2,xOutline_mc,yOutline_mc,gridSize,iFrame,mn_x_I,mx_x_I);
         end
     end
@@ -188,71 +187,111 @@ end
 
 %--------------------------------------------------------------------------
 
-%TODO: Now that we have have points at exactly the same X, we need
+%Now that we have have points at exactly the same X, we need
 %to determine the y values, we might be able to do this by rounding
 
 TOL = 1.0e-12;
-%TODO: 
 
-% max_y_interp = max(y_interp_2,[],1);
 min_y_interp = min(y_interp_1,[],1);
 
-
+%This is the old approach for computing our old dy
 % nY_all = round(gridSize./gridAspectRatio_all);
-% d_unit = (max_y_interp - min_y_interp)./(nY_all - 1);
+% dy = (max_y_interp - min_y_interp)./(nY_all - 1);
 
-%NOTE: d_unit should be the same as the x_unit, otherwise we are biased
-d_unit = x_out_all(2,:) - x_out_all(1,:);
+%NOTE: dy should be the same as the dx, otherwise we are biased (I think)
+dy = x_interp(2,:) - x_interp(1,:);
 
-
+%These are temporary arrays for holding the location of grid points that
+%fit inside the worm. They are a linerization of all points, so they don't
+%have a second dimension, we just pile new points from a worm frame onto
+%any old points from that frame.
 x_all = zeros(1,gridSize*gridSize);
 y_all = zeros(1,gridSize*gridSize);
 
 eccentricity = NaN(1,n_frames);
 orientation  = NaN(1,n_frames);
 
-simple_worm_mask = any(x_out_all,1);
+%A simple worm is one in which after rotation the x position is always
+%increasing or decreasing. If this is the case, then we will have defined
+%the new 'x_interp' variable, if not, it will still be NaN. In Matlab, any
+%is not true for NaN, for all it is ...
+simple_worm_mask = any(x_interp,1);
 
-d_unit = d_unit(simple_worm_mask);
+dy = dy(simple_worm_mask);
 min_y_interp = min_y_interp(simple_worm_mask);
 
-%This step takes a long time ...
-%Can we speed it up????
+
+
+
+
+%   This bit is a little tricky. We want to place our values at every dy.
 %
-%Could vectorize rounding
+%   1) - subtract minimum for centering
+%   2) - round y1 up to nearest dy and y2 down to nearest dy, this is done
+%   by  y1 = ceil(y1/dy)*dy
+%       y2 = floor(y1/dy)*dy
+%       
+%       These lines are somewhat messy because in Matlab we tradeoff
+%       efficiency of calculations for multiple lines. Since these are
+%       relatively slow and the memory allocation can take a decent amount
+%       of time I've tried to condense lines
+%
+%   3) - readd minimum
+%
+%   The minimum is subtracted to allow better coverage of the worm. We
+%   don't want do test each dy 0, dy, 2dy, instead we want it so that the
+%   extreme y-value of the worm is the starting point
+%
+%   min_y, min_y + dy, min_y + 2dy, etc
+%
+%   This is why we must first subtract the minimum. We then readd it for 
+%   doing centroid calculations, although I think this step may be
+%   unnecessary ...
 
-%TODO: I need to ensure that y2 > y1, if not, flip
-%NOTE: beginning and end will be a tossup due to rounding error, any 
-%point in the middle should be fine for testing
 
+%NOTE: The tolerance was subtracted to try and ensure points exactly
+%on the borders of the worm are included as well
+%
+%NOTE: The rounded values are only a subset of the original frames, so we
+%need to be careful about which index we are using
 y_1_rounded = bsxfun(@minus,y_interp_1(:,simple_worm_mask),min_y_interp)-TOL;
 y_2_rounded = bsxfun(@minus,y_interp_2(:,simple_worm_mask),min_y_interp)-TOL;
-y_1_rounded = bsxfun(@times,ceil(bsxfun(@rdivide,y_1_rounded,d_unit)),d_unit);
-y_2_rounded = bsxfun(@times,floor(bsxfun(@rdivide,y_2_rounded,d_unit)),d_unit);
+y_1_rounded = bsxfun(@times,ceil(bsxfun(@rdivide,y_1_rounded,dy)),dy);
+y_2_rounded = bsxfun(@times,floor(bsxfun(@rdivide,y_2_rounded,dy)),dy);
 y_1_rounded = bsxfun(@plus,y_1_rounded,min_y_interp);
 y_2_rounded = bsxfun(@plus,y_2_rounded,min_y_interp);
+
+%size - [gridSize frames]
+
+keyboard
+
+%Ensure that y2 > y1, if not, flip
+%If 
 
 cur_simple = 0;
 for iFrame = find(simple_worm_mask)
     count = 0;
     cur_simple = cur_simple + 1;
     
-    cur_d_unit = d_unit(cur_simple);
+    cur_d_unit = dy(cur_simple);
     
+    %For each x position, we increment from the minimum y value at that x location
+    %to the maximum at that location, in the specified steps. We need
+    %to hold onto the values for doing the eccentricity and orientation
+    %calculations.
     for iIndex = 1:gridSize
+        
+        %Generate appropriate y-values on grid
         temp = y_1_rounded(iIndex,cur_simple):cur_d_unit:y_2_rounded(iIndex,cur_simple);
+        
+        %and store ...
         y_all(count+1:count+length(temp)) = temp;
-        x_all(count+1:count+length(temp)) = x_out_all(iIndex,iFrame);
+        x_all(count+1:count+length(temp)) = x_interp(iIndex,iFrame);
         count = count + length(temp);
     end
 
     [eccentricity(iFrame),orientation(iFrame)] = h__calculateSingleValues(x_all(1:count),y_all(1:count));    
 end
-
-%{
-orientation2 = orientation;
-eccentricity2 = eccentricity;
-%}
 
 %{
 
@@ -274,8 +313,6 @@ axis equal
 
 %Use slow grid method for all unfinished worms
 %--------------------------------------------------------------------------
-%TODO: Pass in min and max, and compute these values inside
-%the function 
 xRange_all = mx_x - mn_x;
 yRange_all = mx_y - mn_y;
 gridAspectRatio_all = xRange_all./yRange_all;
@@ -292,20 +329,51 @@ orientation3(orientation3 < -90) = orientation3(orientation3 < -90) + 180;
 
 orientation = orientation3;
 
-%keyboard
-
-
 %{
+%Debugging code, comparing new to old
 subplot(2,1,1)
 plot(eccentricity - eccentricity1)
 subplot(2,1,2)
 plot(orientation - orientation1)
-
 %}
 
 end
 
+
+
+%OLD CODE
+%--------------------------------------------------------------------------
+
+%{
+xOutline_mc = bsxfun(@minus,xOutline,mean(xOutline,1)); %_mc - mean centered
+yOutline_mc = bsxfun(@minus,yOutline,mean(yOutline,1));
+
+xRange_all = max(xOutline_mc,[],1) - min(xOutline_mc,[],1);
+yRange_all = max(yOutline_mc,[],1) - min(yOutline_mc,[],1);
+gridAspectRatio_all = xRange_all./yRange_all;
+
+tic
+[eccentricity1,orientation1] = h__getEccentricityAndOrientationOld(xOutline_mc,yOutline_mc,xRange_all,yRange_all,gridAspectRatio_all,gridSize);
+toc
+%}
+
+
+
 function [y_interp_1,y_interp_2,x_out_all] = h__getInterpValues(x1,x2,xOutline_mc,yOutline_mc,gridSize,iFrame,mn_x_I,mx_x_I)
+%
+%
+%   [y_interp_1,y_interp_2,x_out_all] = h__getInterpValues(x1,x2,xOutline_mc,yOutline_mc,gridSize,iFrame,mn_x_I,mx_x_I)
+%
+%   Inputs
+%   =======================================================================
+%   x1          :
+%   x2          :
+%   xOutline_mc :
+%   yOutline_mc :
+%   gridSize    :
+%   iFrame      :
+%   mn_x_I      :
+%   mx_x_I      :  
 
 %Does interpolation for the two halves
 %TODO: Define inputs ...

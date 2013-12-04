@@ -183,15 +183,6 @@ classdef event < sl.obj.handle_light
             obj.total_time = obj.n_video_frames/obj.fps;
             obj.frequency  = obj.n_events_for_stats/obj.total_time;
             
-            
-            %??? - why the difference, how to know ????
-            %- for motion codes
-            %ratio.time
-            %ratio.distance
-            %
-            %- for coils
-            %timeRatio - no ratio field
-            
             obj.time_ratio = nansum(obj.event_durations) / obj.total_time;
             if ~isempty(obj.data_sum_name)
                obj.data_ratio = nansum(obj.data_sum_values)/nansum(data); 
@@ -238,8 +229,28 @@ classdef event < sl.obj.handle_light
             %--------------------------------------------------------------
             s.frames    = f;
             s.frequency = obj.frequency;
-            s.timeRatio = obj.time_ratio;
             
+            
+            %??? - why the difference, how to know ????
+            %------------------------------------------------
+            %ratio struct is present if worm can travel during event
+            %
+            %  - this might correspond to data_sum being defined 
+            %
+            %- for motion codes - data and interdata
+            %ratio.time
+            %ratio.distance
+            %
+            %- for coils - just interdata
+            %timeRatio - no ratio field
+            
+            %?? Do we also need a check for inter_data as well?
+            if isempty(obj.data_sum_name)
+                s.timeRatio = obj.time_ratio;
+            else
+                s.ratio.time     = obj.time_ratio;
+                s.ratio.distance = obj.data_ratio;
+            end
         end
         function new_obj = mergeEvents(obj1,obj2)
             

@@ -14,6 +14,22 @@ function directions = getDirections(skeleton_XY)
 %   ===========================================================
 %   directions : (struct)
 %  
+%   Nature Methods Description
+%   ===========================================================
+%   Orientation. 
+%   ------------------
+%   The worm’s orientation is measured overall (from tail to head) as well
+%   as for the head and tail individually. The overall orientation is
+%   measured as the angular direction from the tail to the head centroid.
+%   The head and tail centroids are computed as the mean of their
+%   respective skeleton points. The head and tail direction are computed by
+%   splitting these regions in two, then computing the centroid of each
+%   half. The head direction is measured as the angular direction from the
+%   its second half (the centroid of points 5-8) to its first half (the
+%   centroid of points 1-4). The tail direction is measured as the angular
+%   direction from the its second half (the centroid of points 42-45) to
+%   its first half (the centroid of points 46-49).
+%
 
 SI = seg_worm.skeleton_indices;
 

@@ -114,9 +114,43 @@ motion_mode = NaN(1,totalFrames);
 
 for iType = 1:3
    
-    %TODO: This will all be moved into the event class for better
-    %encapsulation
+
+    %JAH TODO: I'm currently working on the getEvents method ...
+
+    ef = seg_worm.feature.event_finder;
     
+    ef.include_at_thr = true;
+    ef.min_frames_thr = wormEventFramesThr;
+    ef.min_sum_thr    = min_distance{iType};
+    ef.include_at_sum_thr   = true;
+    ef.data_for_sum_thr     = distance;
+    ef.min_inter_frames_thr = wormEventMinInterFramesThr;
+    
+    frames_temp = ef.getEvents(midbody_speed,min_speeds{iType},max_speeds{iType});
+    
+
+    %This following bit is old code which the code above is replacing
+    %----------------------------------------------------------------------
+    %JAH NOTE: Current goal is to verify that frames_temp is equal
+    %to frames{iType}
+    
+    
+%       ISATTHR,            4
+%       MINFRAMESTHR,       5
+%       MAXFRAMESTHR,       6
+%       ISATFRAMESTHR,      7
+%       MINSUMTHR,          8
+%       MAXSUMTHR,          9
+%       ISATSUMTHR,         10
+%       SUMDATA,            11
+%       MININTERFRAMESTHR,  12
+%       MAXINTERFRAMESTHR,  13
+%       ISATINTERFRAMESTHR, 14
+%       MININTERSUMTHR,     15
+%       MAXINTERSUMTHR,     16
+%       ISATINTERSUMTHR)    17
+    
+   
     %NOTE: Since this is relatively complicated, I might want to create an
     %event finder class which allows specification of options ...
     frames{iType} = seg_worm.feature.event.findEvent( ...
@@ -133,30 +167,13 @@ for iType = 1:3
     distance, ...           11
     wormEventMinInterFramesThr); %12
     
-
-    %TODO: Include mode assignment here 
-
-
-    %TODO: Replace this code with the event class, seems to be ok
-    %but I need to clarify the output structure and what forms it takes ...
+    %End of old code
+    %----------------------------------------------------------------------
     
-    % Compute the statistics.
-    [event_stats, stats] = seg_worm.events.events2stats(frames{iType}, fps, distance, 'distance', 'interDistance');
-
-    % Organize the output ...
     cur_field_name = FIELD_NAMES{iType};
-    all_events_struct.(cur_field_name).frames = event_stats;
-    if isempty(stats)
-        all_events_struct.(cur_field_name).frequency = [];
-        all_events_struct.(cur_field_name).ratio     = [];
-    else
-        all_events_struct.(cur_field_name).frequency = stats.frequency;
-        all_events_struct.(cur_field_name).ratio     = stats.ratio;
-    end
 
-    wtf = seg_worm.feature.event(frames{iType},fps,distance,'distance','interDistance');    
-    wtf2 = wtf.getFeatureStruct;
-    keyboard
+    temp = seg_worm.feature.event(frames_temp,fps,distance,'distance','interDistance');    
+    all_events_struct.(cur_field_name) = temp.getFeatureStruct;
     
 end
 all_events_struct.mode = motion_mode;

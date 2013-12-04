@@ -6,9 +6,11 @@
 %bends - indexing was incorrect for posture
 %
 %findEvent
-%   sum data thresholding not implemented correctly
-%   removeEvents using || should be |
-%   off by 1 on start and end when event encompasses start or end
+%   - sum data thresholding not implemented correctly
+%   - removeEvents using || should be |
+%   - event indices are 0 based, not 1 based - but what
+%       about their usage in events???? - is this 1 or 0 based???
+%       JAH TODO: Check this???
 %
 %getAmpWavelength
 %   - power instead of magnitude is used for comparison

@@ -1,25 +1,84 @@
-function [amplitude,wavelength,trackLength] = getAmplitudeAndWavelength(theta_d,xx,yy,wormLengths)
+function [amplitude,wavelength,trackLength] = getAmplitudeAndWavelength(theta_d,xx,yy,worm_lengths)
+%
+%   
+%   TODO: Finish documentation
 %
 %
-%   seg_worm.feature_helpers.posture.getAmplitudeAndWavelength
+%   [amplitude,wavelength,trackLength] = ...
+%       seg_worm.feature_helpers.posture.getAmplitudeAndWavelength(theta_d,xx,yy,wormLengths)
 %
-%   amplitude
+%   Inputs
+%   =======================================================================
+%   theta_d     : 
+%   xx          :
+%   yy          :
+%   wormLengths :
 %
-% worm.posture.amplitude.max        = ampt;
-% worm.posture.amplitude.ratio      = ampRatio;
-% worm.posture.wavelength.primary   = wavelnths(1);
-% worm.posture.wavelength.secondary = wavelnths(2);
-% worm.posture.tracklength = trackLen;
+%
+%   Outputs
+%   =======================================================================
+%   amplitude    :
+%       .max       -
+%       .ratio     -
+%   wavelength   :
+%       .primary   -
+%       .secondary - this might not always be valid, even when the primary
+%                    wavelength is defined
+%   trackLength  :
 %
 %   IMPROVEMENTS:
 %   ----------------------------------------------
 %   1) Add error check (see code)
 %   2) Finish documentation ...
-
-%Note from old code
-%--------------------------------------------------------------------------
-% Code based on:
 %
+%   Nature Methods Description
+%   =======================================================================
+%   Amplitude. 
+%   ------------------
+%   Worm amplitude is expressed in two forms: a) the maximum
+%   amplitude found along the worm body and, b) the ratio of the maximum
+%   amplitudes found on opposing sides of the worm body (wherein the smaller of
+%   these two amplitudes is used as the numerator). The formula and code originate
+%   from the publication “An automated system for measuring parameters of
+%   nematode sinusoidal movement”6.
+%   The worm skeleton is rotated to the horizontal axis using the orientation of the
+%   equivalent ellipse and the skeleton’s centroid is positioned at the origin. The
+%   maximum amplitude is defined as the maximum y coordinate minus the minimum
+%   y coordinate. The amplitude ratio is defined as the maximum positive y coordinate
+%   divided by the absolute value of the minimum negative y coordinate. If the
+%   amplitude ratio is greater than 1, we use its reciprocal.
+%
+%   Wavelength
+%   ------------------------
+%   Wavelength. The worm’s primary and secondary wavelength are computed by
+%   treating the worm’s skeleton as a periodic signal. The formula and code
+%   originate from the publication “An automated system for measuring
+%   parameters of nematode sinusoidal movement”6. The worm’s skeleton is
+%   rotated as described above for the amplitude. If there are any
+%   overlapping skeleton points (the skeleton’s x coordinates are not
+%   monotonically increasing or decreasing in sequence -- e.g., the worm is
+%   in an S shape) then the shape is rejected, otherwise the Fourier
+%   transform computed. The primary wavelength is the wavelength associated
+%   with the largest peak in the transformed data. The secondary wavelength
+%   is computed as the wavelength associated with the second largest
+%   amplitude (as long as it exceeds half the amplitude of the primary
+%   wavelength). The wavelength is capped at twice the value of the worm’s
+%   length. In other words, a worm can never achieve a wavelength more than
+%   double its size.
+%
+%   Tracklength
+%   -----------------------------
+%   Track Length. The worm’s track length is the range of the skeleton’s
+%   horizontal projection (as opposed to the skeleton’s arc length) after
+%   rotating the worm to align it with the horizontal axis. The formula and
+%   code originate from the publication “An automated system for measuring
+%   parameters of nematode sinusoidal movement”.
+
+
+
+
+% Code based on:
+% ------------------------------------------------
 % BMC Genetics, 2005
 % C.J. Cronin, J.E. Mendel, S. Mukhtar, Young-Mee Kim, R.C. Stirb, J. Bruck,
 % P.W. Sternberg
@@ -74,6 +133,8 @@ trackLength = max(wwx)-min(wwx);
 
 dwwx = diff(wwx,1,1);
 
+%Does the sign change? This is a check to make sure that the change in x is
+%always going one way or the other
 badWormOrient = any(bsxfun(@ne,sign(dwwx),sign(dwwx(1,:))),1);
 
 n_frames = length(badWormOrient);
@@ -142,7 +203,7 @@ for iFrame = 1:length(frames_to_calculate)
         s_temp = NaN;
     end
     
-    worm_2x = 2*wormLengths(cur_frame);
+    worm_2x = 2*worm_lengths(cur_frame);
     
     %Cap wavelengths ...
     if p_temp > worm_2x
@@ -150,6 +211,7 @@ for iFrame = 1:length(frames_to_calculate)
     end
     
     %??? Do we really want to keep this as well if p_temp == worm_2x?
+    %i.e., should the secondary wavelength be valid
     if s_temp > worm_2x
         s_temp = worm_2x;
     end
@@ -157,11 +219,7 @@ for iFrame = 1:length(frames_to_calculate)
     p_wavelength(cur_frame) = p_temp;
     s_wavelength(cur_frame) = s_temp;
 end
-% toc;
 
-tic
-[p_wavelength2,s_wavelength2] = h__getWavelengths(badWormOrient,wwx,wwy,wormLengths);
-toc
 
 wavelength.primary   = p_wavelength;
 wavelength.secondary = s_wavelength;
@@ -179,11 +237,13 @@ end
 
 
 function [p_wavelength,s_wavelength] = h__getWavelengths(badWormOrientAll,wwxa,wwya,wormLengths)
+%
+%
+%   This is the old code 
+%
 
 n_frames = length(badWormOrientAll);
 nintervals = size(wwxa,1)-1;
-
-
 
 p_wavelength = NaN(1,n_frames);
 s_wavelength = NaN(1,n_frames);
