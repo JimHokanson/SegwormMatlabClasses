@@ -31,14 +31,13 @@ VENTRAL_MODE = 1;  %??? How is this computed ????
 locomotion.velocity = seg_worm.feature_helpers.locomotion.getWormVelocity(nw.x,nw.y,FPS,VENTRAL_MODE);
 
 
-%Motion - still refactoring events ...
+%Motion - DONE
 %--------------------------------------------------------------------------
 midbody_speed     = locomotion.velocity.midbody.speed;
 locomotion.motion = seg_worm.feature_helpers.locomotion.getWormMotionCodes(midbody_speed, nw.lengths, FPS);
 
-keyboard
 
-%Bends
+%Bends - still working on this ...
 %--------------------------------------------------------------------------
 % % % locomotion.bends.foraging.amplitude
 % % % locomotion.bends.foraging.angleSpeed
@@ -53,7 +52,7 @@ keyboard
 locomotion.bends = seg_worm.feature_helpers.locomotion.getLocomotionBends(...
     wormFile, motionEvents.mode, ventralMode);
 
-
+keyboard
 
 %Turns - still working on this ...
 %--------------------------------------------------------------------------

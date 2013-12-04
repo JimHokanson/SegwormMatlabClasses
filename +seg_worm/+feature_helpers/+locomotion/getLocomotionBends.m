@@ -38,9 +38,8 @@ function bends = getLocomotionBends(wormFile, varargin)
 %
 %   Nature Methods Description - Crawling and Foraging (might split)
 %   =======================================================================
-%
 %   Crawling. 
-%
+%   -----------------------
 %   Worm crawling is expressed as both an amplitude and frequency
 %   (Supplementary Fig. 4e). We measure these features instantaneously at
 %   the head, midbody, and tail. The amplitude and frequency are signed
@@ -85,7 +84,7 @@ function bends = getLocomotionBends(wormFile, varargin)
 %   the total integral, the peak is rejected for being weak.
 %
 %   Foraging
-%   
+%   -----------------------
 %   Foraging. Worm foraging is expressed as both an amplitude and an
 %   angular speed (Supplementary Fig. 4g). Foraging is signed negatively
 %   whenever it is oriented towards the ventral side. In other words, if
@@ -137,6 +136,8 @@ function bends = getLocomotionBends(wormFile, varargin)
 %   between itself and the next frame. The angular speed is signed
 %   negatively whenever its vector points towards the worm’s ventral side.
 
+
+%{
 % Are we using the locomotion mode to remove non-foraging bends?
 pausedMotion = [];
 if ~isempty(varargin)
@@ -233,7 +234,7 @@ fps = double(fps);
 
 % Compute the number of frames.
 frames = lastFrame + 1;
-
+%}
 %==========================================================================
 %==========================================================================
 
@@ -275,6 +276,8 @@ fps = 20;
 % signal cycle to be present in the measurement window. In practice, this
 % threshold appears to be unecessary as the data rarely, if ever, violates
 % it.
+
+
 minNoseWin     = round(0.1 * fps);
 maxNoseWinTime = 15;
 maxNoseWin     = round(maxNoseWinTime * fps);
@@ -497,10 +500,6 @@ for i = 1:length(startNotDataI)
         isInterpNoseData(startNotDataI(i):endNotDataI(i)) = false;
     end
 end
-
-%??? So it seems like data is 
-
-
 
 
 

@@ -119,6 +119,7 @@ classdef event < sl.obj.handle_light
             %   event_ss : (structure array) Event Start & Stop Structure
             %          .start - frame number in which event starts
             %          .end   - frame number in which event ends
+            %               Changing this to: seg_worm.feature.event_ss
             %
             %   fps      : (scalar) frames per second
             %   data     : This data is used for computations, it is
@@ -144,8 +145,14 @@ classdef event < sl.obj.handle_light
             
             obj.fps            = fps;
             obj.n_video_frames = length(data);
-            obj.start_Is       = [event_ss.start];
-            obj.end_Is         = [event_ss.end];
+            
+            if isobject(event_ss)
+                obj.start_Is  = event_ss.start_Is;
+                obj.end_Is    = event_ss.end_Is;
+            else
+                obj.start_Is  = [event_ss.start];
+                obj.end_Is    = [event_ss.end];                
+            end
             obj.data_sum_name       = data_sum_name;
             obj.inter_data_sum_name = inter_data_sum_name;
             

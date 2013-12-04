@@ -2,6 +2,8 @@ function event_ss = getEvents(obj,data,min_thr,max_thr)
 %
 %   event_ss = seg_worm.feature.event_finder.getEvents(obj,data,min_thr,max_thr)
 %
+%   Old Name: findEvent.m
+%
 %   Inputs
 %   =======================================================================
 %   obj     : Class seg_worm.feature.event_finder
@@ -148,88 +150,6 @@ function event_ss = getEvents(obj,data,min_thr,max_thr)
 
 %TODO: For verification, input needs to be changed significantly
 
-
-% % % % % % %==========================================================================
-% % % % % % include_at_thr = obj.include_at_thr;
-% % % % % % minFramesThr   = obj.min_frames_thr;
-% % % % % % max_frames_thr
-% % % % % % % Determine the maximum event frames threshold.
-% % % % % % max_frames_thr = [];
-% % % % % % if length(varargin) > 2
-% % % % % %     max_frames_thr = varargin{3}(:);
-% % % % % % end
-% % % % % % 
-% % % % % % % Is the event frames threshold inclusive?
-% % % % % % isAtFramesThr = false;
-% % % % % % if length(varargin) > 3
-% % % % % %     isAtFramesThr = varargin{4};
-% % % % % % end
-% % % % % % 
-% % % % % % % Determine the minimum data sum threshold.
-% % % % % % minSumThr = [];
-% % % % % % if length(varargin) > 4
-% % % % % %     minSumThr = varargin{5}(:);
-% % % % % % end
-% % % % % % 
-% % % % % % % Determine the maximum data sum threshold.
-% % % % % % maxSumThr = [];
-% % % % % % if length(varargin) > 5
-% % % % % %     maxSumThr = varargin{6}(:);
-% % % % % % end
-% % % % % % 
-% % % % % % % Is the data sum threshold inclusive?
-% % % % % % isAtSumThr = false;
-% % % % % % if length(varargin) > 6
-% % % % % %     isAtSumThr = varargin{7}(:);
-% % % % % % end
-% % % % % % 
-% % % % % % % Determine the event data for sum thresholding.
-% % % % % % sumData = [];
-% % % % % % if length(varargin) > 7
-% % % % % %     sumData = varargin{8}(:);
-% % % % % % end
-% % % % % % if isempty(sumData)
-% % % % % %     sumData = data;
-% % % % % % end
-% % % % % % 
-% % % % % % % Determine the minimum frames separation threshold.
-% % % % % % minInterFramesThr = [];
-% % % % % % if length(varargin) > 8
-% % % % % %     minInterFramesThr = varargin{9}(:);
-% % % % % % end
-% % % % % % 
-% % % % % % % Determine the maximum frames separation threshold.
-% % % % % % maxInterFramesThr = [];
-% % % % % % if length(varargin) > 9
-% % % % % %     maxInterFramesThr = varargin{10}(:);
-% % % % % % end
-% % % % % % 
-% % % % % % % Is the frames separation threshold inclusive?
-% % % % % % isAtInterFramesThr = false;
-% % % % % % if length(varargin) > 10
-% % % % % %     isAtInterFramesThr = varargin{11};
-% % % % % % end
-% % % % % % 
-% % % % % % % Determine the minimum data sum separation threshold.
-% % % % % % minInterSumThr = [];
-% % % % % % if length(varargin) > 11
-% % % % % %     minInterSumThr = varargin{12}(:);
-% % % % % % end
-% % % % % % 
-% % % % % % % Determine the maximum data sum separation threshold.
-% % % % % % maxInterSumThr = [];
-% % % % % % if length(varargin) > 12
-% % % % % %     maxInterSumThr = varargin{13}(:);
-% % % % % % end
-% % % % % % 
-% % % % % % % Is the data sum separation threshold inclusive?
-% % % % % % isAtInterSumThr = false;
-% % % % % % if length(varargin) > 13
-% % % % % %     isAtInterSumThr = varargin{14};
-% % % % % % end
-% % % % % % %==========================================================================
-
-
 % Fix the data.
 %--------------------------------------------------------------------------
 data    = data(:);
@@ -256,12 +176,6 @@ if isempty(startFrames)
 end
 
 
-%--------------------------------------------------------------------------
-%--------------------------------------------------------------------------
-%--------------------------------------------------------------------------
-%--------------------------------------------------------------------------
-% Do we have any events?
-
 %In this function we remove gaps between events if the gaps are too small
 %(min_inter_frames_thr) or too large (max_inter_frames_thr)
 %--------------------------------------------------------------------------
@@ -287,9 +201,7 @@ end
     obj.include_at_inter_frames_thr);
 %}
 
-
-%JAH TODO: At this point in the code ...
-
+%Filter events based on length
 %--------------------------------------------------------------------------
 [startFrames,endFrames] = h__removeTooSmallOrLargeEvents(startFrames,endFrames,...
     obj.min_frames_thr,...
@@ -297,58 +209,13 @@ end
     obj.include_at_frames_thr);
 
 
-% Check the event sums.
+%Filter events based on data sums during event
 %--------------------------------------------------------------------------
-if ~(isempty(minSumThr) && isempty(maxSumThr))
-    
-    % Compute the event sums.
-    eventSums = nan(length(startFrames), 1);
-    for i = 1:length(eventSums)
-        eventSums(i) = nansum(data_for_sum_thr((startFrames(i)):(endFrames(i))));
-    end
-    
-    % Compute the event sum thresholds.
-    if length(minSumThr) > 1
-        newMinSumThr = nan(size(eventSums));
-        for i = 1:length(newMinSumThr)
-            newMinSumThr(i) = nanmean(minSumThr((startFrames(i)):(endFrames(i))));
-        end
-        minSumThr = newMinSumThr;
-    end
-    
-    if length(maxSumThr) > 1
-        newMaxSumThr = nan(size(eventSums));
-        for i = 1:length(newMaxSumThr)
-            newMaxSumThr(i) = nanmean(maxSumThr((startFrames(i)):(endFrames(i))));
-        end
-        maxSumThr = newMaxSumThr;
-    end
-    
-    % Remove small events.
-    removeEvents = false(size(eventSums));
-    if ~isempty(minSumThr)
-        if isAtSumThr
-            removeEvents = eventSums <= minSumThr;
-        else
-            removeEvents = eventSums < minSumThr;
-        end
-    end
-    
-    % Remove large events.
-    if ~isempty(maxSumThr)
-        if isAtSumThr
-            removeEvents =  removeEvents | eventSums >= maxSumThr;
-        else
-            removeEvents =  removeEvents | eventSums > maxSumThr;
-        end
-    end
-    
-    % Remove the events.
-    startFrames(removeEvents) = [];
-    endFrames(removeEvents)   = [];
-end  %~(isempty(minSumThr) && isempty(maxSumThr))
-
-
+[startFrames,endFrames] = h__removeEventsByDataSum(startFrames,endFrames,...
+    obj.min_sum_thr,...
+    obj.max_sum_thr,...
+    obj.include_at_sum_thr,...
+    data_for_sum_thr);
 
 event_ss = seg_worm.feature.event_ss(startFrames,endFrames);
 
@@ -427,31 +294,98 @@ while i < length(startFrames)
 end
 end
 
-function [startFrames,endFrames] = h__removeTooSmallOrLargeEvents(startFrames,endFrames,minFramesThr,maxFramesThr,isAtFramesThr)
+function [startFrames,endFrames] = h__removeEventsByDataSum(startFrames,endFrames,...
+    min_sum_thr,max_sum_thr,include_at_sum_thr,data_for_sum_thr)
+
+if isempty(min_sum_thr) && isempty(max_sum_thr)
+   return 
+end
+    
+%????? - why do we do a sum in one location and a mean in the other????
+%------------------------------------------------------------------
+% Compute the event sums.
+eventSums = nan(length(startFrames), 1);
+for i = 1:length(eventSums)
+    eventSums(i) = nansum(data_for_sum_thr((startFrames(i)):(endFrames(i))));
+end
+
+% Compute the event sum thresholds.
+if length(min_sum_thr) > 1 %i.e. if not a scaler
+    newMinSumThr = nan(size(eventSums));
+    for i = 1:length(newMinSumThr)
+        newMinSumThr(i) = nanmean(min_sum_thr((startFrames(i)):(endFrames(i))));
+    end
+    min_sum_thr = newMinSumThr;
+end
+
+if length(max_sum_thr) > 1
+    newMaxSumThr = nan(size(eventSums));
+    for i = 1:length(newMaxSumThr)
+        newMaxSumThr(i) = nanmean(max_sum_thr((startFrames(i)):(endFrames(i))));
+    end
+    max_sum_thr = newMaxSumThr;
+end
+    
+%Actual filtering of the data
+%------------------------------------------------------------------
+% Remove small events.
+removeEvents = false(size(eventSums));
+if ~isempty(min_sum_thr)
+    if include_at_sum_thr
+        removeEvents = eventSums <= min_sum_thr;
+    else
+        removeEvents = eventSums < min_sum_thr;
+    end
+end
+
+% Remove large events.
+if ~isempty(max_sum_thr)
+    if include_at_sum_thr
+        removeEvents =  removeEvents | eventSums >= max_sum_thr;
+    else
+        removeEvents =  removeEvents | eventSums > max_sum_thr;
+    end
+end
+
+% Remove the events.
+startFrames(removeEvents) = [];
+endFrames(removeEvents)   = [];
+
+
+
+end
+
+function [startFrames,endFrames] = h__removeTooSmallOrLargeEvents(startFrames,endFrames,...
+    min_frames_thr,max_frames_thr,include_at_frames_thr)
+%
+%
+%   This function filters events based on time (really sample count)
+%
+
 
 % Check the event frames.
 %--------------------------------------------------------------------------
-if ~(isempty(minFramesThr) && isempty(maxFramesThr))
+if ~(isempty(min_frames_thr) && isempty(max_frames_thr))
     
     % Compute the event frames.
     n_frames_per_event = endFrames - startFrames + 1;
     
     % Remove small events.
     removeEvents = false(size(n_frames_per_event));
-    if ~isempty(minFramesThr)
-        if isAtFramesThr
-            removeEvents = n_frames_per_event <= minFramesThr;
+    if ~isempty(min_frames_thr)
+        if include_at_frames_thr
+            removeEvents = n_frames_per_event <= min_frames_thr;
         else
-            removeEvents = n_frames_per_event < minFramesThr;
+            removeEvents = n_frames_per_event < min_frames_thr;
         end
     end
     
     % Remove large events.
-    if ~isempty(maxFramesThr)
-        if isAtFramesThr
-            removeEvents = removeEvents | n_frames_per_event >= maxFramesThr;
+    if ~isempty(max_frames_thr)
+        if include_at_frames_thr
+            removeEvents = removeEvents | n_frames_per_event >= max_frames_thr;
         else
-            removeEvents = removeEvents | n_frames_per_event > maxFramesThr;
+            removeEvents = removeEvents | n_frames_per_event > max_frames_thr;
         end
     end
     

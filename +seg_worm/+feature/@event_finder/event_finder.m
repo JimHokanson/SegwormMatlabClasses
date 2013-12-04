@@ -27,8 +27,8 @@ classdef event_finder < sl.obj.handle_light
        
        %---------------------------------------
        %Data based
-       min_sum_thr = []
-       max_sum_thr = []
+       min_sum_thr = [] %(scalar or [1 x n_frames])
+       max_sum_thr = [] %(scalar or [1 x n_frames])
        include_at_sum_thr = false
        
        %----------------------------------------

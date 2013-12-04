@@ -52,7 +52,11 @@ function all_events_struct = getWormMotionCodes(midbody_speed, lengths,fps)
 %   The worm must observe these speed limits almost continuously with
 %   permissible interruptions of, at most, a quarter second (once again,
 %   this permits quick contradictory movements).
-
+%
+%   Questions:
+%   - based on the way these are calculated it seems like a frame
+%   could have no event type (i.e. not be going forward, backward, or
+%   paused)
 
 
 %These are a percentage of the length ...
@@ -64,7 +68,7 @@ PAUSE_THRESHOLD_PCT   = 0.025;
 %--------------------------------------------------------------------------
 
 % Initialize the worm speed and video frames.
-totalFrames = length(midbody_speed);
+n_frames = length(midbody_speed);
 
 % Compute the distance.
 distance = abs(midbody_speed / fps);
@@ -104,19 +108,18 @@ min_speeds   = {minForwardSpeed    []                  minPausedSpeed};
 max_speeds   = {[]                 maxBackwardSpeed    maxPausedSpeed};
 min_distance = {minForwardDistance minBackwardDistance []};
 
-frames = cell(1,3);
+%--------------------------------------------------------------------------
 
 all_events_struct = struct;
 
-FIELD_NAMES = {'forward' 'backward' 'paused'};
-
-motion_mode = NaN(1,totalFrames);
+FIELD_NAMES  = {'forward' 'backward' 'paused'};
+FRAME_VALUES = [1 -1 0];
+motion_mode = NaN(1,n_frames);
 
 for iType = 1:3
    
-
-    %JAH TODO: I'm currently working on the getEvents method ...
-
+    %Determine when the event type occurred
+    %----------------------------------------------------------------------
     ef = seg_worm.feature.event_finder;
     
     ef.include_at_thr = true;
@@ -128,48 +131,14 @@ for iType = 1:3
     
     frames_temp = ef.getEvents(midbody_speed,min_speeds{iType},max_speeds{iType});
     
+    %Assign event type to relevant frames
+    %----------------------------------------------------------------------
+    mask = frames_temp.getEventMask(n_frames);
+    motion_mode(mask) = FRAME_VALUES(iType);
 
-    %This following bit is old code which the code above is replacing
+    %Take the start and stop indices and convert them to the structure
+    %used in the feature files ...
     %----------------------------------------------------------------------
-    %JAH NOTE: Current goal is to verify that frames_temp is equal
-    %to frames{iType}
-    
-    
-%       ISATTHR,            4
-%       MINFRAMESTHR,       5
-%       MAXFRAMESTHR,       6
-%       ISATFRAMESTHR,      7
-%       MINSUMTHR,          8
-%       MAXSUMTHR,          9
-%       ISATSUMTHR,         10
-%       SUMDATA,            11
-%       MININTERFRAMESTHR,  12
-%       MAXINTERFRAMESTHR,  13
-%       ISATINTERFRAMESTHR, 14
-%       MININTERSUMTHR,     15
-%       MAXINTERSUMTHR,     16
-%       ISATINTERSUMTHR)    17
-    
-   
-    %NOTE: Since this is relatively complicated, I might want to create an
-    %event finder class which allows specification of options ...
-    frames{iType} = seg_worm.feature.event.findEvent( ...
-    midbody_speed, ...      1
-    min_speeds{iType}, ...  2
-    max_speeds{iType}, ...  3
-    true, ...               4
-    wormEventFramesThr, ... 5
-    [], ...                 6
-    false, ...              7
-    min_distance{iType}, ...8
-    [], ...                 9
-    true, ...               10
-    distance, ...           11
-    wormEventMinInterFramesThr); %12
-    
-    %End of old code
-    %----------------------------------------------------------------------
-    
     cur_field_name = FIELD_NAMES{iType};
 
     temp = seg_worm.feature.event(frames_temp,fps,distance,'distance','interDistance');    
@@ -177,19 +146,6 @@ for iType = 1:3
     
 end
 all_events_struct.mode = motion_mode;
-
-
-%% Compute the motion mode. - moving this to be in the above loop
-%--------------------------------------------------------------------------
-% % % % % Set forward = 1, backward = -1, paused = 0, and unknown = NaN.
-% % % % all_events_struct.mode  = nan(1,totalFrames);
-% % % % frame_values = [1 -1 0];
-% % % % for iType = 1:3
-% % % %    %Didn't look at this function, might make static from event ...
-% % % %    % Translate the events to logical arrays.
-% % % %    mask = seg_worm.events.events2array(frames{iType},  totalFrames);
-% % % %    all_events_struct.mode(mask) = frame_values(iType); 
-% % % % end
 
 
 end
