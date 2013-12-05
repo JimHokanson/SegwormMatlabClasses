@@ -7,6 +7,8 @@ function data = worm2func(func, state, wormFile, startFrame, endFrame, backScale
 %   wormBends - rewritten as seg_worm.feature_helpers.locomotion.getLocomotionBends
 %   
 %
+%   seg_worm.w.util.worm2func
+%
 %   DATA = WORM2FUNC(FUNC, STATE, WORMFILE, STARTFRAME, ENDFRAME, BACKSCALE, FRONTSCALE)
 %
 %   DATA = WORM2FUNC(FUNC, STATE, WORMFILE, STARTFRAME, ENDFRAME, BACKSCALE, FRONTSCALE, ISEXTENDED)

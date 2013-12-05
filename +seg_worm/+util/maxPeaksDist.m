@@ -22,11 +22,6 @@ function [peaks, indices] = maxPeaksDist(x, dist,use_max,value_cutoff,chain_code
 %   Used in seg_worm.feature_helpers.posture.getAmplitudeAndWavelength
 %
 %   NOTE: Outputs ARE NOT SORTED 
-%
-% © Medical Research Council 2012
-% You will not remove any copyright or other notices from the Software; 
-% you must reproduce all copyright notices and other proprietary 
-% notices on any copies of the Software.
 
 %JAH TODO: Merge with circular version ...
 %Create shared functions ...

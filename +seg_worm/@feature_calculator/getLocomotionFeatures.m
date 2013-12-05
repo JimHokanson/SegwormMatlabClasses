@@ -49,8 +49,16 @@ locomotion.motion = seg_worm.feature_helpers.locomotion.getWormMotionCodes(midbo
 % % % locomotion.bends.midbody.frequency
 % % % locomotion.bends.tail.frequency
 
+%JAH: At this point
+% - code needs to be simplified considerably ...
+motion_mode = locomotion.motion.mode;
 locomotion.bends = seg_worm.feature_helpers.locomotion.getLocomotionBends(...
-    wormFile, motionEvents.mode, ventralMode);
+    [], motion_mode, VENTRAL_MODE);
+
+%This part is done ...
+locomotion.bends.foraging = ...
+    seg_worm.feature_helpers.locomotion.getForaging(...
+    nw.is_segmented,nw.x,nw.y,VENTRAL_MODE);
 
 keyboard
 

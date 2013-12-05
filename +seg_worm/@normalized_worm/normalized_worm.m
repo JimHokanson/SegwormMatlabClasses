@@ -97,6 +97,9 @@ classdef normalized_worm < sl.obj.handle_light
         
         
         skeletons            %[49 2 n] double
+        
+        %NOTE: It is possible that angles could be easily calculated
+        %from the skeletons ...
         angles               %[49 n] double, degrees (Redundant?) How is this calculated?
         %   - is this the low frequency body angle, the high frequency body
         %   angles, the smoothed body angles, or the paired angles
@@ -143,9 +146,13 @@ classdef normalized_worm < sl.obj.handle_light
        contour_x  %[49 x n] Produced by concatenating the vulva and
        %non-vulva contours together
        contour_y  %[49 x n]
+       is_segmented
     end
     
     methods
+        function value = get.is_segmented(obj)
+           value = obj.segmentation_status == 's'; 
+        end
         function value = get.n_frames(obj)
            value = length(obj.segmentation_status); 
         end
