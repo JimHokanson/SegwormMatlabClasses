@@ -23,6 +23,8 @@ function [peaks, indices] = maxPeaksDist(x, dist,use_max,value_cutoff,chain_code
 %
 %   NOTE: Outputs ARE NOT SORTED 
 
+%This function is very slow and might need to be optimized or rewritten.
+
 %JAH TODO: Merge with circular version ...
 %Create shared functions ...
 
@@ -59,6 +61,8 @@ if ~exist('chain_code_lengths','var') || isempty(chain_code_lengths)
     chain_code_lengths = 1:length(x);
 else
     %start and ends need to be adjusted ...
+    %start and end indices need to be based on distance, not index
+    %values
     error('Code as implemented is not correct for this ...')
 end
 
@@ -80,13 +84,16 @@ else
     xt = x;
 end
 
+%NOTE: I added left/right neighbor comparisions which really helped with
+%the fft ...
 if use_max
-    could_be_a_peak = x > value_cutoff;
+    %                                           %> left                     > right
+    could_be_a_peak = x > value_cutoff & [true x(2:end) > x(1:end-1)] & [x(1:end-1) > x(2:end) true];
     I1 = find(could_be_a_peak);
     [~,I2] = sort(-1*x(I1));
     I = I1(I2);
 else
-    could_be_a_peak = x < value_cutoff;
+    could_be_a_peak = x < value_cutoff & [true x(2:end) < x(1:end-1)] & [x(1:end-1) < x(2:end) true];
     I1     = find(could_be_a_peak);
     [~,I2] = sort(x(I1));
     I = I1(I2);
@@ -123,6 +130,9 @@ for iElem = 1:n_sort
         temp_indices = start_I(cur_index):end_I(cur_index);
         could_be_a_peak(temp_indices) = false;
         
+        %This line is really slow ...
+        %It would be better to precompute the max within a window
+        %for all windows ...
         is_peak_mask(cur_index) = max(xt(temp_indices)) == xt(cur_index);
     end
 end
@@ -130,7 +140,10 @@ end
 indices = find(is_peak_mask);
 peaks   = x(indices);
 
-% % % [peaks2, indices2] = h_old(x,dist,chain_code_lengths);
+% tic
+% [peaks2, indices2] = h_old(x,dist,chain_code_lengths);
+% toc
+
 % % % 
 % % % mask = peaks2 > 0.5*max(peaks2);
 % % % indices2 = indices2(mask);

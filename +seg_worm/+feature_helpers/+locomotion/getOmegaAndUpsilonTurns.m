@@ -4,6 +4,17 @@ function [omegas,upsilons] = getOmegaAndUpsilonTurns(nw,tail_to_head_direction)
 %
 %   [omegas,upsilons] =
 %   seg_worm.feature_helpers.locomotion.getOmegaAndUpsilonTurns(nw,tail_to_head_direction)
+%
+%   Old Name: ????
+%
+%   Parent: seg_worm.feature_calculator.getLocomotionFeatures
+
+%JAH: I'm at this point ...
+
+
+
+
+
 
 %TODO: How does the non-straight test work out?
 % i.e. does worms skeleton increase or decrease continuosly after rotation?
@@ -11,6 +22,9 @@ function [omegas,upsilons] = getOmegaAndUpsilonTurns(nw,tail_to_head_direction)
 %
 %Frames:
 %3610        4514        4515        4516        4517        4518        4519        4520        4521
+
+
+
 
 % %From supplemental of Nature Methods paper
 % Turns. Omega and upsilon turn events are computed similarly to a previously 
@@ -66,6 +80,7 @@ featureData.omegaFrames = featureData.omegaFrames | tailToHeadDirectionChangeOme
 
 
 % Now restore the sign
+%--------------------------------------------------------------------------
 n = featureData.omegaFrames == 1; 
 % save start and end indices for the stretches
 [start1, end1] = regexp( char(n+'A'), strcat('B{',num2str(round(fps/4)),',}'), 'start', 'end' );
@@ -92,7 +107,7 @@ end
 omegaFrames   = featureData.omegaFrames;
 
 % Compute the omega frames.
-omegaFramesDorsal = findEvent(omegaFrames, 1, [], true);
+omegaFramesDorsal  = findEvent(omegaFrames, 1, [], true);
 omegaFramesVentral = findEvent(omegaFrames, [], -1, true);
 
 % Unify the ventral and dorsal turns.
@@ -133,6 +148,22 @@ omegas = struct( ...
     'frames', omegaFrames, ...
     'frequency', omegaFrequency, ...
     'timeRatio', omegaTimeRatio);
+
+%==========================================================================
+%==========================================================================
+%==========================================================================
+%==========================================================================
+%==========================================================================
+%==========================================================================
+%==========================================================================
+%                           Upsilon
+%==========================================================================
+%==========================================================================
+%==========================================================================
+%==========================================================================
+%==========================================================================
+%==========================================================================
+%==========================================================================
 
 
 

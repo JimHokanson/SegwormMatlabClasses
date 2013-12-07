@@ -61,6 +61,23 @@ function foraging = getForaging(is_segmented_mask,sx,sy,ventralMode)
 %   - Change references to nose and neck to something more appropriate
 %     NOTE: The neck is past the head, and the angle is within the head
 %   - Change reference to nose_angles to something more appropriate
+%   - Finish documentation ...
+
+% Initialize the function state.
+%
+% Note: empirically I've found the values below achieve good signal.
+%
+% Furthermore ...
+% Huang et al. in 2006, measure foraging frequencies for several worms and
+% find the signal centered at roughly 4Hz. For N2 worms, they see a second
+% signal at 10Hz but I find this value too close to the background noise
+% present in segmentation. Visually inspecting the foraging signal, as the
+% bend between the nose and neck, corroborates a roughly 4Hz signal. But,
+% foraging usually encompasses only half to a quarter cycle. In other
+% words, the worm bends it nose sharply and sometimes bends it back but a
+% full wave, akin to a body bend, occurs far less frequently. Therefore I
+% chose to measure angular speed for foraging.
+
 
 FPS = 20;
 
@@ -199,7 +216,6 @@ end
 %it isn't that slow
 %--------------------------------------------------------------------------
 % Compute the amplitudes between zero crossings.
-tic
 dataSign = sign(nose_bend_angle_d);
 amps     = NaN(1,length(nose_bend_angle_d));
 numAmps  = 0;
@@ -230,7 +246,6 @@ if dataSign(end) > 0
 elseif dataSign(end) < 0
     amps((end - numAmps):end) = min(nose_bend_angle_d((end - numAmps):end));
 end
-toc
 %--------------------------------------------------------------------------
 
 

@@ -37,25 +37,13 @@ midbody_speed     = locomotion.velocity.midbody.speed;
 locomotion.motion = seg_worm.feature_helpers.locomotion.getWormMotionCodes(midbody_speed, nw.lengths, FPS);
 
 
-%Bends - still working on this ...
+%Bends - done, needs documentation though ...
 %--------------------------------------------------------------------------
-% % % locomotion.bends.foraging.amplitude
-% % % locomotion.bends.foraging.angleSpeed
-% % % 
-% % % locomotion.bends.head.amplitude
-% % % locomotion.bends.midbody.amplitude
-% % % locomotion.bends.tail.amplitude
-% % % locomotion.bends.head.frequency
-% % % locomotion.bends.midbody.frequency
-% % % locomotion.bends.tail.frequency
-
-%JAH: At this point
-% - code needs to be simplified considerably ...
 motion_mode = locomotion.motion.mode;
+is_paused   = motion_mode == 0;
 locomotion.bends = seg_worm.feature_helpers.locomotion.getLocomotionBends(...
-    [], motion_mode, VENTRAL_MODE);
+    nw.angles, is_paused, nw.is_segmented);
 
-%This part is done ...
 locomotion.bends.foraging = ...
     seg_worm.feature_helpers.locomotion.getForaging(...
     nw.is_segmented,nw.x,nw.y,VENTRAL_MODE);
