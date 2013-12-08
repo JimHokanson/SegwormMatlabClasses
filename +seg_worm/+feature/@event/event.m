@@ -106,6 +106,16 @@ classdef event < sl.obj.handle_light
        %
        %    in seg_worm.feature_helpers.locomotion.getWormMotionCodes
        frames = findEvent(data, minThr, maxThr, varargin); 
+       function s = getNullStruct(fps,data_sum_name,inter_data_sum_name)
+           %
+           %
+           %    s = seg_worm.feature.event.getNullStruct(fps,data_sum_name,inter_data_sum_name)
+           %
+           
+          event_ss = seg_worm.feature.event_ss([],[]); 
+          obj = seg_worm.feature.event(event_ss,fps,[],data_sum_name,inter_data_sum_name);
+          s = obj.getFeatureStruct();
+       end
     end
     
     methods
@@ -116,10 +126,9 @@ classdef event < sl.obj.handle_light
             %
             %   Inputs
             %   ===========================================================
-            %   event_ss : (structure array) Event Start & Stop Structure
-            %          .start - frame number in which event starts
-            %          .end   - frame number in which event ends
-            %               Changing this to: seg_worm.feature.event_ss
+            %   event_ss : seg_worm.feature.event_ss
+            %          .start_Is - frame numbers in which events start
+            %          .end_Is   - frame numbers in which events end
             %
             %   fps      : (scalar) frames per second
             %   data     : This data is used for computations, it is
@@ -164,7 +173,7 @@ classdef event < sl.obj.handle_light
 
             %---------------------------
             obj.event_durations       = (obj.end_Is - obj.start_Is + 1)./obj.fps;
-            obj.inter_event_durations = [obj.end_Is(2:end) - obj.start_Is(1:end-1) - 1 NaN]./fps;
+            obj.inter_event_durations = [obj.start_Is(2:end) - obj.end_Is(1:end-1) - 1 NaN]./fps;
             
             %---------------------------
             if ~isempty(obj.data_sum_name)

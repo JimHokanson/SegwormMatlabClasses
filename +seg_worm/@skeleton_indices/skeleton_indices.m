@@ -41,6 +41,9 @@ classdef skeleton_indices < sl.obj.handle_light
     
     properties (Dependent)
        ALL_NORMAL_INDICES
+       FIRST_THIRD
+       SECOND_THIRD
+       LAST_THIRD
     end
     
     properties
@@ -48,6 +51,15 @@ classdef skeleton_indices < sl.obj.handle_light
     end
     
     methods
+        function value = get.FIRST_THIRD(obj)
+           value = [obj.HEAD_INDICES obj.NECK_INDICES];
+        end
+        function value = get.SECOND_THIRD(obj)
+           value = obj.MID_INDICES;
+        end
+        function value = get.LAST_THIRD(obj)
+           value = [obj.HIP_INDICES obj.TAIL_INDICES];
+        end
         function value = get.ALL_NORMAL_INDICES(obj)
            value = {obj.HEAD_INDICES obj.NECK_INDICES obj.MID_INDICES obj.HIP_INDICES obj.TAIL_INDICES};  
         end

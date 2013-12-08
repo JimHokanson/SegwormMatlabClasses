@@ -4,7 +4,7 @@ function [omegaFrames, upsilonFrames] = omegaUpsilonDetectCurvature(angleArray, 
 % characteristics: 
 %
 %
-%   OLD NAME: 
+%   OLD NAME: omegaUpsilonDetectCurvature.m
 %
 %
 %   1) They start with high curvature in the first third of the worm.

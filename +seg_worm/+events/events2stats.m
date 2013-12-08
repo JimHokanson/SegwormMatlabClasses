@@ -80,7 +80,9 @@ start_Is = [event_ss.start];
 end_Is   = [event_ss.end];
 
 elapsed_times = (end_Is - start_Is + 1)./fps;
-inter_times   = [end_Is(2:end) - start_Is(1:end-1) - 1 NaN]./fps;
+
+%NOTE: This is wrong ...
+inter_times   = [start_Is(2:end) - end_Is(1:end-1) - 1 NaN]./fps;
 
 eventStats = struct( ...
     'start',        num2cell(start_Is), ...

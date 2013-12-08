@@ -14,6 +14,9 @@ classdef event_finder < sl.obj.handle_light
     %   1) Call constructor to get object for setting options
     %   2) Call getEvents() to get data
     %
+    %   Users:
+    %   seg_worm.feature_helpers.locomotion.getWormMotionCodes
+    %   seg_worm.feature_helpers.locomotion.getUpsilonEvents
     
     properties
        %OPTIONS
@@ -57,7 +60,7 @@ classdef event_finder < sl.obj.handle_light
     end
     
     methods
-       %MAIN FUNCTION:
+       %MAIN FUNCTION ==================================================
        %seg_worm.feature.event_finder.getEvents
     end
     

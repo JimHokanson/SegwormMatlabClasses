@@ -58,6 +58,23 @@ classdef event_ss < sl.obj.handle_light
             
             
         end
+        function [obj,is_first_object] = merge(obj1,obj2)
+           
+           n_1 = obj1.n_events;
+           n_2 = obj2.n_events;
+           all_starts = [obj1.start_Is  obj2.start_Is];
+           all_ends   = [obj1.end_Is    obj2.end_Is];
+           is_first   = [true(1,n_1)    false(1,n_2)];
+           %TODO: Would be good to check that events don't overlap ...
+           
+           [new_starts,order_I] = sort(all_starts);
+           
+           new_ends    = all_ends(order_I);
+           is_first_object = is_first(order_I);
+           
+           obj = seg_worm.feature.event_ss(new_starts,new_ends);
+            
+        end
     end
     
 end

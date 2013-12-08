@@ -171,7 +171,7 @@ event_mask = h__getPossibleEventsByThreshold(data,min_thr,max_thr,obj.include_at
 %Possible short circuit ...
 %--------------------------------------------------------------------------
 if isempty(startFrames)
-    seg_worm.feature.event_ss([],[]);
+    event_ss = seg_worm.feature.event_ss([],[]);
     return
 end
 
