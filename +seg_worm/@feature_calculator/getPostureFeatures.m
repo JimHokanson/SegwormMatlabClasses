@@ -16,7 +16,6 @@ function posture = getPostureFeatures(nw)
 %
 
 
-
 FPS = 20; %TODO: get these from higher up ...
 N_ECCENTRICITY = 50; %grid size for estimating eccentricity, this is the
 %max # of points that will fill the wide dimension
@@ -26,31 +25,24 @@ N_ECCENTRICITY = 50; %grid size for estimating eccentricity, this is the
 posture.bends = seg_worm.feature_helpers.posture.getPostureBends(nw.angles);
 
 
-%Bend Counts???? - where is this in the structure???
-
-
 %Eccentricity & Orientation - needs documentation
 %--------------------------------------------------------------------------
-%This is relatively slow ...
 [posture.eccentricity, worm_orientation] = ...
     seg_worm.feature_helpers.posture.getEccentricity(...
     nw.contour_x, nw.contour_y, N_ECCENTRICITY);
 
 
-
-%Amplitude
-%Wavelengths 
-%TrackLength
+%Amplitude, Wavelengths, TrackLength
 %--------------------------------------------------------------------------
 [posture.amplitude,posture.wavelength,posture.trackLength] = ...
   seg_worm.feature_helpers.posture.getAmplitudeAndWavelength(...
   worm_orientation,nw.x,nw.y,nw.lengths);
 
 
-
 %Kinks (aka bend counts) - CODE NOT YET EXAMINED ... (But it works)
 %--------------------------------------------------------------------------
 posture.kinks = seg_worm.feature_helpers.posture.wormKinks(nw.angles);
+
 
 %Coils - NOT YET FINISHED ... - needs distance from locomotion ...
 %--------------------------------------------------------------------------

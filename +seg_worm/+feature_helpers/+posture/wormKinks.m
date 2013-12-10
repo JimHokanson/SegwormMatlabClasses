@@ -64,13 +64,6 @@ ampThr = 0;
 % Are we smoothing the worm angles?
 issmoothing = true;
 
-
-% Should we show the results on the worm(s)?
-wormSkeletons = [];
-if length(varargin) > 3
-    wormSkeletons = squeeze(varargin{4});
-end
-
 % Orient the worm correctly.
 worm_angles = squeeze(worm_angles);
 if size(worm_angles, 1) == 1
