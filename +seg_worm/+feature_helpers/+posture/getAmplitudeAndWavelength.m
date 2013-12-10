@@ -26,6 +26,10 @@ function [amplitude,wavelength,trackLength] = getAmplitudeAndWavelength(theta_d,
 %                    wavelength is defined
 %   trackLength  :
 %
+%   
+%   Old Name: getAmpWavelength.m
+%
+%
 %   IMPROVEMENTS:
 %   ----------------------------------------------
 %   1) Add error check (see code)
@@ -121,8 +125,9 @@ wwy = bsxfun(@minus,wwy,mean(wwy,1));
 
 % Calculate track amplitude
 amp1 = max(wwy);
-amp2 = abs(min(wwy));
+amp2 = min(wwy);
 amplitude.max   = amp1 - amp2;
+amp2 = abs(amp2);
 amplitude.ratio = min(amp1,amp2)./max(amp1,amp2);
 
 % Calculate track length

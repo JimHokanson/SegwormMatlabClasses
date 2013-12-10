@@ -550,23 +550,19 @@ for iFrame = find(run_mask)
     % get the indices of the points inside of the polygon
     inPointInds = helper__inpolyNew([m(:) n(:)], [xOutline_mc(:,iFrame) yOutline_mc(:,iFrame)]);
     
-    %TODO: Send bug report to guy, frame 979 shows that his code does
-    %not work all that well ...
-    % % %     if iFrame == 979
-    % % %        keyboard
-    % % %     end
-    
+    % get the x and y coordinates of the new set of points to be used in calculating eccentricity.
+    x = m(inPointInds);
+    y = n(inPointInds);
+        
     %{
-        scatter(xOutline_mc(:,iFrame),yOutline_mc(:,iFrame),'g')
+        plot(xOutline_mc(:,iFrame),yOutline_mc(:,iFrame),'g-o')
         hold on
         scatter(x,y,'r')
         hold off
         axis equal
+        title(sprintf('%d',iFrame))
+        pause
     %}
-    
-    % get the x and y coordinates of the new set of points to be used in calculating eccentricity.
-    x = m(inPointInds);
-    y = n(inPointInds);
     
     [eccentricity(iFrame),orientation(iFrame)] = h__calculateSingleValues(x,y);
     

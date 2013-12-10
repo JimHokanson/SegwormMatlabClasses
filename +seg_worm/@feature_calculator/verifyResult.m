@@ -9,7 +9,7 @@ assert2 = @(x,y,z,w)(assert(h__isSimilar(x,y,z),w));
 h = load(feature_mat_path);
 old_worm = h.worm;
 
-keyboard
+
 
 %Morphology
 %==========================================================================
@@ -24,6 +24,8 @@ keyboard
 pn = new_worm.posture;
 po = old_worm.posture;
 
+keyboard
+
 %NOTE: Different algorithms yield slightly different results, I had to
 %increase the % comparision on this just a bit ...
 %
@@ -32,7 +34,8 @@ assert2(pn.eccentricity,po.eccentricity,0.03,'Different eccentricities');
 %plot(abs((po.eccentricity - pn.eccentricity)./po.eccentricity))
 
 
-assert2(pn.amplitude.max,po.amplitude.max,'Different tail2head directions')
+assert2(pn.amplitude.max,po.amplitude.max,0.01,'posture.amplitude.max')
+assert2(pn.amplitude.ratio,po.amplitude.ratio,0.01,'posture.amplitude.ratio')
 
 
 
@@ -51,7 +54,7 @@ assert1(pn.eigenProjection,po.eigenProjection,'Different eigenprojections')
 %               bends: [1x1 struct]
 %        eccentricity: DONE
 %           amplitude:
-%                   .max   - currently wrong ...
+%                   .max   - DONE
 %                   .ratio
 %          wavelength: [1x1 struct]
 %         trackLength: [1x4642 double]
