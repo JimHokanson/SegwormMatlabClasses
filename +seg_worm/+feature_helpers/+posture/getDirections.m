@@ -1,19 +1,24 @@
-function directions = getDirections(skeleton_XY)
+function directions = getDirections(sx,sy)
 %
 %
 %   seg_worm.feature_helpers.posture.getDirections
 %
 %   INPUTS
 %   ===========================================================
-%   skeleton_x : [49 n frames]
-%   skeleton_y : [49 n frames]
+%   skeleton_x : [49 x n_frames]
+%   skeleton_y : [49 x n_frames]
 %
 %   skeleton_XY : [49 (x y) frames]
 %
 %   OUTPUTS
 %   ===========================================================
-%   directions : (struct)
+%   directions : 
+%       .tail2head 
+%       .head
+%       .tail
 %  
+%   Old Name: featureProcess.m
+%
 %   Nature Methods Description
 %   ===========================================================
 %   Orientation. 
@@ -43,10 +48,13 @@ NAMES = {'tail2head' 'head' 'tail'};
 
 directions = struct;
 for iVector = 1:3
-   %Take mean over segments (dim 1)
-   tip_centroid  = squeeze(mean(skeleton_XY(TIP_INDICES{iVector},:,:),1));
-   tail_centroid = squeeze(mean(skeleton_XY(TAIL_INDICES{iVector},:,:),1));
-   directions.(NAMES{iVector}) = 180/pi*atan2(tip_centroid(2,:) - tail_centroid(2,:), tip_centroid(1,:) - tip_centroid(1,:));
+    
+   tip_x   = mean(sx(TIP_INDICES{iVector},:),1);
+   tip_y   = mean(sy(TIP_INDICES{iVector},:),1);
+   tail_x  = mean(sx(TAIL_INDICES{iVector},:),1);   
+   tail_y  = mean(sx(TAIL_INDICES{iVector},:),1);  
+   
+   directions.(NAMES{iVector}) = 180/pi*atan2(tip_y - tail_y, tip_x - tail_x);
 end
 
 end

@@ -29,6 +29,8 @@ NORM_PATH = 'F:\worm_data\segworm_data\video\testing_with_GUI\.data\mec-4 (u253)
 NORM_PATH = '/Users/jameshokanson/Dropbox/worm_data/video/testing_with_GUI/.data/mec-4 (u253) off food x_2010_04_21__17_19_20__1_seg/normalized'
 fmp = 'F:\worm_data\segworm_data\video\testing_with_GUI\results\mec-4 (u253) off food x_2010_04_21__17_19_20__1_features.mat';
 
+fmp - feature mat path
+
 seg_worm.feature_calculator.get_features_rewritten(NORM_PATH,fmp)
 
 %}
@@ -47,7 +49,7 @@ worm.morphology = seg_worm.feature_calculator.getMorphologyFeatures(nw);
 
 %Locomotion
 %--------------------------------------------------------------------------
-%worm.locomotion = seg_worm.feature_calculator.getLocomotionFeatures(nw);
+worm.locomotion = seg_worm.feature_calculator.getLocomotionFeatures(nw);
 
 
 %Posture

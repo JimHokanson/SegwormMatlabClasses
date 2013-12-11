@@ -1,17 +1,15 @@
-function velocity = computeVelocity(x, y, avg_body_angle_d, pointsI, fps, scale_time, ventralMode)
+function velocity = computeVelocity(sx, sy, avg_body_angle_d, pointsI, fps, scale_time, ventral_mode)
 %computeVelocity  
 %
 %   seg_worm.feature_helpers.computeVelocity(x, y, bodyAngle, pointsI, fps, scale_time, ventralMode)
 %
 %   This function is needed by: 
 %       seg_worm.feature_helpers.locomotion.getWormVelocities
+%       
 %
-%   Original MRC File: wormVelocity.m
+%   Old Name: 
+%   - part of wormVelocity.m
 %
-%
-%   Improvements to Make:
-%   =======================================================================
-%   1: 
 %
 %   Inputs
 %   =======================================================================
@@ -56,7 +54,9 @@ function velocity = computeVelocity(x, y, avg_body_angle_d, pointsI, fps, scale_
 %
 %   Nature Methods Description
 %   =======================================================================
-%   Velocity. The worm’s velocity is measured at the tip of the head and
+%   Velocity. 
+%   ---------------------------------------------
+%   The worm’s velocity is measured at the tip of the head and
 %   tail, at the head and tail themselves, and at the midbody. The velocity
 %   is composed of two parts, speed and direction (expressed as an angular
 %   speed) (Supplementary Fig. 4d). The velocity is signed negatively
@@ -96,11 +96,73 @@ function velocity = computeVelocity(x, y, avg_body_angle_d, pointsI, fps, scale_
 %   choosing their start and end frames.
 %
 
-n_frames = size(x,2);
+n_frames = size(sx,2);
 
-speed         = nan(1,n_frames);
-angular_speed = nan(1,n_frames); %Formally known as direction :/
-bodyDirection = nan(1,n_frames);
+%We need to go from a time over which to compute the velocity to a # of
+%samples. The # of samples should be odd.
+scale_samples_final = h__computeCalculationWidth(scale_time,fps);
+
+% Do we have enough coordinates?
+if scale_samples_final > n_frames
+    velocity.speed     = nan(1,n_frames);
+    velocity.direction = nan(1,n_frames);
+    return;
+end
+
+
+%------------------------------------------------------------------
+%Compute the indices that we will use for computing the velocity. We
+%calculate the velocity roughly centered on each sample, but with a
+%considerable width that smooths the velocity.
+good_frames_mask = ~isnan(avg_body_angle_d);
+[keep_mask,left_I,right_I] = h__getVelocityIndices(n_frames,scale_samples_final,good_frames_mask);
+
+%Compute speed
+%------------------------------------------------------------------
+x_mean = mean(sx(pointsI,:), 1);
+y_mean = mean(sy(pointsI,:), 1);
+
+dX  = x_mean(right_I) - x_mean(left_I);
+dY  = y_mean(right_I) - y_mean(left_I);
+
+distance = sqrt(dX.^2 + dY.^2);
+time     = (right_I - left_I)./ fps;
+
+speed    = NaN(1,n_frames);
+speed(keep_mask) = distance./time;
+
+%Compute angular speed
+%--------------------------------------------------------
+angular_speed = NaN(1,n_frames); %Formally known as direction :/
+angular_speed(keep_mask) = h__computeAngularSpeed(sx,sy,pointsI,left_I,right_I,ventral_mode,fps);
+
+% Sign the speed.
+%--------------------------------------------------------
+%We want to know how the worm's movement direction compares to the average
+%angle it had (apparently at the start)
+motion_direction = atan2(dY, dX) * (180 / pi);
+
+%This recenters the definition, as we are considered really with the
+%change, not with the actual value
+body_direction = NaN(1,n_frames);
+body_direction(keep_mask) = motion_direction - avg_body_angle_d(left_I);
+
+body_direction(body_direction < -180) = body_direction(body_direction < -180) + 360;
+body_direction(body_direction > 180)  = body_direction(body_direction > 180)  - 360;
+
+speed(abs(body_direction) > 90) = -speed(abs(body_direction) > 90);
+
+% Organize the velocity.
+%-----------------------------------------------------------
+velocity.speed     = speed;
+velocity.direction = angular_speed;
+
+end
+
+function scale_samples_final = h__computeCalculationWidth(scale_time,fps)
+
+%The scale is used to determine over how many samples the velocity is
+%calculated.
 
 % The scale must be odd.
 %--------------------------------------------------------------------------
@@ -124,29 +186,57 @@ elseif mod(scale_high,2) == 0
 else
     scale_samples_final = scale_high;
 end
-%--------------------------------------------------------------------------
 
-% Do we have enough coordinates?
-if scale_samples_final > n_frames
-    velocity.speed     = speed;
-    velocity.direction = angular_speed;
-    return;
 end
 
-% Compute the body part direction.
-dX = nanmean(diff(x(pointsI,:), 1, 1), 1);
-dY = nanmean(diff(y(pointsI,:), 1, 1), 1);
-
-point_angle_d = atan2(dY, dX) * (180 / pi);
-
-% Compute the coordinates.
-x_mean = mean(x(pointsI,:), 1);
-y_mean = mean(y(pointsI,:), 1);
-
-% Compute the speed using back/front nearest neighbors bounded at twice the scale.
-%--------------------------------------------------------------------------
+function angular_speed = h__computeAngularSpeed(sx,sy,pointsI,left_I,right_I,ventral_mode,fps)
 %
-%   This is the tricky part ...
+%
+%   
+%
+
+
+% Compute the body part direction.
+avg_dX = nanmean(diff(sx(pointsI,:), 1, 1), 1);
+avg_dY = nanmean(diff(sy(pointsI,:), 1, 1), 1);
+
+point_angle_d = atan2(avg_dY, avg_dX) * (180 / pi);
+
+angular_speed = point_angle_d(right_I) - point_angle_d(left_I);
+
+%Correct any jumps that result during the subtraction process
+%i.e. 1 - 359 ~= -358
+angular_speed(angular_speed < -180) = angular_speed(angular_speed < -180) + 360;
+angular_speed(angular_speed > 180)  = angular_speed(angular_speed > 180)  - 360;
+
+angular_speed = angular_speed./fps;
+
+% Sign the direction for dorsal/ventral locomtoion.
+if ventral_mode < 2 % + = dorsal direction
+    angular_speed = -angular_speed;
+end
+
+
+end
+
+function [keep_mask,left_I,right_I] = h__getVelocityIndices(n_frames,scale_samples_final,good_frames_mask)
+%
+%
+%
+% Compute the speed using back/front nearest neighbors bounded at twice the scale.
+%
+%
+%   Outputs
+%   =======================================================================
+%   keep_mask : [1 x n_frames], this is used to indicate which original
+%               frames have valid velocity values, and which don't. 
+%               NOTE: sum(keep_mask) == n_valid_velocity_values
+%   left_I    : [1 x n_valid_velocity_values], for a given sample, this
+%               indicates the index to the left of (less than) the sample
+%               that should be used to calculate the velocity
+%   right_I   : [1 x n_valid_velocity_values]
+
+
 scale_minus_1 = scale_samples_final - 1;
 half_scale    = scale_minus_1 / 2; %NOTE: Since the scale is odd, the half
 %scale will be even, because we subtract 1
@@ -157,7 +247,7 @@ end_index   = n_frames-half_scale;
 %These are the indices we will use to compute the velocity. We add
 %a half scale here to avoid boundary issues. We'll subtract it out later.
 %See below for more details
-middle_indices     = (start_index:end_index) + half_scale;
+middle_I     = (start_index:end_index) + half_scale;
 %   Our start_index frame can only have one valid start frame (frame 1)
 %   afterwards it is invalid. In other words, if frame 1 is not good, we
 %   can't check frame 0 or frame -1, or -2.
@@ -187,20 +277,20 @@ middle_indices     = (start_index:end_index) + half_scale;
 %
 %   
 
-unmatched_left_mask  = true(1,length(middle_indices));
-unmatched_right_mask = true(1,length(middle_indices));
+unmatched_left_mask  = true(1,length(middle_I));
+unmatched_right_mask = true(1,length(middle_I));
 
 %This tells us whether each value is useable or not for velocity
 %Better to do this out of the loop.
 %For real indices (frames 1:n_frames), we rely on whether or not the
 %mean position is NaN, for fake padding frames they can never be good so we
 %set them to be false
-is_good_value_mask = [false(1,half_scale) ~isnan(x_mean) false(1,half_scale)];
+is_good_value_mask = [false(1,half_scale) good_frames_mask false(1,half_scale)];
 
 %These will be the final indices from which we estimate the velocity.
 %i.e. delta_position(I) = (position(right_indices(I)) - position(left_indices(I))
-left_indices  = NaN(1,length(middle_indices));
-right_indices = NaN(1,length(middle_indices));
+left_I  = NaN(1,length(middle_I));
+right_I = NaN(1,length(middle_I));
 
 %Instead of looping over each centered velocity, we loop over each possible
 %shift. A shift is valid if the frame of the shift is good, and we have yet
@@ -210,8 +300,8 @@ for iShift = half_scale:scale_minus_1
     %We grab indices that are the appropriate distance from the current
     %value. If we have not yet found a bound on the given side, and the
     %index is valid, we keep it.
-    left_indices_temp  = middle_indices - iShift;
-    right_indices_temp = middle_indices + iShift;
+    left_indices_temp  = middle_I - iShift;
+    right_indices_temp = middle_I + iShift;
     
     is_good_left_mask  = is_good_value_mask(left_indices_temp);
     is_good_right_mask = is_good_value_mask(right_indices_temp);
@@ -219,191 +309,24 @@ for iShift = half_scale:scale_minus_1
     use_left_mask      = unmatched_left_mask  & is_good_left_mask;
     use_right_mask     = unmatched_right_mask & is_good_right_mask;
     
-    left_indices(use_left_mask)   = left_indices_temp(use_left_mask);
-    right_indices(use_right_mask) = right_indices_temp(use_right_mask);
+    left_I(use_left_mask)   = left_indices_temp(use_left_mask);
+    right_I(use_right_mask) = right_indices_temp(use_right_mask);
     
     unmatched_left_mask(use_left_mask)   = false;
     unmatched_right_mask(use_right_mask) = false;
 end
 
-left_indices   = left_indices    - half_scale; %Remove the offset ...
-right_indices  = right_indices   - half_scale;
-middle_indices = middle_indices  - half_scale;
+left_I   = left_I    - half_scale; %Remove the offset ...
+right_I  = right_I   - half_scale;
+middle_I = middle_I  - half_scale;
 
 %Filter down to usable values, in which both left and right are defined
-keep_mask      = ~isnan(left_indices) & ~isnan(right_indices);
-left_indices   = left_indices(keep_mask);
-right_indices  = right_indices(keep_mask);
-middle_indices = middle_indices(keep_mask);
+valid_indices_mask = ~isnan(left_I) & ~isnan(right_I);
+left_I    = left_I(valid_indices_mask);
+right_I   = right_I(valid_indices_mask);
+middle_I  = middle_I(valid_indices_mask);
 
-%Now onto the final calculations ...
-%--------------------------------------------------------------------------
-dX       = x_mean(right_indices) - x_mean(left_indices);
-dY       = y_mean(right_indices) - y_mean(left_indices);
-distance = sqrt(dX.^ 2 + dY.^ 2);
-time     = (right_indices - left_indices)./ fps;
+keep_mask = false(1,n_frames);
+keep_mask(middle_I) = true;
 
-speed(middle_indices) = distance./time;
-
-angular_speed(middle_indices)   = point_angle_d(right_indices) - point_angle_d(left_indices);
-angular_speed(angular_speed < -180) = angular_speed(angular_speed < -180) + 360;
-angular_speed(angular_speed > 180)  = angular_speed(angular_speed > 180)  - 360;
-
-angular_speed = angular_speed./fps;
-
-% Sign the direction for dorsal/ventral locomtoion.
-if ventralMode < 2 % + = dorsal direction
-    angular_speed = -angular_speed;
 end
-
-
-% Sign the speed.
-%--------------------------------------------------------
-%We want to know how the worm's movement direction compares to the average
-%angle it had (apparently at the start)
-motionDirection = atan2(dY, dX) * (180 / pi);
-
-%This recenters the definition, as we are considered really with the
-%change, not with the actual value
-bodyDirection(middle_indices) = motionDirection - avg_body_angle_d(left_indices);
-
-bodyDirection(bodyDirection < -180) = bodyDirection(bodyDirection < -180) + 360;
-bodyDirection(bodyDirection > 180)  = bodyDirection(bodyDirection > 180)  - 360;
-
-speed(abs(bodyDirection) > 90) = -speed(abs(bodyDirection) > 90);
-
-% Organize the velocity.
-%-----------------------------------------------------------
-velocity.speed     = speed;
-velocity.direction = angular_speed;
-end
-
-
-
-
-
-
-
-
-
-
-%==========================================================================
-%                            THE OLD CODE
-%==========================================================================
-
-
-
-
-
-%{
-This is the original code, although I added some comments ...
-function velocity = h__computeVelocity2(x, y, bodyAngle, pointsI, fps, scale, ventralMode)
-
-%What is scale ????
-
-% The scale must be odd.
-scale = scale * fps;
-
-%???? 
-if rem(floor(scale), 2)
-    scale = floor(scale);
-elseif rem(ceil(scale), 2)
-    scale = ceil(scale);
-else
-    scale = round(scale + 1);
-end
-
-% Do we have enough coordinates?
-speed     = nan(1, size(x, 2));
-direction = nan(1, length(speed));
-body_direction = nan(1,length(speed));
-if scale > size(x, 2)
-    velocity.speed     = speed;
-    velocity.direction = direction;
-    return;
-end
-
-% Compute the body part direction.
-diffX      = nanmean(diff(x(pointsI,:), 1, 1), 1);
-diffY      = nanmean(diff(y(pointsI,:), 1, 1), 1);
-pointAngle = atan2(diffY, diffX) * (180 / pi);
-
-% Compute the coordinates.
-x = mean(x(pointsI,:), 1);
-y = mean(y(pointsI,:), 1);
-
-% Compute the speed using back/front nearest neighbors bounded at twice the scale.
-scaleMinus1 = scale - 1;
-halfScale   = scaleMinus1 / 2;
-diff1       = 1;
-diff2       = scale;
-
-for i = (1 + halfScale):(length(speed) - halfScale)
-    
-    % Advance the indices for the derivative.
-    newDiff1 = i - halfScale;
-    if ~isnan(x(newDiff1))
-        diff1 = newDiff1;
-    elseif i - diff1 >= scale
-        diff1 = i - scale + 1;
-    end
-    newDiff2 = i + halfScale;
-    if ~isnan(x(newDiff2)) || newDiff2 > diff2
-        diff2 = newDiff2;
-    end
-    
-    % Find usable indices for the derivative.
-    while isnan(x(diff1)) && diff1 > 1 && i - diff1 < scaleMinus1
-        diff1 = diff1 - 1;
-    end
-    while isnan(x(diff2)) && diff2 < length(speed) && diff2 - i < scaleMinus1
-        diff2 = diff2 + 1;
-    end
-    
-    % Compute the speed.
-    if ~isnan(x(diff1)) && ~isnan(x(diff2))
-        diffX    = x(diff2) - x(diff1);
-        diffY    = y(diff2) - y(diff1);
-        distance = sqrt(diffX ^ 2 + diffY ^ 2);
-        time     = (diff2 - diff1) / fps;
-        speed(i) = distance / time;
-        
-        % Compute the direction.
-        direction(i) = pointAngle(diff2) - pointAngle(diff1);
-        if direction(i) < -180
-            direction(i) = direction(i) + 360;
-        elseif direction(i) > 180
-            direction(i) = direction(i) - 360;
-        end
-
-        %??????????? - why is this done ????
-        direction(i) = direction(i) / fps;
-        
-        % Sign the speed.
-        %--------------------------------------------------------
-        motionDirection = atan2(diffY, diffX) * (180 / pi);
-        bodyDirection   = motionDirection - bodyAngle(diff1);
-        
-        if bodyDirection < -180
-            bodyDirection = bodyDirection + 360;
-        elseif bodyDirection > 180
-            bodyDirection = bodyDirection - 360;
-        end
-        if abs(bodyDirection) > 90
-            speed(i) = -speed(i);
-        end
-        body_direction(i) = bodyDirection;
-    end
-end
-
-% Sign the direction for dorsal/ventral locomtoion.
-if ventralMode < 2 % + = dorsal direction
-    direction = -direction;
-end
-
-% Organize the velocity.
-velocity.speed     = speed;
-velocity.direction = direction;
-velocity.body_direction = body_direction;
-end
-%}

@@ -2,7 +2,10 @@ function locomotion = getLocomotionFeatures(nw)
 %
 %   locomotion = seg_worm.feature_calculator.getLocomotionFeatures(nw)
 %
-%   Unfinished  Unfinished  Unfinished  Unfinished
+%   Inputs
+%   =======================================================================
+%   nw : seg_worm.normalized_worm
+%
 %
 %   See Also:
 %   seg_worm.feature_helpers.computeVelocity
@@ -19,9 +22,14 @@ function locomotion = getLocomotionFeatures(nw)
 %2 - anticlockwise
 
 FPS = 25.8398;
-VENTRAL_MODE = 2;  %??? How is this computed ????
+VENTRAL_MODE = 0;  %??? How is this computed ????
 %NOTE: midbody speed was opposite, which meant ventral mode was 2
 %TODO: still need to get this from somewhere ...
+%
+%
+%   Used in:
+%   seg_worm.feature_helpers.locomotion.getWormVelocity
+%
 
 %Velocity - DONE
 %--------------------------------------------------------------------------
@@ -40,8 +48,9 @@ motion_mode = locomotion.motion.mode;
 is_paused   = motion_mode == 0;
 
 %This is slow because of the significant # of ffts being computed ...
-% locomotion.bends = seg_worm.feature_helpers.locomotion.getLocomotionBends(...
-%     nw.angles, is_paused, nw.is_segmented);
+locomotion.bends = seg_worm.feature_helpers.locomotion.getLocomotionBends(...
+    nw.angles, is_paused, nw.is_segmented, FPS);
+
 
 locomotion.bends.foraging = ...
     seg_worm.feature_helpers.locomotion.getForaging(...

@@ -1,19 +1,16 @@
-function bends = getLocomotionBends(angles,is_paused,is_segmented_mask)
-%WORMBENDS Compute the temporal bending frequency at the nose, head,
-%midbody, and tail.
+function bends = getLocomotionBends(bend_angles,is_paused,is_segmented_mask,fps)
 %
-%
-%   bends =
-%   seg_worm.feature_helpers.locomotion.getLocomotionBends(angles,is_paused,is_segmented_mask)
-%
+%   Compute the temporal bending frequency at the head, midbody, and tail.
 %
 %   Old Name: wormBends.m
 %
+%
 %   Inputs
 %   =======================================================================
-%   angles            :
-%   is_paused         :
-%   is_segmented_mask :
+%   bend_angles       : [49 x n_frames]
+%   is_paused         : [1 x n_frames]
+%   is_segmented_mask : [1 x n_frames]
+%   fps               : (scalar) frames per second
 %
 %
 %   Outputs:
@@ -25,7 +22,7 @@ function bends = getLocomotionBends(angles,is_paused,is_segmented_mask)
 %       .mid
 %       .tail
 %
-%   Nature Methods Description - Crawling and Foraging (might split)
+%   Nature Methods Description
 %   =======================================================================
 %   Crawling.
 %   -----------------------
@@ -77,16 +74,9 @@ function bends = getLocomotionBends(angles,is_paused,is_segmented_mask)
 %
 %   TODO:
 %   - finish documentation
-%   - handle FPS input
 
-
-
-%New inputs
-%------------------------------------------
-FPS = 25;
-
-% Initialize the function state.
-%
+%Setup Options
+%--------------------------------------------------------------------------
 % Note: empirically I've found the values below achieve good signal.
 %
 % Furthermore ...
@@ -104,13 +94,10 @@ FPS = 25;
 % threshold appears to be unecessary as the data rarely, if ever, violates
 % it.
 
-
-%Setup Options
-%------------------------------------------------------------------
 minBodyWinTime = .5;
-minBodyWin     = round(minBodyWinTime * FPS);
+minBodyWin     = round(minBodyWinTime * fps);
 maxBodyWinTime = 15;
-maxBodyWin     = round(maxBodyWinTime * FPS);
+maxBodyWin     = round(maxBodyWinTime * fps);
 options = struct( ...
     'minWin',   minBodyWin, ...
     'maxWin',   maxBodyWin, ...
@@ -119,10 +106,12 @@ options = struct( ...
     'midI',     23:27, ... % centered at the middle of the worm
     'tailI',    40:44, ... % centered at the tail (1/6 the worm)
     'minFreq',  1 / (4 * maxBodyWinTime), ... % require at least 50% of the wave
-    'maxFreq',  FPS / 4, ... % with 4 frames we can resolve 75% of a wave
-    'peakBandThr',0.5,...
+    'maxFreq',  fps / 4, ... % with 4 frames we can resolve 75% of a wave
+    'peakBandThr',  0.5,...
     'peakEnergyThr',0.5);
+
 %Why are the indices used that are used ????
+%
 %NOTE: These indices are not symettric, 
 %Should we use the skeleton indices instead, or move these to the skeleton
 %indices????
@@ -142,8 +131,8 @@ end
 
 %Set things up for the loop
 %------------------------------------
-section     = {'head' 'mid' 'tail'};
-all_indices = {options.headI options.midI options.tailI};
+section     = {'head'           'mid'           'tail'};
+all_indices = {options.headI    options.midI    options.tailI};
 
 %Initialize interpolation - we'll interpolate over all frames but no extrapolation
 %--------------------------------------------------------------------------
@@ -155,13 +144,13 @@ bends = struct();
 for iBend = 1:3
     
     cur_indices     = all_indices{iBend};
-    avg_bend_angles = mean(angles(cur_indices,:), 1);
+    avg_bend_angles = mean(bend_angles(cur_indices,:), 1);
 
     if ~isempty(interpI) && length(dataI) > 1
         avg_bend_angles(interpI) = interp1(dataI, avg_bend_angles(dataI), interpI, interpType, NaN);
     end
     
-    [amps,freqs] = h__getBendData(avg_bend_angles,FPS,options,is_paused);
+    [amps,freqs] = h__getBendData(avg_bend_angles,fps,options,is_paused);
     
     bends.(section{iBend}).frequency = freqs;
     bends.(section{iBend}).amplitude = amps;
@@ -169,19 +158,30 @@ end
     
 end
 
-
-
 function [amps,freqs] = h__getBendData(avg_bend_angles, fps, options, is_paused)
-%h__getBendData    Compute the bend amplitude and frequency.
+%
+%
+%   Compute the bend amplitude and frequency.
 %
 %   h__getBendData(avg_bend_angles, fps, options, is_paused)
-
+%
+%   Inputs
+%   =======================================================================
+%   avg_bend_angles : [1 x n_frames]
+%   fps             : (scalar)
+%   options         : (struct), this is defined in the calling function
+%   is_paused       : [1 x n_frames], whether or not the worm is considered
+%                     to be paused during the frame
+%
 
 INIT_MAX_I_FOR_BANDWIDTH = 2000; %TODO: Relate this to a real frequency ...
-%and pass it in from higher up. This number is not important to the
-%outcome, only to the speed in which the function runs. We try and find the
+%and pass it in from higher up. This number is NOT IMPORTANT TO THE OUTCOME
+%and is only to the speed in which the function runs. We try and find the
 %bandwidth within this number of samples. 
 
+%TODO: We need to check that the value above is less than the # of samples
+%in the FFT. We might also change this to being a percentage of the # of
+%points. Currently this is around 25% of the # of samples.
 
 %Options extraction
 %----------------------------------
@@ -210,10 +210,12 @@ right_bounds = (1:n_frames) + half_distances;
 %--------------------------------------------------------------------------
 %- frame is not bounded on both sides by a sign change
 %- avg_bend_angles is NaN, this will only happen on the edges because we
-%   interpolate over the other frames ... (we just don't extrapolate)
+%       interpolate over the other frames ... (we just don't extrapolate)
 %- the sign change region is too large
 %- the bounds we settle on exceed the data region
 %- mode segmentation determined the frame was a paused frame
+%
+%
 %??? - what about large NaN regions, are those paused regions???
 
 is_bad_mask  = back_zeros_I == 0 | front_zeros_I == 0 | isnan(avg_bend_angles) | half_distances > max_window;
@@ -275,155 +277,74 @@ end
 
 end
 
-function [peakStartI,peakEndI] = h__getBandwidth(data_win_length,fftData,maxPeakI,INIT_MAX_I_FOR_BANDWIDTH)
-
-peakWinSize = round(sqrt(data_win_length));
-
-    % Find the peak bandwidth.
-    %----------------------------------------------------------------------
-    %The goal is to mind minimum 'peaks' that border the frequency
-    %response.
-    [~, minPeaksI] = seg_worm.util.maxPeaksDist(fftData(1:INIT_MAX_I_FOR_BANDWIDTH), peakWinSize,false,Inf);
-    
-    peakStartI = minPeaksI(find(minPeaksI < maxPeakI,1));
-    peakEndI   = minPeaksI(find(minPeaksI > maxPeakI,1));
-    
-    if isempty(peakEndI) || peakEndI + peakWinSize >= INIT_MAX_I_FOR_BANDWIDTH   
-        [~, minPeaksI] = seg_worm.util.maxPeaksDist(fftData, peakWinSize,false,Inf);
-
-        peakStartI = minPeaksI(find(minPeaksI < maxPeakI,1));
-        peakEndI   = minPeaksI(find(minPeaksI > maxPeakI,1));      
-    end
-
-
-end
-
-function [amps,freqs] = h__temp(avg_bend_angles, minWinSize, maxWinSize, fps, fftRes,max_freq,min_freq)
-
-
-INIT_MAX_I_FOR_BANDWIDTH = 2000; %TODO: Relate this to a real frequency ...
-%and pass it in from higher up ...
-
-peakBandThr   = .5;
-peakEnergyThr = .5;
-
-% Compute the short-time Fourier transforms (STFT).
-%dcThr = 0;
-
-fft_max_I   = fftRes / 2; %Maximum index to keep for frequency analysis
-freq_scalar = (fps / 2) * 1/(fft_max_I - 1);
-
-n_frames = length(avg_bend_angles);
-
-amps  = NaN(1,n_frames);
-freqs = NaN(1,n_frames);
-for iFrame = 1:n_frames
-    
-    % Pull out the time window.
-    %---------------------------------------------------
-    startDataWinI = max(1, iFrame - maxWinSize);
-    endDataWinI   = min(length(avg_bend_angles), iFrame + maxWinSize);
-    
-    
-    %I'd like to delay this step until computing the fft ...
-    dataWin       = avg_bend_angles(startDataWinI:endDataWinI);
-    
-    %?????
-    dataWinI      = iFrame - startDataWinI + 1;
-    
-    %----------------------------------------------------------------------
-
-    [backZeroI,frontZeroI] = h__getZeroCrossings(dataWin,dataWinI,minWinSize);
-    if isempty(backZeroI) || isempty(frontZeroI)
-        continue;
-    end
-        
-    %----------------------------------------------------------------------
-    
-
-    % Center the window.
-    %----------------------------------------------------------------------
-    dataWinSize = max(dataWinI - backZeroI, frontZeroI - dataWinI);
-    
-    backZeroI   = dataWinI - dataWinSize;
-    if backZeroI < 1
-        continue;
-    end
-    
-    frontZeroI = dataWinI + dataWinSize;
-    if frontZeroI > length(dataWin)
-        continue;
-    end
-    
-    % Cut the window off at the zero crossings.
-    dataWin     = dataWin(backZeroI:frontZeroI);
-    peakWinSize = round(sqrt(length(dataWin)));
-    
-    
-    %fft frequency and bandwidth
-    %----------------------------------------------------------------------
-    % Compute the real part of the STFT.
-    %These two steps take a lot of time ...
-    fftData = fft(dataWin, fftRes);
-    fftData = abs(fftData(1:fft_max_I));
-    
-    % Find the peak frequency.
-    [maxPeak,maxPeakI] = max(fftData);
-            
-    %NOTE: If this is true, we'll never bound the peak on the left ...
-    if maxPeakI == 1
-        continue
-    end
-    
-    %TODO: Not sure if this value is correct ...
-    unsigned_freq = freq_scalar*(maxPeakI - 1);
-    
-    if unsigned_freq > max_freq || unsigned_freq < min_freq
-       continue 
-    end
-    
-    % Find the peak bandwidth.
-    %----------------------------------------------------------------------
-    %The goal is to mind minimum 'peaks' that border the frequency
-    %response.
-    [~, minPeaksI] = seg_worm.util.maxPeaksDist(fftData(1:INIT_MAX_I_FOR_BANDWIDTH), peakWinSize,false,Inf);
-    
-    peakStartI = minPeaksI(find(minPeaksI < maxPeakI,1));
-    peakEndI   = minPeaksI(find(minPeaksI > maxPeakI,1));
-    
-    if isempty(peakEndI) || peakEndI + peakWinSize >= INIT_MAX_I_FOR_BANDWIDTH   
-        [~, minPeaksI] = seg_worm.util.maxPeaksDist(fftData, peakWinSize,false,Inf);
-
-        peakStartI = minPeaksI(find(minPeaksI < maxPeakI,1));
-        peakEndI   = minPeaksI(find(minPeaksI > maxPeakI,1));      
-    end
-    
-    %Store data
-    %----------------------------------------------------------------------
-    if ~(   isempty(peakStartI)                           || ...
-            isempty(peakEndI)                             || ...
-            fftData(peakStartI)/maxPeak  > peakBandThr    || ...
-            fftData(peakEndI)/maxPeak   > peakBandThr     || ...
-            sum(fftData(peakStartI:peakEndI) .^ 2) / sum(fftData .^ 2) < peakEnergyThr)
-
-        % Convert the peak to a time frequency.
-        dataSign      = sign(mean(dataWin)); % sign the data
-        amps(iFrame)  = (2 * fftData(maxPeakI) / length(dataWin)) * dataSign;
-        freqs(iFrame) = unsigned_freq * dataSign;
-    end
-    
-end
-
-end
-
-
-function [back_zeros_I,front_zeros_I] = h__getBoundingZeroIndices(avg_bend_angles,minWinSize)
+function [peak_start_I,peak_end_I] = h__getBandwidth(data_win_length,fft_data,max_peak_I,INIT_MAX_I_FOR_BANDWIDTH)
 %
+%
+%   Inputs
+%   =======================================================================
+%   data_win_length : length of real data (ignoring zero padding) that 
+%                     went into computing the FFT
+%   fft_data        : output of the fft function
+%   max_peak_I      : location (index) of the maximum of fft_data
+%   INIT_MAX_I_FOR_BANDWIDTH : see code
+%
+%   Outputs
+%   =======================================================================
+%
+%
+%   See Also:
+%   seg_worm.util.maxPeaksDist
+
+    peakWinSize = round(sqrt(data_win_length));
+
+    % Find the peak bandwidth.
+    %----------------------------------------------------------------------
+    %The goal is to find minimum 'peaks' that border the maximal frequency
+    %response.
+    %
+    %Since this is a time intensive process, we try and start with a small
+    %range of frequencies, as execution time is proportional to the length
+    %of the input data. If this fails we use the full data set
+    [~, min_peaks_I] = seg_worm.util.maxPeaksDist(fft_data(1:INIT_MAX_I_FOR_BANDWIDTH), peakWinSize,false,Inf);
+    
+    peak_start_I = min_peaks_I(find(min_peaks_I < max_peak_I,1));
+    peak_end_I   = min_peaks_I(find(min_peaks_I > max_peak_I,1));
+    
+    if isempty(peak_end_I) || peak_end_I + peakWinSize >= INIT_MAX_I_FOR_BANDWIDTH   
+        [~, min_peaks_I] = seg_worm.util.maxPeaksDist(fft_data, peakWinSize,false,Inf);
+
+        peak_start_I = min_peaks_I(find(min_peaks_I < max_peak_I,1));
+        peak_end_I   = min_peaks_I(find(min_peaks_I > max_peak_I,1));      
+    end
+
+
+end
+
+function [back_zeros_I,front_zeros_I] = h__getBoundingZeroIndices(avg_bend_angles,min_win_size)
 %
 %
 %   The goal of this function is to bound each index by 
+%
+%   Inputs
+%   =====================================================
+%   avg_bend_angles
+%
+%   Outputs
+%   =====================================================
+%
+%
+%   
 
 %TODO: Finish documentation
+
+%Old code found sign changes for every sample. Instead we find all sign
+%changes, then assign sign changes to each index.
+%
+%Our goal is to provide sign change indices for each sample. If we need a
+%wider window than we just increment or decrement (depending upon
+%direction) the sign change index. To determine width we need to
+%dereference the sign change index to get the frame number at which the
+%sign change occurs.
 
 sign_change_I  = find(sign(avg_bend_angles(2:end)) ~= sign(avg_bend_angles(1:end-1)));
 n_sign_changes = length(sign_change_I);
@@ -431,7 +352,7 @@ n_sign_changes = length(sign_change_I);
 %backward - at sign changes - don't subtract or add
 %forward  - we need to add 1
 
-%???? How to propagate indices indices????
+%???? How to propagate indices????
 
 %Let's say we have indices 3  6  9
 %What we need ...
@@ -479,7 +400,7 @@ for iFrame = 1:n_frames
     
     use_values = true;
     % Expand the zero-crossing window.
-    while front_zero_I - back_zero_I + 1 < minWinSize
+    while front_zero_I - back_zero_I + 1 < min_win_size
         
         %If the distance of the zero crossing going forward is further
         %from the current index than the backward crosssing is, then expand
@@ -508,9 +429,6 @@ for iFrame = 1:n_frames
         front_zeros_I(iFrame) = front_zero_I;
     end
 end
-
-start_I = back_zeros_I;
-stop_I  = front_zeros_I;
 
 
 end

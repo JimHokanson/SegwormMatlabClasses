@@ -1,39 +1,32 @@
-function [amplitude,wavelength,trackLength] = getAmplitudeAndWavelength(theta_d,xx,yy,worm_lengths)
+function [amplitude,wavelength,trackLength] = getAmplitudeAndWavelength(theta_d,sx,sy,worm_lengths)
 %
-%   
-%   TODO: Finish documentation
-%
-%
-%   [amplitude,wavelength,trackLength] = ...
-%       seg_worm.feature_helpers.posture.getAmplitudeAndWavelength(theta_d,xx,yy,wormLengths)
 %
 %   Inputs
 %   =======================================================================
-%   theta_d     : 
-%   xx          :
-%   yy          :
-%   wormLengths :
+%   theta_d      : worm orientation based on fitting to an ellipse, in
+%                   degrees
+%   xx           : [49 x n_frames]
+%   yy           : [49 x n_frames]
+%   worm_lengths : [1 x n_frames], total length of each worm
 %
 %
 %   Outputs
 %   =======================================================================
 %   amplitude    :
-%       .max       -
-%       .ratio     -
+%       .max       - [1 x n_frames] max y deviation after rotating major axis to x-axis
+%       .ratio     - [1 x n_frames] ratio of y-deviations (+y and -y) with worm centered
+%                    on the y-axis, ratio is computed to be less than 1
 %   wavelength   :
-%       .primary   -
-%       .secondary - this might not always be valid, even when the primary
-%                    wavelength is defined
-%   trackLength  :
+%       .primary   - [1 x n_frames]
+%       .secondary - [1 x n_frames] this might not always be valid, even 
+%                     when the primary wavelength is defined
+%   trackLength  : [1 x n_frames]
 %
 %   
 %   Old Name: getAmpWavelength.m
+%   TODO: This function was missing from some of the original code
+%   distributions. I need to make sure I upload it.
 %
-%
-%   IMPROVEMENTS:
-%   ----------------------------------------------
-%   1) Add error check (see code)
-%   2) Finish documentation ...
 %
 %   Nature Methods Description
 %   =======================================================================
@@ -79,8 +72,6 @@ function [amplitude,wavelength,trackLength] = getAmplitudeAndWavelength(theta_d,
 %   parameters of nematode sinusoidal movement”.
 
 
-
-
 % Code based on:
 % ------------------------------------------------
 % BMC Genetics, 2005
@@ -93,20 +84,23 @@ function [amplitude,wavelength,trackLength] = getAmplitudeAndWavelength(theta_d,
 N_POINTS_FFT   = 512;
 HALF_N_FFT     = N_POINTS_FFT/2;
 MIN_DIST_PEAKS = 5; %NOTE: Unfortunately the distance is in normalized
-%frequency units, not in real frequency units
+%frequency units (indices really), not in real frequency units
+WAVELENGTH_PCT_MAX_CUTOFF = 0.5; %TODO: Describe
+WAVELENGTH_PCT_CUTOFF = 2; %TODO: Describe
 
-
-%TODO: Add check that N_POINTS_FFT is not less than the # of samples ...
+assert(size(sx,1) <= N_POINTS_FFT,'# of points used in the FFT must be more than the # of points in the skeleton')
 
 theta_r = theta_d*pi/180;
 
-% xx = bsxfun(@minus,xx,mean(xx,1));
-% yy = bsxfun(@minus,yy,mean(yy,1));
-
 %Unrotate worm
 %-----------------------------------------------------------------
-wwx = bsxfun(@times,xx,cos(theta_r)) + bsxfun(@times,yy,sin(theta_r));
-wwy = bsxfun(@times,xx,-sin(theta_r)) + bsxfun(@times,yy,cos(theta_r));
+wwx = bsxfun(@times,sx,cos(theta_r)) + bsxfun(@times,sy,sin(theta_r));
+wwy = bsxfun(@times,sx,-sin(theta_r)) + bsxfun(@times,sy,cos(theta_r));
+
+%Subtract mean
+%-----------------------------------------------------------------
+wwx = bsxfun(@minus,wwx,mean(wwx,1));
+wwy = bsxfun(@minus,wwy,mean(wwy,1));
 
 %Amplitude Calculations
 %--------------------------------------------------------------------------
@@ -117,56 +111,45 @@ wwy = bsxfun(@times,xx,-sin(theta_r)) + bsxfun(@times,yy,cos(theta_r));
 %   ???? - It is surprising that you don't subtract the mean, then rotate,
 %   this is a bit surprising ..., this will be identical here but it is
 %   unclear if the theta calculation is identical ... (see eccentricity
-%   function)
-%   
-
-wwx = bsxfun(@minus,wwx,mean(wwx,1));
-wwy = bsxfun(@minus,wwy,mean(wwy,1));
+%   function)   
 
 % Calculate track amplitude
-amp1 = max(wwy);
-amp2 = min(wwy);
+%--------------------------------------------------------------------------
+amp1 = max(wwy,[],1);
+amp2 = min(wwy,[],1);
 amplitude.max   = amp1 - amp2;
 amp2 = abs(amp2);
 amplitude.ratio = min(amp1,amp2)./max(amp1,amp2);
 
 % Calculate track length
-trackLength = max(wwx)-min(wwx);
+%--------------------------------------------------------------------------
+%NOTE: This is the x distance after rotation, and is different from the worm
+%length which follows the skeleton. This will always be smaller than the
+%worm length.
+trackLength = max(wwx,[],1) - min(wwx,[],1);
 
 %Wavelength Calculation
 %--------------------------------------------------------------------------
-
 dwwx = diff(wwx,1,1);
 
 %Does the sign change? This is a check to make sure that the change in x is
-%always going one way or the other
-badWormOrient = any(bsxfun(@ne,sign(dwwx),sign(dwwx(1,:))),1);
+%always going one way or the other. Is sign of all differences the same as
+%the sign of the first, or rather, are any of the signs not the same as the
+%first sign, indicating a "bad worm orientation".
+bad_worm_orientation = any(bsxfun(@ne,sign(dwwx),sign(dwwx(1,:))),1);
 
-n_frames = length(badWormOrient);
+n_frames = length(bad_worm_orientation);
 
 p_wavelength = NaN(1,n_frames);
 s_wavelength = NaN(1,n_frames);
 
-%Normalize worms, hold onto length ...
-
-minx = min(wwx,[],1);
-maxx = max(wwx,[],1);
-lengthx = maxx - minx;
-
-% norm_wwx = bsxfun(@rdivide,bsxfun(@minus,wwx,minx),lengthx);
-% 
-% n_samples = size(norm_wwx,1);
-% iwwx = repmat(linspace(0,1,n_samples)',1,n_frames); %transpose to column vector
-% 
-% iwwy = interp1(norm_wwx,wwy,iwwx);
-
 %NOTE: Right now this varies from worm to worm which means the spectral
 %resolution varies as well from worm to worm
-spatial_sampling_frequency = (size(wwx,1)-1)./lengthx;
+spatial_sampling_frequency = (size(wwx,1)-1)./trackLength;
 
 ds = 1./spatial_sampling_frequency;
 
-frames_to_calculate = find(~badWormOrient);
+frames_to_calculate = find(~bad_worm_orientation);
 
 for iFrame = 1:length(frames_to_calculate)
     
@@ -185,20 +168,31 @@ for iFrame = 1:length(frames_to_calculate)
     
     temp = fft(iwwy, N_POINTS_FFT);
     
-    iY  = abs(temp(1:HALF_N_FFT)); %NOTE: This is magnitude, not power ...
-    %This is what the supplemental says, not what was done in code ...
-    %Not sure what was done in the reference paper
+    iY   = abs(temp(1:HALF_N_FFT)); %NOTE: This is magnitude, not power ...
+    %This is what the supplemental says, not what was done in the previous 
+    %code. I'm not sure what was done for the actual paper, but I would
+    %guess they used power.
     %
-    %NOTE: Amplitude = 2*abs(fft)/(length_real_data i.e. 48 or 49)
+    %This gets used when determining the secondary wavelength, as it must
+    %be greater than half the maximum to be considered a secondary
+    %wavelength.
     
-    [peaks,indx] = seg_worm.util.maxPeaksDist(iY, MIN_DIST_PEAKS,true,0.5*max(iY));
-
-    [~,I] = sort(-1*peaks); %Sort descending, don't like dim option ...
-    indx      = indx(I);
-
-    f = (indx-1)/512*spatial_sampling_frequency(cur_frame);
+    %NOTE: True Amplitude = 2*abs(fft)/(length_real_data i.e. 48 or 49, not 512)
+    %
+    %i.e. for a sinusoid of a given amplitude, the above formula would give
+    %you the amplitude of the sinusoid
     
-    all_wavelengths = 1./f;
+    %Find peaks that are greater than the cutoff
+    [peaks,indx] = seg_worm.util.maxPeaksDist(iY, MIN_DIST_PEAKS,true,WAVELENGTH_PCT_MAX_CUTOFF*max(iY));
+
+    %We sort the peaks so that the largest is at the first index and will
+    %be primary, this was not done in the previous version of the code
+    [~,I] = sort(-1*peaks); %Sort descending by multiplying by -1
+    indx  = indx(I);
+
+    frequency_values = (indx-1)/N_POINTS_FFT*spatial_sampling_frequency(cur_frame);
+    
+    all_wavelengths = 1./frequency_values;
     
     p_temp = all_wavelengths(1);
     
@@ -208,17 +202,18 @@ for iFrame = 1:length(frames_to_calculate)
         s_temp = NaN;
     end
     
-    worm_2x = 2*worm_lengths(cur_frame);
+    worm_wavelength_max = WAVELENGTH_PCT_CUTOFF*worm_lengths(cur_frame);
     
     %Cap wavelengths ...
-    if p_temp > worm_2x
-        p_temp = worm_2x;
+    if p_temp > worm_wavelength_max
+        p_temp = worm_wavelength_max;
     end
     
     %??? Do we really want to keep this as well if p_temp == worm_2x?
-    %i.e., should the secondary wavelength be valid
-    if s_temp > worm_2x
-        s_temp = worm_2x;
+    %i.e., should the secondary wavelength be valid if the primary is also
+    %limited in this way ?????
+    if s_temp > worm_wavelength_max
+        s_temp = worm_wavelength_max;
     end
     
     p_wavelength(cur_frame) = p_temp;
@@ -228,129 +223,5 @@ end
 
 wavelength.primary   = p_wavelength;
 wavelength.secondary = s_wavelength;
-
-% plot(p_wavelength,'bo')
-% hold on
-% plot(p_wavelength2,'k+')
-% plot(s_wavelength,'go')
-% plot(s_wavelength2,'r+')
-% hold off
-% keyboard
-
-
-end
-
-
-function [p_wavelength,s_wavelength] = h__getWavelengths(badWormOrientAll,wwxa,wwya,wormLengths)
-%
-%
-%   This is the old code 
-%
-
-n_frames = length(badWormOrientAll);
-nintervals = size(wwxa,1)-1;
-
-p_wavelength = NaN(1,n_frames);
-s_wavelength = NaN(1,n_frames);
-
-for iFrame = 1:n_frames
-
-   wwx = wwxa(:,iFrame);
-   wwy = wwya(:,iFrame);
-   badWormOrient = badWormOrientAll(iFrame);
-   wormLen = wormLengths(iFrame);
-    
-% Wavelength
-if (badWormOrient>0)
-    wavelengths = [nan, nan];
-else
-    % for non-curled worms, can measure wavelength
-    % Interpolate signal to position vertices equally
-    %   distributed along X-axis...
-    % (NOTE: Using signal as a factor of X-position, NOT TIME!
-    %   Hence, references of "frequency" are "spatial frequency,"
-    %   not temporal frequency)
-    
-    % Reference vector of equally distributed X-positions
-    iwwx = [wwx(1) : (wwx(end)-wwx(1))/nintervals : wwx(end)];
-    % Signal interpolated to reference vector
-    try
-        iwwy = interp1(wwx, wwy, iwwx);
-    catch ME1
-        msgString = getReport(ME1, 'extended','hyperlinks','off');
-        msgbox(msgString);
-    end
-    % Calculate spatial frequency of signal (cycles/PIXEL)
-    % TJ: 512 - number of sampling points
-    iY = fft(iwwy, 512);
-    % Power of constitutive "frequency" components (From Matlab online
-    % documentation for _fft [1]_)
-    iPyy = iY.* conj(iY) / 512;
-    % Worm length (pixels) of the bounding box
-    
-    xlength = max(iwwx) - min(iwwx);
-    
-%     if iFrame == 322
-%         keyboard
-%     end
-    
-%     keyboard
-    
-%     spatial_frequency = 1./(iwwx(2) - iwwx(1));
-%     
-%     f4 = linspace(0,spatial_frequency,512);
-%     
-%     
-%     f3 = spatial_frquency*(0:256/512);
-%     
-% 
-%     f3 = 0:spatial_frequency/512:511/512spatial_frequency;
-    
-    % Vector of "frequencies" (cycles/pixel), from 0 (steady state factor)
-    % to Nyquist frequency (i.e. 0.5*sampling frequency).
-    % (In our case sampling frequency is typically 12 samples per worm).
-    % (Nyquist frequency is the theoretical highest frequency that can be
-    % accurately detected for a given sampling frequency.)
-    f = (nintervals/xlength) * (0:256)/512;
-    
-    % Define search distance
-    distance = 5; % round(257/48); -- we can try 10 if this gives poor
-    % Peak discrimination
-    % MaxPeaksDist is a function written by Ev Yemini to find peaks
-    [peaks, indx] = seg_worm.util.maxPeaksDist(iPyy(1:257), distance,true,0);
-    
-    % We will filter the peaks that are smaller than 1/2 of the maximum
-    % peak value
-    indxFilt = indx(peaks>max(peaks)/2);
-    
-    wavelnthArray = 1./f(indxFilt);
-    
-    wavelnth2 = NaN;
-    
-    wavelnth1 = wavelnthArray(1);
-    if length(indxFilt) > 1
-        wavelnth2 = wavelnthArray(2);
-    end
-    % We will cap the value of wavelength to be at most 2x the length of
-    % the worm
-    if wavelnth1 > 2*wormLen
-        wavelnth1 = 2*wormLen;
-    end
-    if wavelnth2 > wormLen
-        wavelnth2 = 2*wormLen;
-    end
-	% Save wavelength
-    wavelengths = [wavelnth1, wavelnth2];
-    
-end
-
-p_wavelength(iFrame) = wavelengths(1);
-s_wavelength(iFrame) = wavelengths(2);
-
-end
-
-
-
-
 
 end

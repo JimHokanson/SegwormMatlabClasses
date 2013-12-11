@@ -1,6 +1,4 @@
-function bends = getPostureBends(angles)
-%
-%   bends = seg_worm.feature_helpers.posture.getPostureBends(angles)
+function bends = getPostureBends(bend_angles)
 %
 %
 %   Output
@@ -10,9 +8,20 @@ function bends = getPostureBends(angles)
 %           .mean
 %           .stdDev
 %       .neck
+%           .mean
+%           .stdDev
 %       .midbody
+%           .mean
+%           .stdDev
 %       .hips
+%           .mean
+%           .stdDev
 %       .tail
+%           .mean
+%           .stdDev
+%
+%
+%   Old Names: featureProcess.m, schaferFeatures_process.m
 %
 %   Nature Methods Description
 %   =======================================================================
@@ -45,16 +54,13 @@ bends = struct;
 for iField = 1:n_fields
     cur_indices = ALL_INDICES{iField};
     cur_name    = FIELDS{iField};
-    bends.(cur_name).mean   = nanmean(angles(cur_indices,:));
-    bends.(cur_name).stdDev = nanstd(angles(cur_indices,:));
+    bends.(cur_name).mean   = nanmean(bend_angles(cur_indices,:));
+    bends.(cur_name).stdDev = nanstd(bend_angles(cur_indices,:));
     
     %Sign the standard deviation ...
     %----------------------------------------------------------------------
     mask = bends.(cur_name).mean < 0;
     bends.(cur_name).stdDev(mask) = -1*bends.(cur_name).stdDev(mask);
 end
-
-% posture.bends = bends;
-
 
 end

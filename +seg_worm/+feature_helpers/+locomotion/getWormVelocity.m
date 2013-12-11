@@ -1,4 +1,4 @@
-function velocity = getWormVelocity(x, y, fps, ventralMode)
+function velocity = getWormVelocity(sx, sy, fps, ventral_mode)
 %getWormVelocity   Compute the worm velocity (speed & direction) at the
 %head-tip/head/midbody/tail/tail-tip
 %
@@ -7,16 +7,18 @@ function velocity = getWormVelocity(x, y, fps, ventralMode)
 %   Old Name: wormVelocity.m
 %
 %   Inputs:
-%       x           - the worm skeleton's x-axis coordinates
-%       y           - the worm skeleton's y-axis coordinates
-%       fps         - the frames/seconds
-%       ventralMode - the ventral side mode:
+%   =======================================================================
+%       sx           : the worm skeleton's x-axis coordinates
+%       sy           : the worm skeleton's y-axis coordinates
+%       fps          : the frames/seconds
+%       ventral_mode : the ventral side mode:
 %
 %                     0 = the ventral side is unknown
 %                     1 = the ventral side is clockwise
 %                     2 = the ventral side is anticlockwise
 %
 %   Outputs:
+%   =======================================================================
 %       velocity - the worm velocity; each field has subfields for the
 %                  "speed" and "direction":
 %
@@ -28,7 +30,9 @@ function velocity = getWormVelocity(x, y, fps, ventralMode)
 %
 %   Nature Methods Description
 %   =======================================================================
-%   Velocity. The worm’s velocity is measured at the tip of the head and
+%   Velocity. 
+%   ----------------------------------
+%   The worm’s velocity is measured at the tip of the head and
 %   tail, at the head and tail themselves, and at the midbody. The velocity
 %   is composed of two parts, speed and direction (expressed as an angular
 %   speed) (Supplementary Fig. 4d). The velocity is signed negatively
@@ -67,8 +71,10 @@ BODY_DIFF = 0.5;
 % Compute the tail-to-head direction.
 bodyI     = SI.BODY_INDICES;
 
-diffX     = nanmean(diff(x(bodyI,:), 1, 1), 1);
-diffY     = nanmean(diff(y(bodyI,:), 1, 1), 1);
+bodyI = bodyI(end:-1:1); %flip for angle calculations
+
+diffX     = nanmean(diff(sx(bodyI,:), 1, 1), 1);
+diffY     = nanmean(diff(sy(bodyI,:), 1, 1), 1);
 avg_body_angles_d = atan2(diffY, diffX).*(180 / pi);
 
 % Compute the velocity.
@@ -84,7 +90,7 @@ for iField = 1:length(FIELD_NAMES)
    
    %NOTE: This was moved to a separate function because I found that this
    %same function was being used elsewhere ...
-   velocity.(cur_field_name)  = seg_worm.feature_helpers.computeVelocity(x, y, avg_body_angles_d, cur_indices, fps, cur_scale, ventralMode);
+   velocity.(cur_field_name)  = seg_worm.feature_helpers.computeVelocity(sx, sy, avg_body_angles_d, cur_indices, fps, cur_scale, ventral_mode);
 end
 
 end

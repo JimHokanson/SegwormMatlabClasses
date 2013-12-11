@@ -1,11 +1,9 @@
 function curvature = wormPathCurvature(x, y, fps, ventralMode)
-%WORMPATHCUR?VATURE Compute the worm path curvature (angle/distance).
 %
-%   CURVATURE = WORMPATHCURVATURE(X, Y, FPS)
-%
-%   CURVATURE = WORMPATHCURVATURE(X, Y, FPS, VENTRALMODE)
+%   Compute the worm path curvature (angle/distance).
 %
 %   Inputs:
+%   =======================================================================
 %       x           - the worm skeleton's x-axis coordinates
 %       y           - the worm skeleton's y-axis coordinates
 %       fps         - the frames/seconds
@@ -16,6 +14,7 @@ function curvature = wormPathCurvature(x, y, fps, ventralMode)
 %                     2 = the ventral side is anticlockwise
 %
 %   Outputs:
+%   =======================================================================
 %       curvature - the worm path curvature (the angle between every 3 
 %                   subsequent locations at the given scale, divided by the
 %                   distance traveled between these 3 subsequent locations)
@@ -47,7 +46,7 @@ bodyAngle = atan2(diffY, diffX) * (180 / pi);
 velocity = h__computeVelocity(x, y, bodyAngle, bodyI, fps, bodyDiff, ventralMode);
 
 % Compute the path curvature.
-curvature = computeCurvature(velocity.speed, velocity.direction, bodyDiff, fps);
+curvature = h__computeCurvature(velocity.speed, velocity.direction, bodyDiff, fps);
 end
 
 
@@ -153,7 +152,7 @@ end
 
 
 %% Compute the worm path curvature.
-function curvature = computeCurvature(speed, direction, scale, fps)
+function curvature = h__computeCurvature(speed, direction, scale, fps)
 
 % The frame scale must be odd.
 frameScale = scale * fps;

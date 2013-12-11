@@ -20,14 +20,21 @@ classdef normalized_worm < sl.obj.handle_light
     %
     %   See Also:
     %   seg_worm.w.util.normWorms
-    %
-    %
+    %   seg_worm.feature_calculator.getMorphologyFeatures
+    %   seg_worm.feature_calculator.getLocomotionFeatures
+    %   seg_worm.feature_calculator.getPostureFeatures
+    %   seg_worm.feature_calculator.getPathFeatures
     %
     %    createObjectFromFiles
     %
     %   IMPROVEMENTS
     %   ===================================================================
     %   1) Ensure that non-segmented frames have NaN values ...
+    %
+    %
+    %   See Also:
+    %   seg_worm.feature_calculator.get_features_rewritten
+    %   
     
     
     %{
@@ -77,6 +84,7 @@ classdef normalized_worm < sl.obj.handle_light
         %    m = stage movement
         %    d = dropped frame
         %    n??? - there are references in some old code to this type
+        
         frame_codes         %[1 n], see comments in seg_worm.parsing.frame_errors
         %near the bottom, I haven't yet coded in the values as constants
         %... :/
@@ -87,6 +95,8 @@ classdef normalized_worm < sl.obj.handle_light
         %
         %   Uses:
         %   seg_worm.feature_helpers.posture.wormTouchFrames
+        %
+        %   This is needed 
         
         %------------------------------------------------------------------
         vulva_contours       %[49 2 n] double
@@ -132,6 +142,15 @@ classdef normalized_worm < sl.obj.handle_light
         %- seg_worm.feature_calculator.getMorphologyFeatures
        
         ventral_mode %NYI, needed for locomotion ...
+        %
+        %   Used in:
+        %   - seg_worm.feature_helpers.locomotion.getWormVelocity
+        %   - 
+        %   
+        
+        
+        %video_info
+
     end
     
     properties

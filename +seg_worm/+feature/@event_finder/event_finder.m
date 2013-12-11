@@ -3,9 +3,13 @@ classdef event_finder < sl.obj.handle_light
     %   Class:
     %   seg_worm.feature.event_finder
     %   
+    %   Old Name:
+    %   - findEvent.m
     %
-    %   TODO: Return class of event_ss
-    %
+    %   The interface with findEvent was really complicated, so I made this
+    %   a class in which you specify the options for finding events, then
+    %   you run the method getEvents() to find the events.
+    %   
     %   See Also:
     %   seg_worm.feature.event_ss
     %   seg_worm.feature.event
