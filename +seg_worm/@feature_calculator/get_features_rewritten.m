@@ -43,13 +43,29 @@ nw = seg_worm.normalized_worm.getObject(norm_folder);
 
 worm       = struct;
 
+
+FPS = 25.8398;
+VENTRAL_MODE = 0;  %??? I think this is set manually, but I'm not sure
+%where I should get this from at this point ...
+%
+%   ventralMode:
+%   0 - unknown
+%   1 - clockwise
+%   2 - anticlockwise
+%
+%   Used in:
+%   seg_worm.feature_helpers.locomotion.getWormVelocity
+%   seg_worm.feature_helpers.locomotion.getForaging
+%
+
+
 %Morphology - DONE
 %--------------------------------------------------------------------------
 worm.morphology = seg_worm.feature_calculator.getMorphologyFeatures(nw);
 
-%Locomotion
+%Locomotion - nearly done, just needs to be documented and tested
 %--------------------------------------------------------------------------
-worm.locomotion = seg_worm.feature_calculator.getLocomotionFeatures(nw);
+worm.locomotion = seg_worm.feature_calculator.getLocomotionFeatures(nw,FPS,VENTRAL_MODE);
 
 
 %Posture

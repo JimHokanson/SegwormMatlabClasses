@@ -2,8 +2,8 @@ function bends = getLocomotionBends(bend_angles,is_paused,is_segmented_mask,fps)
 %
 %   Compute the temporal bending frequency at the head, midbody, and tail.
 %
-%   Old Name: wormBends.m
-%
+%   Old Name: 
+%   - part of wormBends.m
 %
 %   Inputs
 %   =======================================================================
@@ -71,9 +71,7 @@ function bends = getLocomotionBends(bend_angles,is_paused,is_segmented_mask,fps)
 %   rejected for being unclear and crawling is marked as undefined at the
 %   frame. Similarly, if the integral between the troughs is less than half
 %   the total integral, the peak is rejected for being weak.
-%
-%   TODO:
-%   - finish documentation
+
 
 %Setup Options
 %--------------------------------------------------------------------------
@@ -89,12 +87,17 @@ function bends = getLocomotionBends(bend_angles,is_paused,is_segmented_mask,fps)
 % tick, resulting from segmentation noise, will be diluted by the
 % additional frame.
 %
+%
+%
+%   JAH NOTE: This comment (below) from MRC doesn't appear to be tested in the
+%   code. It looks like it was removed ...
+%
 % I chose a low-frequency threshold that requires at least half of the
 % signal cycle to be present in the measurement window. In practice, this
 % threshold appears to be unecessary as the data rarely, if ever, violates
 % it.
 
-minBodyWinTime = .5;
+minBodyWinTime = 0.5;
 minBodyWin     = round(minBodyWinTime * fps);
 maxBodyWinTime = 15;
 maxBodyWin     = round(maxBodyWinTime * fps);
@@ -107,14 +110,19 @@ options = struct( ...
     'tailI',    40:44, ... % centered at the tail (1/6 the worm)
     'minFreq',  1 / (4 * maxBodyWinTime), ... % require at least 50% of the wave
     'maxFreq',  fps / 4, ... % with 4 frames we can resolve 75% of a wave
-    'peakBandThr',  0.5,...
+    'max_amp_pct_bandwidth', 0.5,...
     'peakEnergyThr',0.5);
 
-%Why are the indices used that are used ????
+%max_amp_pct_bandwidth - when determining the bandwidth,
+%the minimums that are found can't exceed this percentage of the maximum.
+%Doing so invalidates the result,
 %
-%NOTE: These indices are not symettric, 
-%Should we use the skeleton indices instead, or move these to the skeleton
-%indices????
+%
+%   Why are the indices used that are used ????
+%
+%NOTE: These indices are not symettric. Should we use the skeleton indices
+%instead, or move these to the skeleton indices???
+%
 %SI = seg_worm.skeleton_indices;
 
 % No worm data.
@@ -190,7 +198,7 @@ max_window = options.maxWin;
 max_freq   = options.maxFreq;
 min_freq   = options.minFreq;
 fft_n_samples = options.res;
-peakBandThr   = options.peakBandThr;
+max_amp_pct_bandwidth   = options.max_amp_pct_bandwidth;
 peakEnergyThr = options.peakEnergyThr;
 
 %TODO: This needs to be cleaned up ...
@@ -232,18 +240,18 @@ amps  = NaN(1,n_frames);
 freqs = NaN(1,n_frames);
 for iFrame = find(~is_bad_mask)
     
-    dataWin = avg_bend_angles(left_bounds(iFrame):right_bounds(iFrame));
-    data_win_length = length(dataWin);
+    windowed_data   = avg_bend_angles(left_bounds(iFrame):right_bounds(iFrame));
+    data_win_length = length(windowed_data);
     
     %fft frequency and bandwidth
     %----------------------------------------------------------------------
     % Compute the real part of the STFT.
     %These two steps take a lot of time ...
-    fftData = fft(dataWin, fft_n_samples);
-    fftData = abs(fftData(1:fft_max_I));
+    fft_data = fft(windowed_data, fft_n_samples);
+    fft_data = abs(fft_data(1:fft_max_I));
     
     % Find the peak frequency.
-    [maxPeak,maxPeakI] = max(fftData);
+    [maxPeak,maxPeakI] = max(fft_data);
             
     %NOTE: If this is true, we'll never bound the peak on the left ...
     if maxPeakI == 1
@@ -257,29 +265,37 @@ for iFrame = find(~is_bad_mask)
        continue 
     end
     
-    [peakStartI,peakEndI] = h__getBandwidth(data_win_length,fftData,maxPeakI,INIT_MAX_I_FOR_BANDWIDTH);
-
+    [peakStartI,peakEndI] = h__getBandwidth(data_win_length,fft_data,maxPeakI,INIT_MAX_I_FOR_BANDWIDTH);
+    
     %Store data
     %----------------------------------------------------------------------
     if ~(   isempty(peakStartI)                           || ...
             isempty(peakEndI)                             || ...
-            fftData(peakStartI)/maxPeak  > peakBandThr    || ...
-            fftData(peakEndI)/maxPeak   > peakBandThr     || ...
-            sum(fftData(peakStartI:peakEndI) .^ 2) / sum(fftData .^ 2) < peakEnergyThr)
+            fft_data(peakStartI) > max_amp_pct_bandwidth*maxPeak    || ... %The minimums can't be too big
+            fft_data(peakEndI)   > max_amp_pct_bandwidth*maxPeak    || ... 
+            sum(fft_data(peakStartI:peakEndI) .^ 2) < peakEnergyThr * sum(fft_data .^ 2)) %Needs to have enough energy
 
         % Convert the peak to a time frequency.
-        dataSign      = sign(mean(dataWin)); % sign the data
-        amps(iFrame)  = (2 * fftData(maxPeakI) / data_win_length) * dataSign;
+        dataSign      = sign(mean(windowed_data)); % sign the data
+        amps(iFrame)  = (2 * fft_data(maxPeakI) / data_win_length) * dataSign;
         freqs(iFrame) = unsigned_freq * dataSign;
     end
     
 end
+
 
 end
 
 function [peak_start_I,peak_end_I] = h__getBandwidth(data_win_length,fft_data,max_peak_I,INIT_MAX_I_FOR_BANDWIDTH)
 %
 %
+%   The goal is to find minimum 'peaks' that border the maximal frequency
+%   response.
+%     
+%   Since this is a time intensive process, we try and start with a small
+%   range of frequencies, as execution time is proportional to the length
+%   of the input data. If this fails we use the full data set.
+%   
 %   Inputs
 %   =======================================================================
 %   data_win_length : length of real data (ignoring zero padding) that 
@@ -290,7 +306,8 @@ function [peak_start_I,peak_end_I] = h__getBandwidth(data_win_length,fft_data,ma
 %
 %   Outputs
 %   =======================================================================
-%
+%   peak_start_I : (scalar)
+%   peak_end_I   : (scalar)
 %
 %   See Also:
 %   seg_worm.util.maxPeaksDist
@@ -299,17 +316,26 @@ function [peak_start_I,peak_end_I] = h__getBandwidth(data_win_length,fft_data,ma
 
     % Find the peak bandwidth.
     %----------------------------------------------------------------------
-    %The goal is to find minimum 'peaks' that border the maximal frequency
-    %response.
-    %
-    %Since this is a time intensive process, we try and start with a small
-    %range of frequencies, as execution time is proportional to the length
-    %of the input data. If this fails we use the full data set
-    [~, min_peaks_I] = seg_worm.util.maxPeaksDist(fft_data(1:INIT_MAX_I_FOR_BANDWIDTH), peakWinSize,false,Inf);
     
-    peak_start_I = min_peaks_I(find(min_peaks_I < max_peak_I,1));
-    peak_end_I   = min_peaks_I(find(min_peaks_I > max_peak_I,1));
     
+    if max_peak_I < INIT_MAX_I_FOR_BANDWIDTH
+        
+        %NOTE: It is incorrect to filter by the maximum here, as we want to
+        %allow matching a peak that will later be judged invalid. If we
+        %filter here we may find another smaller peak which will not be
+        %judged invalid later on.
+        [~, min_peaks_I] = seg_worm.util.maxPeaksDist(fft_data(1:INIT_MAX_I_FOR_BANDWIDTH), peakWinSize,false,Inf);
+
+        peak_start_I = min_peaks_I(find(min_peaks_I < max_peak_I,1));
+        peak_end_I   = min_peaks_I(find(min_peaks_I > max_peak_I,1));
+    else
+        peak_start_I = [];
+        peak_end_I   = [];
+    end
+    
+    %NOTE: Besides checking for an empty value, we also need to ensure that
+    %the minimum didn't come too close to the data border, as more data
+    %could invalidate the result we have.
     if isempty(peak_end_I) || peak_end_I + peakWinSize >= INIT_MAX_I_FOR_BANDWIDTH   
         [~, min_peaks_I] = seg_worm.util.maxPeaksDist(fft_data, peakWinSize,false,Inf);
 
@@ -327,38 +353,67 @@ function [back_zeros_I,front_zeros_I] = h__getBoundingZeroIndices(avg_bend_angle
 %
 %   Inputs
 %   =====================================================
-%   avg_bend_angles
+%   avg_bend_angles : [1 x n_frames]
+%   min_win_size    : (scalar), the minimum size of the data window
 %
 %   Outputs
-%   =====================================================
-%
-%
+%   =======================================================================
+%   back_zeros_I    : [1 x n_frames] For each frame, this specifies a
+%                   proceeding frame in which a change in the bend angle
+%                   occurs. Invalid entries are indicated by 0.
+%   front_zeros_I   : [1 x n_frames]
 %   
 
-%TODO: Finish documentation
-
-%Old code found sign changes for every sample. Instead we find all sign
-%changes, then assign sign changes to each index.
-%
-%Our goal is to provide sign change indices for each sample. If we need a
-%wider window than we just increment or decrement (depending upon
-%direction) the sign change index. To determine width we need to
-%dereference the sign change index to get the frame number at which the
-%sign change occurs.
+%Getting sign change indices ...
+%--------------------------------------------------------------------------
+%The old code found sign changes for every frame, even though the sign
+%changes never changed. Instead we find all sign changes, and then for each
+%frame know which frame to the left and right have sign changes. We do this
+%in such a way so that if we need to look further to the left or right, it
+%is really easy to get the next answer.
 
 sign_change_I  = find(sign(avg_bend_angles(2:end)) ~= sign(avg_bend_angles(1:end-1)));
 n_sign_changes = length(sign_change_I);
 
-%backward - at sign changes - don't subtract or add
-%forward  - we need to add 1
+%To get the correct frame numbers, we need to do the following depending on
+%whether or not the bound is the left (backward) bound or the right
+%(forward) bound. JAH NOTE: I haven't really thought through why this is, but
+%it mimics the old code.
+%
+%
+%for left bounds   - at sign changes - don't subtract or add
+%for right bounds  - we need to add 1
 
-%???? How to propagate indices????
 
-%Let's say we have indices 3  6  9
+%Let's say we have sign changes at indices 3  6  9
 %What we need ...
-%        1 2 3 4 5 6 7 9 10
-%Left  = 0 0 0 3 3 3 6 6 6  %At 4, we have a zero at 3 to the left ...
-%Right = 2 2 5 5 5 8 8 8
+%        1 2 3 4 5 6 7  9  10  Indices
+%Left  = 0 0 0 3 3 3 6  6  6   - at 4, the left sign change is at 3
+%Right = 4 4 4 7 7 7 10 10 0   - at 4, the right sign change is at 7
+%
+%NOTE: The values above are the final indices or values, but instead we
+%want to work with the indices, so we need:
+%
+%        1 2 3 4 5 6 7  9  10  Indices
+%Left  = 0 0 0 1 1 1 2  2  2 - left_sign_change_I
+%Right = 1 1 1 2 2 2 3  3  3 - right_sign_change_I
+%
+%   we also need:
+%   left_values  = [3 6 9]  %the sign change indices
+%   right_values = [4 7 10] %+1
+%
+%   So this says:
+%   left_sign_change_I(7) => 2
+%   left_values(2) => 6, our sign change is at 6
+%
+%   Let's say we need to expand further to the left, then we take 
+%   left_sign_change_I(7) - 1 => 1
+%   left_values(1) => 3, our new sign change is at 3
+%
+%   Further:
+%   left_sign_change_I(7) - 2 => 0
+%   We've gone too far, nothing at index 0, set to invalid
+
 
 % dSignChange = diff(sign_change_I);
 
@@ -367,8 +422,14 @@ n_frames = length(avg_bend_angles);
 %For each element in the array, these values indicate which sign change
 %index to use ...
 left_sign_change_I  = zeros(1,n_frames);
-left_sign_change_I(sign_change_I + 1) = 1;
-left_sign_change_I = cumsum(left_sign_change_I);
+left_sign_change_I(sign_change_I + 1) = 1; %We increment at values to the 
+%right of the sign changes
+left_sign_change_I = cumsum(left_sign_change_I); %This is a little Matlab
+%trick in which something like:
+%1 0 0 1 0 0 1 0 0 
+%   becomes:
+%1 1 1 2 2 2 3 3 3 - so now at each frame, we get the index of the value
+%that is to the left
 
 right_sign_change_I    = zeros(1,n_frames);
 right_sign_change_I(sign_change_I(1:end-1)+1) = 1;
@@ -382,14 +443,14 @@ right_sign_change_I(sign_change_I(end)+1:end) = 0; %Nothing to the right of the 
 %incrementing the pointer index, rather than doing a search
 left_values  = sign_change_I;
 right_values = sign_change_I + 1; 
-
+%--------------------------------------------------------------------------
 
 back_zeros_I  = zeros(1,n_frames);
 front_zeros_I = zeros(1,n_frames);
 
 for iFrame = 1:n_frames
     
-    cur_left_index = left_sign_change_I(iFrame);
+    cur_left_index  = left_sign_change_I(iFrame);
     cur_right_index = right_sign_change_I(iFrame);
     if left_sign_change_I(iFrame) == 0 || right_sign_change_I(iFrame) == 0
         continue
@@ -399,14 +460,47 @@ for iFrame = 1:n_frames
     front_zero_I = right_values(cur_right_index);
     
     use_values = true;
+    
     % Expand the zero-crossing window.
+    %----------------------------------------------------------------------
+    %JAH NOTE: We center on the sample by using the larger of the two gaps.
+    %This means the gap size is 2*larger_window, where the half window size
+    %is:
+    %left_window_size  = iFrame - back_zero_I
+    %right_window_size = front_zero_I - iFrame
+    %
+    %so in reality we should use:
+    %
+    %front_zero_I - iFrame < min_win_size/2 && iFrame - back_zero_I < min_win_size/2
+    %
+    %By not doing this, we overshoot the minimum window size that we need
+    %to use. Consider window sizes that are in terms of the minimum window
+    %size.
+    %
+    %i.e. 0.5w means the left or right window is half min_win_size
+    %
+    %Consider we have:
+    %0.5w left 
+    %0.3w right
+    %
+    %If we stopped now, we would get a windows size of 2*0.5w or w, which
+    %is what we want.
+    %
+    %Since we keep going, the right window will expand, let's say:
+    %0.5w left
+    %0.7w right
+    %
+    %Now in the calling function we will center on the frame and the total 
+    %window distance will be 2*0.7w or 1.4w, which is larger than we
+    %needed.
+    
     while front_zero_I - back_zero_I + 1 < min_win_size
         
-        %If the distance of the zero crossing going forward is further
-        %from the current index than the backward crosssing is, then expand
-        %the backward crossing
+        %Expand the smaller of the two windows
+        %----------------------------------------------------
+        %  left_window_size       right_window_size
         if iFrame - back_zero_I < front_zero_I - iFrame
-            %Then expand backwards
+            %Then expand to the left
             cur_left_index = cur_left_index - 1;
             if cur_left_index == 0
                 use_values = false;
@@ -414,7 +508,7 @@ for iFrame = 1:n_frames
             end
             back_zero_I  = left_values(cur_left_index);
         else
-            %Expand forwards 
+            %Expand to the right 
             cur_right_index = cur_right_index + 1;
             if cur_right_index > n_sign_changes
                 use_values = false;

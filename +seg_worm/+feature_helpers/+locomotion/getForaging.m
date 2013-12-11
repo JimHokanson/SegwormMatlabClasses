@@ -1,7 +1,17 @@
-function foraging = getForaging(is_segmented_mask,sx,sy,ventralMode)
+function foraging = getForaging(is_segmented_mask,sx,sy,ventral_mode)
 %
 %
-%   foraging = seg_worm.feature_helpers.locomotion.getForaging(is_segmented_mask,sx,sy,ventralMode)
+%   seg_worm.feature_helpers.locomotion.getForaging
+%
+%   Old Name: 
+%   - part of wormBends.m
+%
+%   Inputs
+%   =======================================================================
+%   is_segmented_mask :
+%   sx :
+%   sy :
+%   ventral_mode : 
 %
 %   Foraging
 %   -----------------------
@@ -108,7 +118,7 @@ noseBends = h__computeNoseBends(nose_xi,nose_yi,neck_xi,neck_yi);
 
 [noseAmps,noseFreqs] = h__foragingData(noseBends, MIN_NOSE_WINDOW, FPS);
 
-if ventralMode > 1
+if ventral_mode > 1
     noseAmps  = -noseAmps;
     noseFreqs = -noseFreqs;
 end
