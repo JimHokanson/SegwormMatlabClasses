@@ -37,3 +37,9 @@
 %--------------------------------------------------------------------
 %
 %   Mismatch between description and cutoffs actually used ...
+%
+%seg_worm.feature_helpers.path.wormPathCurvature
+%--------------------------------------------------------------------
+% - indices used in body angle doesn't match description
+% - NOTE: There is a comment about not using the ends because of noise,
+%   but they are in seg_worm.feature_helpers.locomotion.getWormVelocity

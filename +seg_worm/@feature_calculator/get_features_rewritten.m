@@ -58,7 +58,7 @@ VENTRAL_MODE = 0;  %??? I think this is set manually, but I'm not sure
 %   seg_worm.feature_helpers.locomotion.getForaging
 %
 
-
+tic
 %Morphology - DONE
 %--------------------------------------------------------------------------
 worm.morphology = seg_worm.feature_calculator.getMorphologyFeatures(nw);
@@ -71,13 +71,16 @@ worm.locomotion = seg_worm.feature_calculator.getLocomotionFeatures(nw,FPS,VENTR
 
 %Posture
 %--------------------------------------------------------------------------
-midbody_distance = abs(locomotion.velocity.midbody.speed/FPS);
+midbody_distance = abs(worm.locomotion.velocity.midbody.speed/FPS);
 worm.posture = seg_worm.feature_calculator.getPostureFeatures(nw,midbody_distance,FPS);
+
+
+%Path
+%--------------------------------------------------------------------------
+worm.path = seg_worm.feature_calculator.getPathFeatures(nw,FPS,VENTRAL_MODE);
+
+toc
 
 seg_worm.feature_calculator.verifyResult(worm,feature_mat_path);
 
 keyboard
-
-%Path
-%--------------------------------------------------------------------------
-worm.path = seg_worm.feature_calculator.getPathFeatures(nw);

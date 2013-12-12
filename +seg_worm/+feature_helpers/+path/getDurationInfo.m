@@ -1,7 +1,9 @@
 function duration_struct = getDurationInfo(sx, sy, widths, fps)
-%getDurationInfo  Compute the time spent at each point along the worm path.
+%   
 %
-%   duration_struct = seg_worm.feature_helpers.path.getDurationInfo(sx, sy, widths, fps)
+%   seg_worm.feature_helpers.path.getDurationInfo
+%
+%   Compute the time spent at each point along the worm path.
 %
 %   Various parts of the worm are discretized into grid locations. The
 %   discretization is based on the average worm width (excludes neck and
@@ -13,30 +15,56 @@ function duration_struct = getDurationInfo(sx, sy, widths, fps)
 %
 %
 %   Inputs:
+%   =======================================================================
+%   sx     : [49 x n_frames] skeleton x coordinates
+%   sy     : [49 x n_frames] 
+%   widths : [49 x n_frames] widths at each point in the skeleton
+%   fps    : (scalar)
+%   
 %
-%   Output:
-%       arena - a struct of the arena/path size with subfields:
-%
-%               height = the arena height
-%                        (for the matrix of time spent at each point)
-%               width  = the arena width
-%                        (for the matrix of time spent at each point)
-%
-%               min:
-%                  x = the path location of the arena's minimum x coordinate
-%                  y = the path location of the arena's minimum y coordinate
-%
-%               max:
-%                  x = the path location of the arena's maximum x coordinate
-%                  y = the path location of the arena's maximum y coordinate
-%
-%       times - a struct(s) of the time(s) spent, per path, with subfields:
-%
-%               indices = [1  n_non_zero] the indices for the non-zero time
+%   Outputs:
+%   =======================================================================
+%       arena : a struct of the arena/path size with subfields:
+% 
+%           height = the arena height
+%                    (for the matrix of time spent at each point)
+%           width  = the arena width
+%                    (for the matrix of time spent at each point)
+% 
+%           min:
+%              x = the path location of the arena's minimum x coordinate
+%              y = the path location of the arena's minimum y coordinate
+% 
+%           max:
+%              x = the path location of the arena's maximum x coordinate
+%              y = the path location of the arena's maximum y coordinate
+% 
+%       These are all of the same format, see worm for the example:
+%       worm    :
+%           .indices - [1  n_non_zero] the indices for the non-zero time
 %                       points in the arena matrix
-%               times   = [1  n_non_zero] how long some part of the worm
+%           .time    - [1  n_non_zero] how long some part of the worm
 %                       body was at each of the indices
-
+%       head    :
+%       midbody :
+%       tail    :
+%
+%
+%   Nature Methods Description
+%   =======================================================================
+%   Dwelling. 
+%   -------------------------------------------
+%   The worm dwelling is computed for the head, midbody, tail, and the
+%   entire worm (Supplementary Fig. 4i). The worm’s width is assumed to be
+%   the mean of its head, midbody, and tail widths across all frames. The
+%   skeleton’s minimum and maximum location, for the x and y axes, is used
+%   to create a rectangular boundary. This boundary is subdivided into a
+%   grid wherein each grid square has a diagonal the same length as the
+%   worm’s width. When skeleton points are present on a grid square, their
+%   corresponding body part is computed as dwelling within that square. The
+%   dwelling for each grid square is integrated to define the dwelling
+%   distribution for each body part. For each body part, untouched grid
+%   squares are ignored.
 
 
 %Compute the scale
@@ -85,19 +113,19 @@ sys = sys - yScaledMin + 1;
 
 
 % Construct the empty arena(s).
-arenaSize = [yScaledMax - yScaledMin + 1, xScaledMax - xScaledMin + 1];
+arena_size = [yScaledMax - yScaledMin + 1, xScaledMax - xScaledMin + 1];
 
 %Organize the arena size.
 %------------------------------------------------
-arena.height = arenaSize(1);
-arena.width  = arenaSize(2);
+arena.height = arena_size(1);
+arena.width  = arena_size(2);
 arena.min.x  = min(sx(:));
 arena.min.y  = min(sy(:));
 arena.max.x  = max(sx(:));
 arena.max.y  = max(sy(:));
 %--------------------------------------------------------------------------
 
-arenas = h__populateArenas(arenaSize, sys, sxs, s_points);
+arenas = h__populateArenas(arena_size, sys, sxs, s_points);
 
 
 % Organize the arena/path time(s).
@@ -137,7 +165,8 @@ frames_run   = find(any(all_worm_I)); %NOTE: any(NaN) is false, all(NaN) is true
 n_frames_run = length(frames_run);
 
 %1 area for each set of skeleton indices
-arenas    = cell(n_points,1);
+n_points = length(s_points);
+arenas   = cell(n_points,1);
 
 for iPoint = 1:n_points
    

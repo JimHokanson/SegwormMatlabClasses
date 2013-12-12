@@ -1,7 +1,7 @@
 function velocity = computeVelocity(sx, sy, avg_body_angle_d, pointsI, fps, scale_time, ventral_mode)
 %computeVelocity  
 %
-%   seg_worm.feature_helpers.computeVelocity(x, y, bodyAngle, pointsI, fps, scale_time, ventralMode)
+%   seg_worm.feature_helpers.computeVelocity
 %
 %   This function is needed by: 
 %       seg_worm.feature_helpers.locomotion.getWormVelocities
@@ -100,7 +100,8 @@ n_frames = size(sx,2);
 
 %We need to go from a time over which to compute the velocity to a # of
 %samples. The # of samples should be odd.
-scale_samples_final = h__computeCalculationWidth(scale_time,fps);
+scale_samples_final = seg_worm.feature_helpers.getWindowWidthAsInteger(scale_time,fps);
+
 
 % Do we have enough coordinates?
 if scale_samples_final > n_frames
@@ -140,52 +141,33 @@ angular_speed(keep_mask) = h__computeAngularSpeed(sx,sy,pointsI,left_I,right_I,v
 %--------------------------------------------------------
 %We want to know how the worm's movement direction compares to the average
 %angle it had (apparently at the start)
-motion_direction = atan2(dY, dX) * (180 / pi);
+motion_direction = NaN(1,n_frames);
+motion_direction(keep_mask) = atan2(dY, dX) * (180 / pi);
 
 %This recenters the definition, as we are considered really with the
 %change, not with the actual value
 body_direction = NaN(1,n_frames);
-body_direction(keep_mask) = motion_direction - avg_body_angle_d(left_I);
+body_direction(keep_mask) = motion_direction(keep_mask) - avg_body_angle_d(left_I);
 
 body_direction(body_direction < -180) = body_direction(body_direction < -180) + 360;
 body_direction(body_direction > 180)  = body_direction(body_direction > 180)  - 360;
 
 speed(abs(body_direction) > 90) = -speed(abs(body_direction) > 90);
 
+
+%Added for wormPathCurvature
+%------------------------------------
+motion_direction(body_direction < 0) = -1*motion_direction(body_direction < 0);
+if ventral_mode > 1
+   motion_direction = -1*motion_direction; 
+end
+
 % Organize the velocity.
 %-----------------------------------------------------------
-velocity.speed     = speed;
-velocity.direction = angular_speed;
-
-end
-
-function scale_samples_final = h__computeCalculationWidth(scale_time,fps)
-
-%The scale is used to determine over how many samples the velocity is
-%calculated.
-
-% The scale must be odd.
-%--------------------------------------------------------------------------
-%To this end we take the value obtained and round it down and up, we choose
-%the odd value. This is made tricky if it is an even integer to start, such
-%that rounding up or down both result in an even integer. In this case we
-%add 1
-scale_samples_input = scale_time * fps;
-
-scale_low  = floor(scale_samples_input);
-scale_high = ceil(scale_samples_input);
-
-if scale_low == scale_high
-    if mod(scale_low,2) == 0
-        scale_samples_final = scale_samples_input + 1;
-    else
-        scale_samples_final = scale_low;
-    end
-elseif mod(scale_high,2) == 0
-    scale_samples_final = scale_low;
-else
-    scale_samples_final = scale_high;
-end
+velocity.speed            = speed;
+velocity.angular_speed    = angular_speed;
+velocity.body_direction   = body_direction;
+velocity.motion_direction = motion_direction;
 
 end
 

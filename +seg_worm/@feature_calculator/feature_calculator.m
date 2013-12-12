@@ -18,7 +18,7 @@ classdef feature_calculator < sl.obj.handle_light
         morphology = getMorphologyFeatures(nw)
         posture    = getPostureFeatures(nw,midbody_distance,FPS)
         locomotion = getLocomotionFeatures(nw,FPS,VENTRAL_MODE)
-        path       = getPathFeatures(nw)
+        path       = getPathFeatures(nw,FPS,VENTRAL_MODE)
         get_features_rewritten(norm_folder,feature_mat_path)
         verifyResult(new_worm,feature_mat_path)
     end

@@ -1,6 +1,10 @@
-function curvature = wormPathCurvature(x, y, fps, ventralMode)
+function curvature = wormPathCurvature(x, y, fps, ventral_mode)
 %
 %   Compute the worm path curvature (angle/distance).
+%
+%   seg_worm.feature_helpers.path.wormPathCurvature
+%
+%   Old Name: wormPathCurvature.m
 %
 %   Inputs:
 %   =======================================================================
@@ -19,169 +23,102 @@ function curvature = wormPathCurvature(x, y, fps, ventralMode)
 %                   subsequent locations at the given scale, divided by the
 %                   distance traveled between these 3 subsequent locations)
 %
+%   Nature Methods Description
+%   =======================================================================
+%   Curvature. 
+%   -----------------------------
+%   The path curvature is defined as the angle, in radians, of the worm’s
+%   path divided by the distance it traveled in microns. The curvature is
+%   signed to provide the path’s dorsal-ventral orientation. When the
+%   worm’s path curves in the direction of its ventral side, the curvature
+%   is signed negatively.
+% 
+%   The worm’s location is defined as the centroid of its body, with the
+%   head and tail removed (points 9-41). We remove the head and tail
+%   because their movement can cause large displacements in the worm’s
+%   centroid. 
 %
-% © Medical Research Council 2012
-% You will not remove any copyright or other notices from the Software; 
-% you must reproduce all copyright notices and other proprietary 
-% notices on any copies of the Software.
+%   For each frame wherein the worm’s location is known, we search for a
+%   start frame 1/4 of a second before and an end frame 1/4 second after to
+%   delineate the worm’s instantaneous path. If the worm’s location is not
+%   known within either the start or end frame, we extend the search for a
+%   known location up to 1/2 second in either direction. If the worm’s
+%   location is still missing at either the start or end, the path
+%   curvature is marked unknown at this point.
+% 
+%   With three usable frames, we have an approximation of the start,
+%   middle, and end for the worm’s instantaneous path curvature. We use the
+%   difference in tangent angles between the middle to the end and between
+%   the start to the middle. The distance is measured as the integral of
+%   the distance traveled, per frame, between the start and end frames.
+%   When a frame is missing, the distance is interpolated using the next
+%   available segmented frame. The instantaneous path curvature is then
+%   computed as the angle divided by the distance. This path curvature is
+%   signed negatively if the angle curves in the direction of the worm’s
+%   ventral side.
+%
+%   See Also:
+%   
 
-
-%% Compute the path curvature.
+BODY_DIFF = 0.5; %Minimum window over which to calculate the velocity
 
 % Initialize the body parts.
-samples = size(x, 1);
-size12  = floor(samples / 12);
-bodyI   = fliplr((1 + size12):(samples - size12));
-
-% Initialize the velocity derivative scale.
-fps = double(fps);
-bodyDiff = 0.5;
+bodyI = 45:-1:5; %This does not match the description ...
 
 % Compute the tail-to-head direction.
 diffX     = nanmean(diff(x(bodyI,:), 1, 1), 1);
 diffY     = nanmean(diff(y(bodyI,:), 1, 1), 1);
-bodyAngle = atan2(diffY, diffX) * (180 / pi);
+avg_body_angles_d = atan2(diffY, diffX) * (180 / pi);
 
-% Compute the velocity.
-velocity = h__computeVelocity(x, y, bodyAngle, bodyI, fps, bodyDiff, ventralMode);
+velocity = seg_worm.feature_helpers.computeVelocity(...
+    x, y, avg_body_angles_d, bodyI, fps, BODY_DIFF, ventral_mode);
 
 % Compute the path curvature.
-curvature = h__computeCurvature(velocity.speed, velocity.direction, bodyDiff, fps);
+curvature = h__computeCurvature(velocity.speed, velocity.motion_direction, BODY_DIFF, fps);
+
 end
-
-
-
-%% Compute the velocity.
-function velocity = h__computeVelocity(x, y, bodyAngle, pointsI, fps, scale, ventralMode)
-%
-%
-%   ????? - this function is very familiar, seems we have a bit of
-%   redundancy here ... (which function????)
-%
-%   originally the function was called wormVelocity.m
-%
-%   Now at: seg_worm.feature_helpers.locomotion.getWormVelocity
-%
-
-% The scale must be odd.
-scale = scale * fps;
-if rem(floor(scale), 2)
-    scale = floor(scale);
-elseif rem(ceil(scale), 2)
-    scale = ceil(scale);
-else
-    scale = round(scale + 1);
-end
-
-% Do we have enough coordinates?
-speed = nan(1, size(x, 2));
-direction = nan(1, length(speed));
-if scale > size(x, 2)
-    velocity.speed = speed;
-    velocity.direction = direction;
-    return;
-end
-
-% Compute the coordinates.
-x = mean(x(pointsI,:), 1);
-y = mean(y(pointsI,:), 1);
-
-% Compute the speed using back/front nearest neighbors bounded at twice
-% the scale.
-scaleMinus1 = scale - 1;
-halfScale = scaleMinus1 / 2;
-diff1 = 1;
-diff2 = scale;
-for i = (1 + halfScale):(length(speed) - halfScale)
-    
-    % Advance the indices for the derivative.
-    newDiff1 = i - halfScale;
-    if ~isnan(x(newDiff1))
-        diff1 = newDiff1;
-    elseif i - diff1 >= scale
-        diff1 = i - scale + 1;
-    end
-    newDiff2 = i + halfScale;
-    if ~isnan(x(newDiff2)) || newDiff2 > diff2
-        diff2 = newDiff2;
-    end
-    
-    % Find usable indices for the derivative.
-    while isnan(x(diff1)) && diff1 > 1 && i - diff1 < scaleMinus1
-        diff1 = diff1 - 1;
-    end
-    while isnan(x(diff2)) && diff2 < length(speed) && ...
-            diff2 - i < scaleMinus1
-        diff2 = diff2 + 1;
-    end
-    
-    % Compute the speed.
-    if ~isnan(x(diff1)) && ~isnan(x(diff2))
-        diffX = x(diff2) - x(diff1);
-        diffY = y(diff2) - y(diff1);
-        distance = sqrt(diffX ^ 2 + diffY ^ 2);
-        time = (diff2 - diff1) / fps;
-        speed(i) = distance / time;
-        
-        % Compute the direction.
-        direction(i) = atan2(diffY, diffX) * (180 / pi);
-        
-        % Sign the direction.
-        bodyDirection = direction(i) - bodyAngle(diff1);
-        if bodyDirection < -180
-            bodyDirection = bodyDirection + 360;
-        elseif bodyDirection > 180
-            bodyDirection = bodyDirection - 360;
-        end
-        if bodyDirection < 0
-            direction(i) = -direction(i);
-        end
-    end
-end
-
-% Sign the direction for dorsal/ventral locomtoion.
-if ventralMode > 1 % + = dorsal direction
-    direction = -direction;
-end
-
-% Organize the velocity.
-velocity.speed = speed;
-velocity.direction = direction;
-end
-
 
 
 %% Compute the worm path curvature.
-function curvature = h__computeCurvature(speed, direction, scale, fps)
+function curvature = h__computeCurvature(speed, motion_direction, window_width, fps)
+%
+%
+%   Inputs
+%   ==============================================================
+%   speed : [1 x n_frames]
+%   motion_direction : [1 x n_frames] (Units: degrees)  TODO: Add description
+%   window_width : (scalar) (Units: s)
+%   fps : (scalar)
+%
+%   Outputs
+%   ================================================
+%   curvature
 
 % The frame scale must be odd.
-frameScale = scale * fps;
-if rem(floor(frameScale), 2)
-    frameScale = floor(frameScale);
-elseif rem(ceil(frameScale), 2)
-    frameScale = ceil(frameScale);
-else
-    frameScale = round(frameScale + 1);
-end
-halfFrameScale = (frameScale - 1) / 2;
+frame_scale = seg_worm.feature_helpers.getWindowWidthAsInteger(window_width,fps);
+half_frame_scale = (frame_scale - 1) / 2;
 
 % Compute the angle differentials and distances.
 speed = abs(speed);
-diffDirection = nan(size(speed));
-distance      = nan(size(diffDirection));
-diffDirection(1:(end - frameScale + 1)) = ...
-    direction(frameScale:end) - direction(1:(end - frameScale + 1));
-distanceI = (halfFrameScale + 1):(length(speed) - frameScale);
-distance(distanceI) = ((speed(distanceI) + ...
-    speed(distanceI + frameScale)) * scale) / 2;
+
+diff_motion = NaN(size(speed));
+right_max_I = length(diff_motion) - frame_scale + 1;
+diff_motion(1:right_max_I) = motion_direction(frame_scale:end) - motion_direction(1:right_max_I);
+
+diff_motion(diff_motion >= 180) = diff_motion(diff_motion >= 180) - 360;
+diff_motion(diff_motion <= -180) = diff_motion(diff_motion <= -180) + 360;
+
+distanceI           = (half_frame_scale + 1):(length(speed) - frame_scale);
+distance            = NaN(size(speed));
+distance(distanceI) = ((speed(distanceI) + speed(distanceI + frame_scale)) * window_width) / 2;
 
 % Wrap the direction.
-wrap = diffDirection >= 180;
-diffDirection(wrap) = diffDirection(wrap) - 360;
-wrap = diffDirection <= -180;
-diffDirection(wrap) = diffDirection(wrap) + 360;
+
 
 % Compute the worm path curvature.
 distance(distance < 1) = NaN;
-curvature = (diffDirection ./ distance) * (pi / 180);
+curvature = (diff_motion ./ distance) * (pi / 180);
 end
+
+
+

@@ -22,6 +22,8 @@ frames_ventral = ef.getEvents(signed_frames,[],-1);
 [frames_merged,is_ventral] = frames_ventral.merge(frames_dorsal);
 
 temp = seg_worm.feature.event(frames_merged,FPS,midbody_distance,DATA_SUM_NAME,INTER_DATA_SUM_NAME); 
+
+%seg_worm.feature.event.getFeatureStruct
 turn_events = temp.getFeatureStruct;
 
 %Add extra field, isVentral ...

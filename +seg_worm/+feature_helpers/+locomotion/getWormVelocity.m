@@ -2,7 +2,7 @@ function velocity = getWormVelocity(sx, sy, fps, ventral_mode)
 %getWormVelocity   Compute the worm velocity (speed & direction) at the
 %head-tip/head/midbody/tail/tail-tip
 %
-%   velocity = seg_worm.feature_helpers.locomotion.getWormVelocity(x, y, fps, ventralMode)
+%   seg_worm.feature_helpers.locomotion.getWormVelocity
 %
 %   Old Name: wormVelocity.m
 %
@@ -69,10 +69,11 @@ TIP_DIFF  = 0.25;
 BODY_DIFF = 0.5;
 
 % Compute the tail-to-head direction.
-bodyI     = SI.BODY_INDICES;
+%--------------------------------------------------------------------------
+bodyI     = SI.BODY_INDICES(end:-1:1); %flip for angle calculations
 
-bodyI = bodyI(end:-1:1); %flip for angle calculations
-
+%NOTE: This is different than in:
+%seg_worm.feature_helpers.path.wormPathCurvature
 diffX     = nanmean(diff(sx(bodyI,:), 1, 1), 1);
 diffY     = nanmean(diff(sy(bodyI,:), 1, 1), 1);
 avg_body_angles_d = atan2(diffY, diffX).*(180 / pi);
@@ -89,8 +90,12 @@ for iField = 1:length(FIELD_NAMES)
    cur_scale      = TIME_SCALE_VALUES(iField);
    
    %NOTE: This was moved to a separate function because I found that this
-   %same function was being used elsewhere ...
-   velocity.(cur_field_name)  = seg_worm.feature_helpers.computeVelocity(sx, sy, avg_body_angles_d, cur_indices, fps, cur_scale, ventral_mode);
+   %same function was being used elsewhere in:
+   %    seg_worm.feature_helpers.path.wormPathCurvature
+   temp = seg_worm.feature_helpers.computeVelocity(...
+       sx, sy, avg_body_angles_d, cur_indices, fps, cur_scale, ventral_mode);
+   
+   velocity.(cur_field_name) = struct('speed',temp.speed,'direction',temp.angular_speed);
 end
 
 end

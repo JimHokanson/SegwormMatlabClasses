@@ -26,18 +26,18 @@ function path = getPathFeatures(nw,FPS,VENTRAL_MODE)
 path.range = seg_worm.feature_helpers.path.getRange(nw.contour_x,nw.contour_y);
 
 
-%Duration
+%Duration (aka Dwelling) - DONE
 %--------------------------------------------------------------------------
 path.duration = seg_worm.feature_helpers.path.getDurationInfo(nw.x, nw.y, nw.widths, FPS);
 
 
-%Coordinates
+%Coordinates - DONE
 %--------------------------------------------------------------------------
 path.coordinates.x = mean(nw.contour_x);
 path.coordinates.y = mean(nw.contour_y);
 
 
-%Curvature
+%Curvature - DONE
 %--------------------------------------------------------------------------
 path.curvature = seg_worm.feature_helpers.path.wormPathCurvature(nw.x,nw.y,FPS,VENTRAL_MODE);
 

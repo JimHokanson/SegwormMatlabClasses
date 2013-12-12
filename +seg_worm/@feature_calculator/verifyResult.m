@@ -36,7 +36,7 @@ plot(ln.bends.foraging.angleSpeed,lo.bends.foraging.angleSpeed)
 instr = {'velocity.headTip.speed'       1         []
          'velocity.headTip.direction'   1         []
          'velocity.head.speed'          1         []
-         'width.tail'    1 []};
+         'width.tail'                   1         []};
 
 h__runInstructions(lo,ln,'locomotion',instr)     
 
