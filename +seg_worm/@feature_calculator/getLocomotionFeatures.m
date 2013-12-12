@@ -8,7 +8,15 @@ function locomotion = getLocomotionFeatures(nw,FPS,VENTRAL_MODE)
 %   FPS :
 %   VENTRAL_MODE :
 %
+%   STATUS:
+%   DONE
+%
 %   See Also:
+%   seg_worm.feature_helpers.locomotion.getWormVelocity
+%   seg_worm.feature_helpers.locomotion.getWormMotionCodes
+%   seg_worm.feature_helpers.locomotion.getLocomotionBends
+%   seg_worm.feature_helpers.locomotion.getForaging
+%   seg_worm.feature_helpers.locomotion.getOmegaAndUpsilonTurns
 %   seg_worm.feature_helpers.computeVelocity
 
 
@@ -30,25 +38,25 @@ locomotion.motion = seg_worm.feature_helpers.locomotion.getWormMotionCodes(midbo
 %--------------------------------------------------------------------------
 motion_mode = locomotion.motion.mode;
 is_paused   = motion_mode == 0;
-
-%This is slow because of the significant # of ffts being computed.
+%SLOW - many ffts being computed
 locomotion.bends = seg_worm.feature_helpers.locomotion.getLocomotionBends(...
     nw.angles, is_paused, nw.is_segmented, FPS);
 
 
 
-%Foraging - part of bends - needs documentation
+%Foraging - part of bends - DONE
 %--------------------------------------------------------------------------
 locomotion.bends.foraging = ...
     seg_worm.feature_helpers.locomotion.getForaging(...
-    nw.is_segmented,nw.x,nw.y,VENTRAL_MODE);
+    nw.x,nw.y,nw.is_segmented,VENTRAL_MODE,FPS);
 
 
 
-%Turns - needs documentation
+%Turns - nearly done, could benefit from a bit more documentation
 %--------------------------------------------------------------------------
-midbody_distance = abs(midbody_speed/FPS);
+midbody_distance  = abs(midbody_speed/FPS);
 is_stage_movement = nw.segmentation_status == 'm';
+
 [omegas,upsilons] = ...
     seg_worm.feature_helpers.locomotion.getOmegaAndUpsilonTurns(...
     nw.angles,is_stage_movement,midbody_distance,nw.x,nw.y,FPS);

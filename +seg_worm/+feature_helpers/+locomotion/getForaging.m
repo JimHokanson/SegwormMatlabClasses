@@ -1,18 +1,23 @@
-function foraging = getForaging(is_segmented_mask,sx,sy,ventral_mode)
+function foraging = getForaging(sx,sy,is_segmented_mask,ventral_mode,FPS)
 %
 %
 %   seg_worm.feature_helpers.locomotion.getForaging
 %
+%
 %   Old Name: 
 %   - part of wormBends.m
 %
+%
 %   Inputs
 %   =======================================================================
-%   is_segmented_mask :
-%   sx :
-%   sy :
-%   ventral_mode : 
+%   sx  :
+%   sy  :
+%   is_segmented_mask : [1 x n_frames]
+%   ventral_mode      : (scalar)
+%   FPS :
 %
+%   Nature Methods Description
+%   =======================================================================
 %   Foraging
 %   -----------------------
 %   Foraging. Worm foraging is expressed as both an amplitude and an
@@ -65,13 +70,7 @@ function foraging = getForaging(is_segmented_mask,sx,sy,ventral_mode)
 %   angular speed computed between the previous frame and itself and
 %   between itself and the next frame. The angular speed is signed
 %   negatively whenever its vector points towards the worm’s ventral side.
-%
-%   Improvements:
-%   =======================================================================
-%   - Change references to nose and neck to something more appropriate
-%     NOTE: The neck is past the head, and the angle is within the head
-%   - Change reference to nose_angles to something more appropriate
-%   - Finish documentation ...
+
 
 % Initialize the function state.
 %
@@ -88,9 +87,6 @@ function foraging = getForaging(is_segmented_mask,sx,sy,ventral_mode)
 % full wave, akin to a body bend, occurs far less frequently. Therefore I
 % chose to measure angular speed for foraging.
 
-
-FPS = 20;
-
 SI = seg_worm.skeleton_indices;
 NOSE_I = SI.HEAD_TIP_INDICES(end:-1:1); %flip to maintain orientation for
 %angles and consistency with old code ...
@@ -104,6 +100,8 @@ nose_y = sy(NOSE_I,:);
 neck_x = sx(NECK_I,:);
 neck_y = sy(NECK_I,:);
 
+%Step 1: Interpolation of skeleton indices
+%--------------------------------------------------------------------------
 interp_nose_mask = h__getNoseInterpolationIndices(is_segmented_mask,MAX_NOSE_INTERP);
 
 dataI       = find(is_segmented_mask);
@@ -114,89 +112,130 @@ nose_yi = h__interpData(nose_y,dataI,noseInterpI);
 neck_xi = h__interpData(neck_x,dataI,noseInterpI);
 neck_yi = h__interpData(neck_y,dataI,noseInterpI);
 
-noseBends = h__computeNoseBends(nose_xi,nose_yi,neck_xi,neck_yi);
+%Step 2: Calculation of the bend angles
+%--------------------------------------------------------------------------
+nose_bends = h__computeNoseBends(nose_xi,nose_yi,neck_xi,neck_yi);
 
-[noseAmps,noseFreqs] = h__foragingData(noseBends, MIN_NOSE_WINDOW, FPS);
+%Step 3: 
+[nose_amps,nose_freqs] = h__foragingData(nose_bends, MIN_NOSE_WINDOW, FPS);
 
 if ventral_mode > 1
-    noseAmps  = -noseAmps;
-    noseFreqs = -noseFreqs;
+    nose_amps  = -nose_amps;
+    nose_freqs = -nose_freqs;
 end
 
-foraging.amplitude  = noseAmps;
-foraging.angleSpeed = noseFreqs;
+foraging.amplitude  = nose_amps;
+foraging.angleSpeed = nose_freqs;
 
-
-end
-
-function noseBends = h__computeNoseBends(nose_x,nose_y,neck_x,neck_y)
-
-noseAngles = h__computeBendAngles(nose_x,nose_y);
-neckAngles = h__computeBendAngles(neck_x,neck_y);
-
-noseBends  = (noseAngles - neckAngles)';
-
-wrap       = noseBends > pi;
-noseBends(wrap) = noseBends(wrap) - 2 * pi;
-
-wrap       = noseBends < -pi;
-noseBends(wrap) = noseBends(wrap) + 2 * pi;
-
-noseBends  = noseBends * 180 / pi; 
 
 end
 
-function angles = h__computeBendAngles(x,y)
+function nose_bends_d = h__computeNoseBends(nose_x,nose_y,neck_x,neck_y)
+%
+%   Compute the difference in angles between the nose and neck (really the
+%   head tip and head base).
+%   
+%
+%   Inputs
+%   ======================================================
+%   nose_x: [4 x n_frames]
+%   nose_y: [4 x n_frames]
+%   neck_x: [4 x n_frames]
+%   neck_y: [4 x n_frames]
+%
+%   Outputs
+%   ======================================================
+%   nose_bends_d
+
+noseAngles = h__computeAvgAngles(nose_x,nose_y);
+neckAngles = h__computeAvgAngles(neck_x,neck_y);
+
+%TODO: These three should be a method, calculating the difference
+%in angles and ensuring all results are within +/- 180
+nose_bends_d  = (noseAngles - neckAngles)'*180/pi;
+
+nose_bends_d(nose_bends_d > 180)  = nose_bends_d(nose_bends_d > 180) - 360;
+nose_bends_d(nose_bends_d < -180) = nose_bends_d(nose_bends_d < -180) + 360;
+end
+
+function angles = h__computeAvgAngles(x,y)
+%
+%   Take average difference between successive x and y skeleton points, the
+%   compute the arc tangent from those averages.
+%
+%   Simple helper for h__computeNoseBends
 
     avg_diff_x = mean(diff(x,1,1));
     avg_diff_y = mean(diff(y,1,1));
     
     angles = atan2(avg_diff_y,avg_diff_x);
-
 end
 
 
-function x_new = h__interpData(x_old,dataI,noseInterpI)
+function x_new = h__interpData(x_old,good_data_I,fix_data_I)
+%
+%
+%   TODO: move to: seg_worm.feature_helpers.interpolateNanData
+%
+%   Inputs
+%   =======================================================================
+%   x_old       : [4 x n_frames]
+%   good_data_I : [1 x m]
+%   fix_data_I  : [1 x n]
 
 x_new = x_old;
 
+%NOTE: This version is a bit weird because the size of y is not 1d
 for i1 = 1:size(x_old,1)
-   x_new(i1,noseInterpI) = interp1(dataI,x_old(i1,dataI),noseInterpI,'linear',NaN); 
+   x_new(i1,fix_data_I) = interp1(good_data_I,x_old(i1,good_data_I),fix_data_I,'linear',NaN); 
 end
 
 end
 
 
-function isInterpNoseData = h__getNoseInterpolationIndices(is_segmented_mask,maxNoseInterp)
+function interp_data_mask = h__getNoseInterpolationIndices(is_segmented_mask,max_nose_interp_sample_width)
+%
+%   
+%   Interpolate data:
+%   - but don't extrapolate
+%   - don't interpolate if the gap is too large
+%
+%   Inputs
+%   =======================================================================
+%   is_segmented_mask :
+%   max_nose_interp_sample_width : Maximum # of frames that 
+%
+%   Outputs
+%   =======================================================================
+%   interp_data_mask : [1 x n_frames} whether or not to interpolate a data point
 
-%Interpolation ....
-%==========================================================================
+%JAH NOTE: I'm considering replacing this and other interpolation code
+%with a specific function for all feature processing
+
 % Find the start and end indices for missing data chunks.
 isNotData        = ~is_segmented_mask;
-isInterpNoseData = isNotData;
+interp_data_mask = isNotData;
 diffIsNotData    = diff(isNotData);
 
-%TODO: This needs to be fixed ...
 startNotDataI    = find(diffIsNotData == 1);
-endNotDataI      = find(diffIsNotData == -1);
+endNotDataI      = find(diffIsNotData == -1) - 1;
 
 % Don't interpolate missing data at the very start and end.
 %--------------------------------------------------------------------------
 if ~isempty(startNotDataI) && (isempty(endNotDataI) || startNotDataI(end) > endNotDataI(end))
-    isInterpNoseData(startNotDataI(end):end) = false;
+    interp_data_mask(startNotDataI(end):end) = false;
     startNotDataI(end) = [];
 end
 
 if ~isempty(endNotDataI) && (isempty(startNotDataI) || startNotDataI(1) > endNotDataI(1))
-    isInterpNoseData(1:endNotDataI(1)) = false;
+    interp_data_mask(1:endNotDataI(1)) = false;
     endNotDataI(1) = [];
 end
 
 % Don't interpolate large missing chunks of data.
-
 for i = 1:length(startNotDataI)
-    if endNotDataI(i) - startNotDataI(i) > maxNoseInterp
-        isInterpNoseData(startNotDataI(i):endNotDataI(i)) = false;
+    if endNotDataI(i) - startNotDataI(i) > max_nose_interp_sample_width
+        interp_data_mask(startNotDataI(i):endNotDataI(i)) = false;
     end
 end
 
@@ -207,68 +246,97 @@ end
 
 
 %% Compute the foraging amplitude and angular speed.
-function [amps,speeds] = h__foragingData(nose_bend_angle_d, minWinSize, fps)
+function [amps,speeds] = h__foragingData(nose_bend_angle_d, min_win_size, fps)
+%
+%
+%
+%   Inputs
+%   =======================================================================
+%   nose_bend_angle_d : [n_frames x 1]
+%   min_win_size : (scalar)
+%   fps : (scalar)
+%
+%   Outputs
+%   =======================================================================
+%   amps   : [1 x n_frames]
+%   speeds : [1 x n_frames]
+%
+%
 
 % Clean up the signal with a gaussian filter.
-if minWinSize > 0
-    gaussFilter       = gausswin(2 * minWinSize + 1) / minWinSize;
+%--------------------------------------------------------------------------
+if min_win_size > 0
+    gaussFilter       = gausswin(2 * min_win_size + 1) / min_win_size;
     nose_bend_angle_d = conv(nose_bend_angle_d, gaussFilter, 'same');
     
-    nose_bend_angle_d(1:minWinSize) = NaN;
-    nose_bend_angle_d((end - minWinSize + 1):end) = NaN;
+    %Remove partial data frames ...
+    nose_bend_angle_d(1:min_win_size) = NaN;
+    nose_bend_angle_d((end - min_win_size + 1):end) = NaN;
 end
 
-
-%NOTE: This code doesn't handle unsegmented data, so the foraging magnitude
-%could be inaccurate in many places ...
-
-%JAH NOTE: I left this code as is for now, I could improve it but
-%it isn't that slow
+%Calculate amplitudes
 %--------------------------------------------------------------------------
-% Compute the amplitudes between zero crossings.
-dataSign = sign(nose_bend_angle_d);
-amps     = NaN(1,length(nose_bend_angle_d));
-numAmps  = 0;
-for i = 1:(length(nose_bend_angle_d) - 1)
-    
-    % Compute the amplitude for the region.
-    % Note: data at the zero crossing has NaN (unknown) amplitude.
-    if dataSign(i) ~= dataSign(i + 1);
-        if dataSign(i) > 0
-            amps((i - numAmps):i) = max(nose_bend_angle_d((i - numAmps):i));
-        elseif dataSign(i) < 0
-            amps((i - numAmps):i) = min(nose_bend_angle_d((i - numAmps):i));
-        end
-        
-        % Reset the count.
-        numAmps = 0;
-        
-    % Advance.
-    else
-        numAmps = numAmps + 1;
-    end
-end
+amps = h__getAmps(nose_bend_angle_d);
 
-% Compute the amplitude for the end region.
-% Note: data at the zero crossing has NaN (unknown) amplitude.
-if dataSign(end) > 0
-    amps((end - numAmps):end) = max(nose_bend_angle_d((end - numAmps):end));
-elseif dataSign(end) < 0
-    amps((end - numAmps):end) = min(nose_bend_angle_d((end - numAmps):end));
-end
+
+%Calculate angular speed
 %--------------------------------------------------------------------------
-
-
 % Compute the speed centered between the back and front foraging movements.
 %
 %  1     2    3
-%    d1    d2
+%    d1    d2     d1 = 2 - 1,   d2 = 3 - 2
 %        x        assign to x, avg of d1 and d2
-%
-dData  = diff(nose_bend_angle_d) * fps;
-speeds = NaN(size(amps));
-speeds(2:end-1) = (dData(1:(end - 1)) + dData(2:end)) / 2;
 
+%???? - why multiply and not divide by fps????
+
+d_data = diff(nose_bend_angle_d) * fps;
+speeds = NaN(size(amps));
+speeds(2:end-1) = (d_data(1:(end - 1)) + d_data(2:end)) / 2;
+
+
+%Propagate NaN for speeds to amps
+%--------------------------------------------------------------------------
 amps(isnan(speeds)) = NaN;
+
+end
+
+function amps = h__getAmps(nose_bend_angle_d)
+%
+%In between all sign changes, get the maximum or minimum value and
+%apply to all indices that have the same sign within the stretch
+%
+%i.e. 
+%
+%1 2 3 2 1 -1 -2 -1 1 2 2 5 becomes
+%3 3 3 3 3 -2 -2 -2 5 5 5 5
+
+n_frames = length(nose_bend_angle_d);
+
+dataSign = sign(nose_bend_angle_d);
+sign_change_I = find(dataSign(2:end) ~= dataSign(1:end-1));
+
+end_I   = [sign_change_I; n_frames];
+start_I = [1; sign_change_I+1];
+
+%All Nan values are considered sign changes, remove these ...
+mask = isnan(start_I);
+start_I(mask) = [];
+end_I(mask)   = [];
+
+amps = NaN(1,n_frames);
+
+%For each chunk, get max or min, depending on whether the data is positive
+%or negative ...
+for iChunk = 1:length(start_I)
+   cur_start = start_I(iChunk);
+   cur_end   = end_I(iChunk);
+   
+   if nose_bend_angle_d(cur_start) > 0
+       amps(cur_start:cur_end) = max(nose_bend_angle_d(cur_start:cur_end));
+   else
+       amps(cur_start:cur_end) = min(nose_bend_angle_d(cur_start:cur_end));
+   end
+end
+
 
 end

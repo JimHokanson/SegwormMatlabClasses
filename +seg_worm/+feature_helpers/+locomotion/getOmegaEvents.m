@@ -1,19 +1,38 @@
-function omega_events = getOmegaEvents(omega_frames_from_angles,sx,sy,body_angles,midbody_distance,FPS)
+function omega_events = getOmegaEvents(omega_frames_from_angles,sx,sy,body_angles,midbody_distance,fps)
 %
 %
-%   omega_events = seg_worm.feature_helpers.locomotion.getOmegaEvents(omega_frames_from_angles,sx,sy,FPS,body_angles,midbody_distance)
 %
+%   seg_worm.feature_helpers.locomotion.getOmegaEvents
+%
+%   Inputs
+%   =======================================================================
+%   sx :
+%   sy :
+%   fps
+%   body_angles :
+%   midbody_distance :
+%   omega_frames_from_angles : [1 x n_frames], each frame has the value 0,
+%       1, or -1, 
+%
+%   Outputs
+%   =======================================================================
+%   omega_events : event structure 
+%
+%   See Also:
+%   seg_worm.feature_helpers.locomotion.getOmegaAndUpsilonTurns
+%   seg_worm.feature_helpers.locomotion.getTurnEventsFromSignedFrames
 
-MIN_OMEGA_EVENT_LENGTH = round(FPS/4);
+MIN_OMEGA_EVENT_LENGTH = round(fps/4);
 
 body_angles_i = h__interp_NaN(body_angles,true); %_i - interpolated
 
-omega_frames_from_th_change = h_getHeadTailDirectionChange(FPS,sx,sy);
+omega_frames_from_th_change = h_getHeadTailDirectionChange(fps,sx,sy);
 
 %Filter:
-%This is a carry over from the old code, where we filtered before merging
-%...
-omega_frames_from_th_change = h__filterAndSignFrames(body_angles_i,omega_frames_from_th_change,MIN_OMEGA_EVENT_LENGTH);
+%This is to be consistent with the old code. We filter then merge, then
+%filter again :/
+omega_frames_from_th_change = h__filterAndSignFrames(...
+    body_angles_i,omega_frames_from_th_change,MIN_OMEGA_EVENT_LENGTH);
 
 is_omega_frame = omega_frames_from_angles | omega_frames_from_th_change;
 
@@ -21,7 +40,8 @@ is_omega_frame = omega_frames_from_angles | omega_frames_from_th_change;
 signed_omega_frames = h__filterAndSignFrames(body_angles_i,is_omega_frame,MIN_OMEGA_EVENT_LENGTH);
 
 %Convert frames to events ...
-omega_events = seg_worm.feature_helpers.locomotion.getTurnEventsFromSignedFrames(signed_omega_frames,midbody_distance,FPS);
+omega_events = seg_worm.feature_helpers.locomotion.getTurnEventsFromSignedFrames(...
+    signed_omega_frames,midbody_distance,fps);
 
 end
 
@@ -29,7 +49,9 @@ function is_omega_angle_change = h_getHeadTailDirectionChange(FPS,sx,sy)
 %
 %
 %   NOTE: This change in direction of the head and tail indicates that
-%   either a turn occurred OR that an error in the parsing occurred
+%   either a turn occurred OR that an error in the parsing occurred.
+%   Basically we look for the angle from the head to the tail to all of a
+%   sudden change by 180 degrees. 
 %
 
 MAX_FRAME_JUMP_FOR_ANGLE_DIFF = round(FPS/2);

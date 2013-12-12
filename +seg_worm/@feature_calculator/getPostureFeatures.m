@@ -1,4 +1,4 @@
-function posture = getPostureFeatures(nw)
+function posture = getPostureFeatures(nw,midbody_distance,FPS)
 %
 %   posture = seg_worm.feature_calculator.getPostureFeatures(nw)
 %
@@ -13,8 +13,6 @@ function posture = getPostureFeatures(nw)
 %   first
 %
 
-
-FPS = 20; %TODO: get these from higher up ...
 N_ECCENTRICITY = 50; %grid size for estimating eccentricity, this is the
 %max # of points that will fill the wide dimension
 
@@ -42,9 +40,9 @@ posture.bends = seg_worm.feature_helpers.posture.getPostureBends(nw.angles);
 posture.kinks = seg_worm.feature_helpers.posture.wormKinks(nw.angles);
 
 
-%Coils - NOT YET FINISHED ... - needs distance from locomotion ...
+%Coils - NOT YET FINISHED - just added distance, needs documentation
 %--------------------------------------------------------------------------
-posture.coils = seg_worm.feature_helpers.posture.getCoils(nw.n_frames,nw.frame_codes);
+posture.coils = seg_worm.feature_helpers.posture.getCoils(nw.frame_codes,midbody_distance,FPS);
 
 
 %Directions (AKA orientation) - DONE

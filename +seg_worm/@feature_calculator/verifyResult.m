@@ -3,10 +3,6 @@ function verifyResult(new_worm,feature_mat_path)
 %
 %   seg_worm.feature_calculator.verifyResult(new_worm,feature_mat_path)
 
-
-assert1 = @(x,y,z)(assert(isequaln(x,y),z));
-assert2 = @(x,y,z,w)(assert(all(h__percentDiff(x,y) < z),w));
-assert3 = @(x,y,z,w) (assert(h__corrValue(x,y) > z,w));
 h = load(feature_mat_path);
 old_worm = h.worm;
 
@@ -14,11 +10,35 @@ old_worm = h.worm;
 
 %Morphology
 %==========================================================================
+mn = new_worm.morphology;
+mo = old_worm.morphology;
+
+instr = {'length' 1         []
+         'width.head' 1     []
+         'width.midbody' 1 []
+         'width.tail'    1 []};
+
+h__runInstructions(mo,mn,'morphology',instr)     
+     
+keyboard
 
 
 
 
 
+%Locomotion
+%==========================================================================
+ln = new_worm.locomotion;
+lo = old_worm.locomotion;
+
+plot(ln.bends.foraging.angleSpeed,lo.bends.foraging.angleSpeed)
+
+instr = {'velocity.headTip.speed'       1         []
+         'velocity.headTip.direction'   1         []
+         'velocity.head.speed'          1         []
+         'width.tail'    1 []};
+
+h__runInstructions(lo,ln,'locomotion',instr)     
 
 %Posture
 %==========================================================================
@@ -137,4 +157,36 @@ function h__summarize(new,old)
     plot(h__percentDiff(old,new))
     title(sprintf('r: %0.3f',h__corrValue(old,new)))
     
+end
+
+function h__runInstructions(so,sn,main_name,instr)
+
+n_instr = size(instr,1);
+
+for iInstr = 1:n_instr
+   cur_deep_field_name = instr{iInstr,1};
+   cur_test_number     = instr{iInstr,2};
+   option              = instr{iInstr,3};
+   
+   x = eval(['so.' cur_deep_field_name]);
+   y = eval(['sn.' cur_deep_field_name]);
+   
+   error_msg = sprintf('%s.%s',main_name,cur_deep_field_name);
+   
+   switch cur_test_number
+       case 1
+           assert(isequaln(x,y),error_msg)
+       case 2
+           assert(all(h__percentDiff(x,y) < option),error_msg)
+       case 3
+           assert(h__corrValue(x,y) > option,error_msg);
+   end
+    
+end
+
+
+assert1 = @(x,y,z)(assert(isequaln(x,y),z));
+assert2 = @(x,y,z,w)(assert(all(h__percentDiff(x,y) < z),w));
+assert3 = @(x,y,z,w) (assert(h__corrValue(x,y) > z,w));
+
 end

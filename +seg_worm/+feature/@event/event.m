@@ -188,8 +188,8 @@ classdef event < sl.obj.handle_light
             if ~isempty(inter_data_sum_name)
                 temp = NaN(1,obj.n_events);
                 for iEvent = 1:(obj.n_events-1)
-                    start_frame = obj.end_Is(iEvent)+1;
-                    end_frame   = obj.start_Is(iEvent+1)-1;
+                    start_frame  = obj.end_Is(iEvent)+1;
+                    end_frame    = obj.start_Is(iEvent+1)-1;
                     temp(iEvent) = nansum(data(start_frame:end_frame));
                 end
                 obj.inter_data_sum_values = temp;
@@ -230,6 +230,8 @@ classdef event < sl.obj.handle_light
                 'end',          num2cell(obj.end_Is), ...
                 'time',         num2cell(obj.event_durations),...
                 'interTime',    num2cell(obj.inter_event_durations));
+            f = f'; %f is apparently a column vector
+            
             
             if ~isempty(obj.data_sum_name)
                temp = num2cell(obj.data_sum_values);

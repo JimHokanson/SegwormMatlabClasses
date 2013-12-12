@@ -63,14 +63,16 @@ VENTRAL_MODE = 0;  %??? I think this is set manually, but I'm not sure
 %--------------------------------------------------------------------------
 worm.morphology = seg_worm.feature_calculator.getMorphologyFeatures(nw);
 
-%Locomotion - nearly done, just needs to be documented and tested
+
+%Locomotion - DONE
 %--------------------------------------------------------------------------
 worm.locomotion = seg_worm.feature_calculator.getLocomotionFeatures(nw,FPS,VENTRAL_MODE);
 
 
 %Posture
 %--------------------------------------------------------------------------
-worm.posture = seg_worm.feature_calculator.getPostureFeatures(nw);
+midbody_distance = abs(locomotion.velocity.midbody.speed/FPS);
+worm.posture = seg_worm.feature_calculator.getPostureFeatures(nw,midbody_distance,FPS);
 
 seg_worm.feature_calculator.verifyResult(worm,feature_mat_path);
 

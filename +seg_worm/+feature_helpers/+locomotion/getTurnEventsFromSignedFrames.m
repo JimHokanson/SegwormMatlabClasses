@@ -1,8 +1,11 @@
 function turn_events = getTurnEventsFromSignedFrames(signed_frames,midbody_distance,FPS)
 %
 %
-%   turn_event = seg_worm.feature_helpers.locomotion.getTurnEventFromSignedFrames(signed_frames,midbody_distance,FPS)
-
+%   seg_worm.feature_helpers.locomotion.getTurnEventsFromSignedFrames
+%
+%   This code is common to omega and upsilon turns.
+%
+%
 
 INTER_DATA_SUM_NAME = 'interDistance';
 DATA_SUM_NAME       = '';
