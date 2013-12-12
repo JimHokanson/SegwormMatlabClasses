@@ -1,30 +1,22 @@
-function range = getRange(nw)
+function range = getRange(contour_x,contour_y)
 %
+%   seg_worm.feature_helpers.path.getRange
 %
-%   range = seg_worm.feature_helpers.path.getRange(nw)
+%   Old Name: wormPathRange.m
 %
-% The range is defined, per frame, as the distance of the worm’s midbody
-% from its final path centroid. The central dot displays the final path
-% centroid. The two arrows display the range at early and late times within
-% the experiment. (i) The locations of worm dwelling are shown as a
-% heatmap. A single location of dwelling dominates faint traces of the
-% worm’s path during motion.
+%   Nature Methods Description
+%   =======================================================================
+%   The centroid of the worm’s entire path is computed. The range is
+%   defined as the distance of the worm’s midbody from this overall
+%   centroid, in each frame (Supplementary Fig. 4h).
 
-%TODO: Change the code so that only the contours are passed in, I was 
-%passing in the object to use the skeletons as well, but I'll stick with
-%the contours for now ...
-
-
-%NOTE: This code uses the contours, but the skeleton is probably just as
-%good and is only slightly different ...
-contour_x = nw.contour_x;
-contour_y = nw.contour_y;
-
-%Average first by frame ...
+%Average by frame
 %---------------------------------------
 mean_cx = mean(contour_x,1);
 mean_cy = mean(contour_y,1);
 
+%Averages over all frames for subtracting
+%--------------------------------------------------------
 x_centroid_cx = nanmean(mean_cx);
 y_centroid_cy = nanmean(mean_cy);
 
@@ -33,7 +25,6 @@ range = sqrt((mean_cx - x_centroid_cx).^2 + (mean_cy - y_centroid_cy).^2);
 %Skeleton version
 %---------------------------------------------------
 %{
-
 s_x = nw.x;
 s_y = nw.y;
 

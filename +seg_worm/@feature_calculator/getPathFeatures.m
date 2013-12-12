@@ -1,4 +1,4 @@
-function path = getPathFeatures(nw)
+function path = getPathFeatures(nw,FPS,VENTRAL_MODE)
 %
 %
 %   seg_worm.feature_calculator.getPathFeatures(nw)
@@ -16,22 +16,14 @@ function path = getPathFeatures(nw)
 % at the “indices” of the arena matrix
 %
 %
-%
-
-%TODO: Pass these in from above ...
-FPS = 20;
-VENTRAL_MODE = 0;
-% % % %% The worm path.
-% % % wormPath = struct( ...
-% % %     'range',        pathRange, ...
-% % %     'duration',     pathDuration, ...
-% % %     'coordinates',  centroidCoordinates, ...
-% % %     'curvature',    pathCurvature);
+%   See also:
+%   seg_worm.feature_helpers.path.getRange
 
 
-%Range
+
+%Range - DONE
 %---------------------------------------------------------------
-path.range = seg_worm.feature_helpers.path.getRange(nw);
+path.range = seg_worm.feature_helpers.path.getRange(nw.contour_x,nw.contour_y);
 
 
 %Duration
