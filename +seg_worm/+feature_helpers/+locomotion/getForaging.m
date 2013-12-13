@@ -309,10 +309,12 @@ function amps = h__getAmps(nose_bend_angle_d)
 %
 %1 2 3 2 1 -1 -2 -1 1 2 2 5 becomes
 %3 3 3 3 3 -2 -2 -2 5 5 5 5
+%
+%   NOTE: This code is very similar to wormKinks
 
 n_frames = length(nose_bend_angle_d);
 
-dataSign = sign(nose_bend_angle_d);
+dataSign      = sign(nose_bend_angle_d);
 sign_change_I = find(dataSign(2:end) ~= dataSign(1:end-1));
 
 end_I   = [sign_change_I; n_frames];

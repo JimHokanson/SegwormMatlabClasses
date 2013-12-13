@@ -3,6 +3,10 @@ function verifyResult(new_worm,feature_mat_path)
 %
 %   seg_worm.feature_calculator.verifyResult(new_worm,feature_mat_path)
 
+%This is meant to be a quick script that checks that our processing code
+%produces the same (or similar) results that their code does.
+
+
 h = load(feature_mat_path);
 old_worm = h.worm;
 

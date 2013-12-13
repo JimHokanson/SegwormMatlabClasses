@@ -9,6 +9,7 @@
 %--------------------------------------------------------------------
 %- indexing was incorrect for posture
 %
+%
 %findEvent
 %--------------------------------------------------------------------
 %   - sum data thresholding not implemented correctly
@@ -36,7 +37,9 @@
 %seg_worm.feature_helpers.locomotion.getOmegaAndUpsilonTurns
 %--------------------------------------------------------------------
 %
-%   Mismatch between description and cutoffs actually used ...
+%   Mismatch between description and cutoffs actually used for finding
+%   possible event frames.
+%
 %
 %seg_worm.feature_helpers.path.wormPathCurvature
 %--------------------------------------------------------------------

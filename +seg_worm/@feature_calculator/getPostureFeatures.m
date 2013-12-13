@@ -23,6 +23,8 @@ posture.bends = seg_worm.feature_helpers.posture.getPostureBends(nw.angles);
 
 %Eccentricity & Orientation - DONE
 %--------------------------------------------------------------------------
+%??? - Would we be able to identify simple worms by integrating the angles?
+%cumsum(angles) - ensure cumsum never exceeds some value
 [posture.eccentricity, worm_orientation] = ...
     seg_worm.feature_helpers.posture.getEccentricity(...
     nw.contour_x, nw.contour_y, N_ECCENTRICITY);

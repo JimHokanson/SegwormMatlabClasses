@@ -1,32 +1,17 @@
-function numKinks = wormKinks(worm_angles)
-%WORMKINKS Compute the kinks in a worm.
+function n_kinks_all = wormKinks(worm_angles)
 %
 %
-%   num_kinks = seg_worm.feature_helpers.posture.wormKinks(worm_angles)
+%   seg_worm.feature_helpers.posture.wormKinks
 %
+%   Old Name: wormKinks.m
 %
-%   [NUMKINKS KINKANGLES KINKINDICES] = WORMKINKS(WORMANGLES, LENGTHTHR,
-%                                                 AMPTHR, ISSMOOTHING,
-%                                                 WORMSKELETONS)
 %
 %   Inputs:
-%       wormAngles    - the worm(s) bend angles at each skeleton point
-%       lengthThr     - the bend segment length threshold, shorter segments
-%                       are considered noise, not bends;
-%                       the default is 1/12 of the worm
-%       ampThr        - the bend amplitude threshold, smaller amplitudes
-%                       are considered noise, not bends;
-%                       the default is 0 degrees
-%       issmoothing   - are we smoothing the worm angles? If so, the angles
-%                       are convolved with a gaussian filter of the same
-%                       size as the length threshold; the default is true
-%       wormSkeletons - a 3-D matrix of worms (the first 2 dimensions are
-%                       the x and y coordinates and the 3rd dimension is
-%                       worms); when present, the worm kinks are displayed
+%   =======================================================================
+%   worm_angles : the worm(s) bend angles at each skeleton point
 %
 %   Outputs:
 %       numKinks - the number of kinks
-%       indices  - the indices of the kinks
 %
 %   Nature Methods Description
 %   =======================================================================
@@ -39,7 +24,9 @@ function numKinks = wormKinks(worm_angles)
 %   These angles are convolved with a Gaussian filter, 1/12 the length of
 %   the skeleton, with a width defined by the Matlab “gausswin” function’s
 %   default ? of 2.5 and normalized such that the filter integrates to 1,
-%   to smooth out any high-frequency changes. 
+%   to smooth out any high-frequency changes.
+%
+%   JAH: Why normalize if no threshold ?????
 %
 %   The angles are then sequentially checked from head to tail. Every time
 %   the angle changes sign or hits 0°, the end of a bend has been found and
@@ -48,130 +35,74 @@ function numKinks = wormKinks(worm_angles)
 %   counted. This ignores small bends at the tip of the head and tail.
 
 
-
-
-%JAH NOTE: I have not yet looked at this function ...
-
-
-
 % Determine the bend segment length threshold.
-lengthThr    = round(size(worm_angles, 1) / 12);
-endLengthThr = lengthThr;
-
-% Determine the bend amplitude threshold.
-ampThr = 0;
-
-% Are we smoothing the worm angles?
-issmoothing = true;
-
-% Orient the worm correctly.
-worm_angles = squeeze(worm_angles);
-if size(worm_angles, 1) == 1
-    worm_angles = worm_angles';
-end
+lengthThr = round(size(worm_angles, 1) / 12); %Inclusive threshold
 
 % Compute a guassian filter for the angles.
-if issmoothing
-    halfLengthThr = round(lengthThr / 2);
-    gaussFilter   = gausswin(halfLengthThr * 2 + 1) / halfLengthThr;
-end
+%--------------------------------------------------------------------------
+%JAH NOTE: This is a nice way of getting the appropriate odd value
+%unlike the other code with so many if statements ...
+%- see window code which tries to get an odd value ...
+halfLengthThr = round(lengthThr / 2);
+gaussFilter   = gausswin(halfLengthThr * 2 + 1) / halfLengthThr;
+
 
 % Compute the kinks for the worms.
-numWorms    = size(worm_angles, 2);
-numKinks    = nan(1, numWorms);
-for i = 1:size(worm_angles, 2)
+n_frames    = size(worm_angles, 2);
+n_kinks_all    = nan(1, n_frames);
+for iFrame = find(any(worm_angles,1))
     
-    % Do we have a worm?
-    bends = worm_angles(:,i);
-    nanBends = isnan(bends);
-    if all(nanBends)
-        continue;
-    end
-    
-    % Filter the worm bends.
-    if issmoothing
-        bends = conv(bends, gaussFilter, 'same');
-    end
-    
-    % Compute the kinks.
-    bendSigns = sign(bends);
-    kinkAngle = nan(1, length(bendSigns));
-    kinkIndex = nan(1, length(bendSigns));
-    numKink = 0;
-    numSameSign = 0; % the number of adjacent bends with the same sign
-    for j = 1:(length(bendSigns) - 1) % the last bend is NaN
-        
-        % Compute the kink information.
-        % Note: data at the zero crossing is counted for both bend sides.
-        if bendSigns(j) ~= 0 && ~isnan(bendSigns(j)) && ...
-                ~isnan(bendSigns(j + 1)) && ...
-                bendSigns(j) ~= bendSigns(j + 1)
-            if bendSigns(j) > 0
-                amp = max(bends((j - numSameSign):j));
-            elseif bendSigns(j) < 0
-                amp = min(bends((j - numSameSign):j));
-            else
-                amp = 0;
-            end
-            
-            % Compute the bend length.
-            if numKink == 0
-                bendLength = j;
-            else
-                bendLength = numSameSign + 1;
-            end
-            
-            % Include the zero bend.
-            if bendSigns(j+1) == 0
-                bendLength = bendLength + 1;
-            end
-            
-            % Add the first kink.
-            if numKink == 0
-                if bendLength >= endLengthThr && abs(amp) >= ampThr
-                    numKink = numKink + 1;
-                    kinkAngle(numKink) = amp;
-                    kinkIndex(numKink) = j - (bendLength - 1) / 2;
-                end
-                
-                % Add the kink.
-            else
-                if bendLength >= lengthThr && abs(amp) >= ampThr
-                    numKink = numKink + 1;
-                    kinkAngle(numKink) = amp;
-                    kinkIndex(numKink) = j - (bendLength - 1) / 2;
-                end
-            end
-            
-            % Reset the count for adjacent bends with the same sign.
-            numSameSign = 0;
-            
-            % Advance.
-        else
-            numSameSign = numSameSign + 1;
-        end
-    end
-    
-    % Compute the kink information for the last bend.
-    bendLength = numSameSign + 1;
-    segSigns   = bendSigns((end - bendLength + 1):end);
-    segSigns   = segSigns(~isnan(segSigns));
-    if isempty(segSigns) || segSigns(1) == 0
-        amp = 0;
-    elseif segSigns(1) == 1
-        amp = max(bends((end - bendLength + 1):end));
-    else % if segSigns(1) == -1
-        amp = min(bends((end - bendLength + 1):end));
-    end
-    
-    if bendLength >= endLengthThr && abs(amp) >= ampThr
-        numKink = numKink + 1;
-    end
-    
-    
-    % Record the kink information.
-    numKinks(i)    = numKink;
-    
-    
+    bends = conv(worm_angles(:,iFrame), gaussFilter, 'same');
+
+    n_kinks_all(iFrame) = h__computeNumberOfKinks_New(bends,lengthThr);
 end
+
+
+end
+
+function  n_kinks = h__computeNumberOfKinks_New(bends,lengthThr)
+    %
+    %   We look for sign changes. We get the length of each signed
+    %   region and if it is greater than sum length cutoff, we count it as
+    %   a kink.
+    %
+   
+   %TODO: Check for 0 sign, this is unhandled ...
+   %TODO: Should check for any NaN between start_I(1) and end_I(end)
+   % - this should never happpen
+   
+    %This code is identical in getForaging
+    %-------------------------------------------------------
+    n_frames = length(bends);
+
+    dataSign      = sign(bends);
+    sign_change_I = find(dataSign(2:end) ~= dataSign(1:end-1));
+
+    end_I   = [sign_change_I; n_frames];
+    start_I = [1; sign_change_I+1];
+
+    %All NaN values are considered sign changes, remove these ...
+    mask = isnan(bends(start_I));
+    start_I(mask) = [];
+    end_I(mask)   = [];
+    %-------------------------------------------------------
+    %End of identical code ...
+    
+    
+    lengths = end_I - start_I + 1;
+    
+    %Adjust lengths for first and last:
+    %Basically we allow NaN values to count towards the length for the
+    %first and last
+    if ~isempty(lengths)
+       if start_I(1) ~= 1 %Due to NaN
+          lengths(1) = lengths(1) + start_I(1)-1;  
+       end
+       if end_I(end) ~= n_frames
+          lengths(end) = lengths(end) + (n_frames - end_I(end));
+       end
+    end
+    
+    n_kinks = sum(lengths >= lengthThr);
+   
 end
