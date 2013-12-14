@@ -37,12 +37,12 @@ posture.bends = seg_worm.feature_helpers.posture.getPostureBends(nw.angles);
   worm_orientation,nw.x,nw.y,nw.lengths);
 
 
-%Kinks (aka bend counts) - CODE NOT YET EXAMINED ... (But it works)
+%Kinks (aka bend counts) - DONE
 %--------------------------------------------------------------------------
 posture.kinks = seg_worm.feature_helpers.posture.wormKinks(nw.angles);
 
 
-%Coils - NOT YET FINISHED - just added distance, needs documentation
+%Coils - DONE
 %--------------------------------------------------------------------------
 posture.coils = seg_worm.feature_helpers.posture.getCoils(nw.frame_codes,midbody_distance,FPS);
 
