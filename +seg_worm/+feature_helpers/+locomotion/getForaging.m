@@ -321,7 +321,7 @@ end_I   = [sign_change_I; n_frames];
 start_I = [1; sign_change_I+1];
 
 %All Nan values are considered sign changes, remove these ...
-mask = isnan(start_I);
+mask = isnan(nose_bend_angle_d(start_I));
 start_I(mask) = [];
 end_I(mask)   = [];
 

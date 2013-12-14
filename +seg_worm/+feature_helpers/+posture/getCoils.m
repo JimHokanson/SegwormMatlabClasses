@@ -32,7 +32,7 @@ function coils = getCoils(frame_codes,midbody_distance,FPS)
 INTER_DATA_NAME = 'interDistance';
 DATA_NAME = [];
 
-coiled_frames = seg_worm.feature_helpers.posture.wormTouchFrames(frame_codes, FPS);
+coiled_frames = h__getWormTouchFrames(frame_codes, FPS);
 
 coiled_events = seg_worm.feature.event(coiled_frames,FPS,midbody_distance,DATA_NAME,INTER_DATA_NAME);
 coils = coiled_events.getFeatureStruct;

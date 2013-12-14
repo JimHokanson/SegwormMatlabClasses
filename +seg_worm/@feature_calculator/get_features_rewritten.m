@@ -38,6 +38,8 @@ seg_worm.feature_calculator.get_features_rewritten(NORM_PATH,fmp)
 %NOTE: I want seg_worm.normalized_worm to eventually
 %be the input to this function. 
 
+t_final = tic;
+
 nw = seg_worm.normalized_worm.getObject(norm_folder);
 %Class: seg_worm.normalized_worm
 
@@ -58,7 +60,6 @@ VENTRAL_MODE = 0;  %??? I think this is set manually, but I'm not sure
 %   seg_worm.feature_helpers.locomotion.getForaging
 %
 
-tic
 %Morphology - DONE
 %--------------------------------------------------------------------------
 worm.morphology = seg_worm.feature_calculator.getMorphologyFeatures(nw);
@@ -79,8 +80,7 @@ worm.posture = seg_worm.feature_calculator.getPostureFeatures(nw,midbody_distanc
 %--------------------------------------------------------------------------
 worm.path = seg_worm.feature_calculator.getPathFeatures(nw,FPS,VENTRAL_MODE);
 
-toc
+fprintf('Total Run Time %0.2g\n',toc(t_final));
 
 seg_worm.feature_calculator.verifyResult(worm,feature_mat_path);
 
-keyboard

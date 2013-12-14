@@ -17,32 +17,43 @@ old_worm = h.worm;
 mn = new_worm.morphology;
 mo = old_worm.morphology;
 
-instr = {'length' 1         []
-         'width.head' 1     []
-         'width.midbody' 1 []
-         'width.tail'    1 []};
+instr = {'length'           1 []
+         'width.head'       1 []
+         'width.midbody'    1 []
+         'width.tail'       1 []
+         'area'             1 []
+         'areaPerLength'    1 []
+         'widthPerLength'   1 []};
 
 h__runInstructions(mo,mn,'morphology',instr)     
      
-keyboard
-
-
-
-
 
 %Locomotion
 %==========================================================================
 ln = new_worm.locomotion;
 lo = old_worm.locomotion;
 
-plot(ln.bends.foraging.angleSpeed,lo.bends.foraging.angleSpeed)
 
-instr = {'velocity.headTip.speed'       1         []
+%motion.forward - old [1 x n]   new is [n x 1]
+%frequency - not the same ...
+%.ratio - slightly different
+
+%TODO: Why the discrepancy between 
+
+keyboard
+
+instr = {'motion.forward'               4         [] %Event
+         'motion.backward'              4         []
+         'motion.paused'                4         []
+         'motion.mode'                  1         []
+         'velocity.headTip.speed'       1         []
          'velocity.headTip.direction'   1         []
          'velocity.head.speed'          1         []
          'width.tail'                   1         []};
 
 h__runInstructions(lo,ln,'locomotion',instr)     
+
+keyboard
 
 %Posture
 %==========================================================================
@@ -177,6 +188,7 @@ for iInstr = 1:n_instr
    
    error_msg = sprintf('%s.%s',main_name,cur_deep_field_name);
    
+   try
    switch cur_test_number
        case 1
            assert(isequaln(x,y),error_msg)
@@ -184,6 +196,10 @@ for iInstr = 1:n_instr
            assert(all(h__percentDiff(x,y) < option),error_msg)
        case 3
            assert(h__corrValue(x,y) > option,error_msg);
+   end
+   catch ME
+       h__summarize(x,y)
+       rethrow(ME)
    end
     
 end

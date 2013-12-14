@@ -1,18 +1,364 @@
-%This code was originally copied from SegWorm/Pipeline/featureProcess.m
+function fileInfo = featureProcess(hObject, eventdata, handles, fileInfo, analysisTableName, conn)
+% FEATUREPROCESS This function is called in the pipeline and will compute
+% the features.
+%   Input:
+%           hObject   - GUI data object
+%           eventdata - GUI data object
+%           handles   - GUI data object
+%           fileInfo  - experiment information variable contains the status
+%           of the pipeline and the location of the experiment files
+%           analysisTableName - the name of the analysis table that was
+%           selected in preferences
 %
-%   This is the old code for getting feature data. We are rewriting this to
-%   make the code alot easier to follow.
+%   Output:
+%           fileInfo - experiment info
 %
+% Get the GUI parameters
 %
 % © Medical Research Council 2012
 % You will not remove any copyright or other notices from the Software; 
 % you must reproduce all copyright notices and other proprietary 
 % notices on any copies of the Software.
+mydata = guidata(hObject);
 
-%Norm Blocks ...
+%INPUTS
+%-------------------------------------------
+%- location of the normalized worms
+%- 
 
-%datNameIn - see documentation folder for segNormInfo.mat documentation
 
+
+
+% Define norm worm size
+NUMBER_OF_POINTS = 49;
+
+% Define location for normalized worms
+datNameIn = strrep(fileInfo.expList.segDat,'segInfo',['normalized\', 'segNormInfo']);
+
+
+% Check if the file exists, throw an error if it doesn't
+if exist(datNameIn, 'file') ~= 2
+    errorMsg = strcat('Experiment normalized segmentation file:', {''}, strrep(datNameIn,'\','/'), {' '}, 'not found!');
+    error('featureProcess:fileNotFound', errorMsg{1});
+end
+
+%% Define experiment annotation
+%--------------------------------------------------------
+%
+% Formulate the feature file save data
+
+% The WT2 information.
+trackerVersion    = '2.0.4';
+hardwareVersion   = '2.0';
+analysisVersion   = '2.0';
+systemAnnotations = [];
+wt2 = struct( ...
+    'tracker',      trackerVersion, ...
+    'hardware',     hardwareVersion, ...
+    'analysis',     analysisVersion, ...
+    'annotations',  systemAnnotations);
+% The video information.
+
+globalFrameCounter = [];
+load(datNameIn, 'globalFrameCounter');
+if isempty(globalFrameCounter)
+    load(fileInfo.expList.segDat, 'globalFrameCounter');
+    if isempty(globalFrameCounter)
+        error('features:missingVariable', ['Variable globalFrameCounter ',...
+            'could not be found in the segmentation info file or the norm ',...
+            'info file. Please re-run segmentation for this experiment.'])
+    end
+end
+
+% Define frame rate
+load(datNameIn, 'myAviInfo');
+fps = myAviInfo.fps;
+
+videoFrames = globalFrameCounter;
+videoTime = globalFrameCounter / fps;
+
+videoLength = struct( ...
+    'frames',   videoFrames, ...
+    'time',     videoTime);
+
+height = myAviInfo.height;
+width  = myAviInfo.width;
+
+pixel2MicronScale = [];
+load(datNameIn, 'pixel2MicronScale');
+
+pixelsPerMicrons = pixel2MicronScale;
+
+fourcc = myAviInfo.fourcc;
+micronsPerPixels = struct( ...
+    'x', pixelsPerMicrons(1,1), ...
+    'y', pixelsPerMicrons(1,2));
+
+resolution = struct( ...
+    'fps', fps, ...
+    'height', height, ...
+    'width', width, ...
+    'micronsPerPixels', micronsPerPixels, ...
+    'fourcc', fourcc);
+
+% The experiment information.
+videoFile    = fileInfo.expList.avi;
+vignetteFile = fileInfo.expList.vignette;
+infoFile     = fileInfo.expList.xml;
+stageLogFile = fileInfo.expList.log;
+expDirectory = fileInfo.expList.dir;
+expComputer  = char(java.net.InetAddress.getLocalHost.toString);
+expFiles = struct( ...
+    'video',        videoFile, ...
+    'vignette',     vignetteFile, ...
+    'info',         infoFile, ...
+    'stage',        stageLogFile, ...
+    'directory',    expDirectory, ...
+    'computer',     expComputer);
+
+% Initialize the info
+expTimestamp = [];
+expGenotype = [];
+expGene = [];
+expAllele = [];
+expStrain = [];
+expFood = [];
+expVentralSide = [];
+expAgarSide = [];
+expSex = [];
+expAge = [];
+expIllumination = [];
+expTemperature = [];
+expChemicals = [];
+expArena = [];
+expTracker = [];
+expExperimenter = [];
+expLab = [];
+expAddress = [];
+expChromosome = []; 
+expWormAnnotations = [];
+expEnvironmentAnnotations = [];
+expLabAnnotations = [];
+expHabitutation = [];
+
+
+if handles.preferences.useDB
+    experimentId = getExperimentId(conn, fileInfo.expList.fileName);
+    
+    % Lets connect to the database and fill in the annotation values
+    sqlString = strcat('select EA.id, strain.strainName,', {' '}, ...
+        'gene.geneName, allele.alleleName, C.chromosomeName,', {' '},...
+        'I.datestamp, food.foodName, ventralSide.ventralSideName,', {' '},...
+        'WS.sideName, TN.trackerName, sex.sexName, age.ageName,', {' '},...
+        'experimenters.name, EL.address, genotype.genotypeName,', {' '},...
+        'H.habitName', {' '},...
+        'from exp_annotation EA',{' '},...
+        'left join gene on EA.geneid = gene.geneid',{' '},...
+        'left join strain on EA.strainID = strain.strainID', {' '},...
+        'left join allele on EA.alleleid = allele.alleleid', {' '},...
+        'left join chromosome C on EA.chromosomeID = C.chromosomeID', {' '},...
+        'left join food on EA.foodID = food.foodID', {' '},...
+        'left join ventralSide on EA.ventralSideID = ventralSide.ventralSideID', {' '},...
+        'left join wormSide WS on EA.agarSideID = WS.sideID', {' '},...
+        'left join trackerNO TN on EA.trackerID = TN.trackerID', {' '},...
+        'left join sex on EA.sexID = sex.sexID', {' '},...
+        'left join age on EA.ageID = age.ageID', {' '},...
+        'left join experimenters on EA.experimenterID = experimenters.expID', {' '},...
+        'left join experimenterLocation EL on EA.locationID = EL.locationID', {' '},...
+        'left join genotype on EA.genotypeID = genotype.genotypeID', {' '},...
+        'left join info I on EA.id = I.id', {' '},...
+        'left join habituation H on EA.habitId = H.habitId', {' '},...
+        'where EA.id =', {' '}, num2str(experimentId),';');
+    curs = exec(conn, sqlString);
+    curs = fetch(curs);
+    expInfo = curs.Data;
+    close(curs);
+    
+    if isempty(expInfo)
+        warningStr = strcat('MYSQL query failed!', sqlString);
+        warning('features:DBconnectForAnnotationFailed', warningStr{1});
+    elseif strcmp(expInfo, 'No Data')
+        % No info
+    else        
+        expData.id = expInfo{1,1};
+        if strcmpi(expInfo{1,2},'null') || strcmpi(expInfo{1,2},'unknown')
+            expData.strainName = [];
+        else
+            expData.strainName = expInfo{1,2};
+        end
+        if strcmpi(expInfo{1,3},'null') || strcmpi(expInfo{1,3},'unknown')
+            expData.geneName = [];
+        else
+            expData.geneName = expInfo{1,3};
+        end
+        if strcmpi(expInfo{1,4},'null') || strcmpi(expInfo{1,4},'unknown')
+            expData.alleleName = [];
+        else
+            expData.alleleName = expInfo{1,4};
+        end
+        
+        if strcmpi(expInfo{1,5},'null') || strcmpi(expInfo{1,5},'unknown')
+            expData.chromosomeName = [];
+        else
+            expData.chromosomeName = expInfo{1,5};
+        end
+        
+        if strcmpi(expInfo{1,6},'null') || strcmpi(expInfo{1,6},'unknown')
+            expData.datestamp = [];
+        else
+            expData.datestamp = expInfo{1,6};
+        end
+        
+        if strcmpi(expInfo{1,7},'null') || strcmpi(expInfo{1,7},'unknown')
+            expData.foodName = [];
+        else
+            expData.foodName = expInfo{1,7};
+        end
+        
+        if strcmpi(expInfo{1,8},'null') || strcmpi(expInfo{1,8},'unknown')
+            expData.ventralSide = [];
+        else
+            expData.ventralSide = expInfo{1,8};
+        end
+        
+        if strcmpi(expInfo{1,9},'null') || strcmpi(expInfo{1,9},'unknown')
+            expData.agarSide = [];
+        else
+            expData.agarSide = expInfo{1,9};
+        end
+        
+        if strcmpi(expInfo{1,10},'null') || strcmpi(expInfo{1,10},'unknown')
+            expData.trackerName = [];
+        else
+            expData.trackerName = expInfo{1,10};
+        end
+        
+        if strcmpi(expInfo{1,11},'null') || strcmpi(expInfo{1,11},'unknown')
+            expData.sex = [];
+        else
+            expData.sex = expInfo{1,11};
+        end
+        
+        if strcmpi(expInfo{1,12},'null') || strcmpi(expInfo{1,12},'unknown')
+            expData.age = [];
+        else
+            expData.age = expInfo{1,12};
+        end
+        
+        
+        if strcmpi(expInfo{1,13},'null') || strcmpi(expInfo{1,13},'unknown')
+            expData.experimenter = [];
+        else
+            expData.experimenter = expInfo{1,13};
+        end
+        
+        if strcmpi(expInfo{1,14},'null') || strcmpi(expInfo{1,14},'unknown')
+            expData.address = [];
+        else
+            expData.address = expInfo{1,14};
+        end
+                
+        if strcmpi(expInfo{1,15},'null') || strcmpi(expInfo{1,15},'unknown')
+            expData.genotype = [];
+        else
+            expData.genotype = expInfo{1,15};
+        end
+        
+        if strcmpi(expInfo{1,16},'null') || strcmpi(expInfo{1,16},'unknown')
+            expData.habituation = [];
+        else
+            expData.habituation = expInfo{1,16};
+        end
+        
+        expTimestamp  = expData.datestamp;
+        expGene       = expData.geneName;
+        expAllele     = expData.alleleName;
+        expStrain     = expData.strainName;
+        expChromosome = expData.chromosomeName;
+        expFood       = expData.foodName;
+        expVentralSide = expData.ventralSide;
+        expAgarSide   =  expData.agarSide;
+        expSex = expData.sex;
+        expAge = expData.age;
+        expHabitutation = expData.habituation;
+        expTracker      = strrep(expData.trackerName,'tracker_','');
+        expExperimenter = expData.experimenter;
+        expAddress      = expData.address;
+        
+        expGenotype = expData.genotype;
+        
+        expIllumination = '627nm';
+        expTemperature  = '22C';
+        expChemicals    = [];
+        expArena        = 'low-peptone NGM plate';
+       
+        
+        expLab = 'William R Schafer';
+        expWormAnnotations = [];
+        expLabAnnotations = [];
+        expEnvironmentAnnotations = [];
+    end
+else
+    % get at least the ventralSide if we are operating offline
+    try
+        wormNameInfo = parseWormFilename(strcat(fileInfo.expList.fileName, '.avi'));
+    catch ME1 %#ok<NASGU>
+        wormNameInfo.side = 'unknown';
+    end
+    
+    if strcmpi(wormNameInfo.side, 'L')
+        expVentralSide = 'clockwise';
+    elseif strcmpi(wormNameInfo.side, 'R')
+        expVentralSide = 'anticlockwise';
+    else
+        expVentralSide = [];
+    end
+end
+
+% Compute ventralMode
+% Set ventralMode as follows -- unknown = 0, anticlockwise = 1, clockwise = 2
+ventralMode = 0;
+if ~isempty(expVentralSide)
+    switch expVentralSide
+        case 'anticlockwise'
+            ventralMode = 2;
+        case 'clockwise'
+            ventralMode = 1;
+    end
+end
+
+expWorm = struct( ...
+    'genotype', expGenotype, ...
+    'gene', expGene, ...
+    'allele', expAllele, ...
+    'strain', expStrain, ...
+    'chromosome', expChromosome, ...
+    'ventralSide', expVentralSide, ...
+    'agarSide', expAgarSide, ...
+    'sex', expSex, ...
+    'age', expAge, ...
+    'habituation', expHabitutation, ...
+    'annotations', expWormAnnotations);   
+
+expEnvironment = struct( ...
+    'timestamp', expTimestamp, ...
+    'food', expFood, ...    
+    'illumination', expIllumination, ...    
+    'temperature', expTemperature, ...
+    'chemicals', expChemicals, ...
+    'arena', expArena, ...
+    'tracker', expTracker, ...
+    'annotations', expEnvironmentAnnotations);   
+
+expLab = struct( ...
+    'name', expLab, ...
+    'experimenter', expExperimenter, ...
+    'address', expAddress, ...
+    'annotations', expLabAnnotations);
+
+experiment = struct( ...
+    'worm', expWorm, ...
+    'environment', expEnvironment);
 % -----------------------------------------------------
 %% Start calculating the features
 %
@@ -25,37 +371,37 @@ load('masterEigenWorms_N2.mat');
 featuresOutName = fullfile(fileInfo.expList.dir, 'results', [fileInfo.expList.fileName,'_features.mat']);
 
 % Initialize features
-featureData.movementMode        = [];
-featureData.noseBendFrequency   = [];
-featureData.headBendFrequency   = [];
+featureData.movementMode = [];
+featureData.noseBendFrequency = [];
+featureData.headBendFrequency = [];
 featureData.middleBendFrequency = [];
-featureData.tailBendFrequency   = [];
+featureData.tailBendFrequency = [];
 
-featureData.width       = [];
-featureData.wormLength  = [];
-featureData.area        = [];
-featureData.thickness   = [];
-featureData.fatness     = [];
+featureData.width = [];
+featureData.wormLength = [];
+featureData.area = [];
+featureData.thickness = [];
+featureData.fatness = [];
 
 featureData.amplitudeCronin = [];
-featureData.wavelength1     = [];
-featureData.wavelength2     = [];
-featureData.meanBendAngles  = [];
-featureData.stdBendAngles   = [];
+featureData.wavelength1 = [];
+featureData.wavelength2 = [];
+featureData.meanBendAngles = [];
+featureData.stdBendAngles = [];
 
-featureData.eccentricity       = [];
-featureData.numberOfKinks      = [];
-featureData.skeletonAngles     = [];
+featureData.eccentricity = [];
+featureData.numberOfKinks = [];
+featureData.skeletonAngles = [];
 featureData.skeletonMeanAngles = [];
 featureData.eigenProjectedAmps = [];
-featureData.widthsAtTips       = [];
+featureData.widthsAtTips = [];
 
-featureData.trackLength    = [];
+featureData.trackLength = [];
 featureData.amplitudeRatio = [];
 
-featureData.omegaFrames   = [];
+featureData.omegaFrames = [];
 featureData.upsilonFrames = [];
-featureData.wormLength
+
 featureData.angleArray = [];
 
 % Start computing the features
@@ -91,7 +437,7 @@ featureWindow = 250;
 frame = 1;
 % totalNumberOfFrames
 
-outlineCentroid   = nan(globalFrameCounter,2);
+outlineCentroid = nan(globalFrameCounter,2);
 postureXSkeletons = nan(globalFrameCounter, NUMBER_OF_POINTS);
 postureYSkeletons = nan(globalFrameCounter, NUMBER_OF_POINTS);
 
@@ -107,8 +453,6 @@ for i=1:length(normBlockList)
     blockNo = i;
     blockNameStr      = strcat('normBlock', num2str(blockNo));
     datFileNameBlock  = strrep(datNameIn, 'segNormInfo', blockNameStr);
-    
-    %Load data from file
     load(datFileNameBlock, blockNameStr);
     data = [];
     eval(strcat('data =', blockNameStr,';'));
@@ -121,7 +465,7 @@ for i=1:length(normBlockList)
             skCoords = data{4}(:, :, j);
             
             % Computing outline centorid
-            outlineCentroid(frame,:)    = mean([data{2}(1:end-1,:,j);data{3}(2:end,:,j)]);
+            outlineCentroid(frame,:) = mean([data{2}(1:end-1,:,j);data{3}(2:end,:,j)]);
             
             postureXSkeletons(frame, :) = skCoords(:,1);
             postureYSkeletons(frame, :) = skCoords(:,2);
@@ -131,26 +475,22 @@ for i=1:length(normBlockList)
             tailCentroid = mean(skCoords(round(5/6*NUMBER_OF_POINTS)+1:NUMBER_OF_POINTS,:));
             
             % Compute tail direction
-            tailToHeadDirectionFrame   = atan2(headCentroid(1, 2) - tailCentroid(1,2), headCentroid(1,1) - tailCentroid(1,1));
+            tailToHeadDirectionFrame = atan2(headCentroid(1, 2) - tailCentroid(1,2), headCentroid(1,1) - tailCentroid(1,1));
             tailToHeadDirection(frame) = tailToHeadDirectionFrame * 180/pi;
-            
             % Compute head and tail direction
             headEnd           = 1:round(1/18*NUMBER_OF_POINTS);
             headBegin         = round(1/6*NUMBER_OF_POINTS)+1 - headEnd;
             headBegin         = fliplr(headBegin);
             headEndCentroid   = mean(skCoords(headEnd,:));
             headBeginCentroid = mean(skCoords(headBegin,:));
-            
             % Tail
             tailEnd           = round(17/18*NUMBER_OF_POINTS) + 1:NUMBER_OF_POINTS;
             tailBegin         = round(5/6*NUMBER_OF_POINTS) + 1:round(16/18*NUMBER_OF_POINTS);
             tailEndCentroid   = mean(skCoords(tailEnd,:));
             tailBeginCentroid = mean(skCoords(tailBegin,:));
-            
             % Direction for head
             headDirectionFrame   = atan2(headEndCentroid(2) - headBeginCentroid(2), headEndCentroid(1) - headBeginCentroid(1));
             headDirection(frame) = headDirectionFrame * 180/pi;
-            
             % Direction for tail
             tailDirectionFrame   = atan2(tailEndCentroid(2) - tailBeginCentroid(2), tailEndCentroid(1) - tailBeginCentroid(1));
             tailDirection(frame) = tailDirectionFrame * 180/pi;
@@ -182,7 +522,7 @@ for blockNo = 1 : length(normBlockList)
     drawnow;
     
     % Get current block
-    blockNameStr    = normBlockList{blockNo};
+    blockNameStr = normBlockList{blockNo};
     % Get norm block data
     datFileNameBlock = strrep(datNameIn, 'segNormInfo', blockNameStr);
     load(datFileNameBlock, blockNameStr);
@@ -208,11 +548,11 @@ for blockNo = 1 : length(normBlockList)
     [wormAreaBlock, wormLenBlock, wormWidthBlock, wormThicknessBlock,...
         wormFatnessBlock] = morphology_process(hObject, eventdata, handles, fileInfo, mainBlock);
     
-    featureData.area        = [featureData.area,        wormAreaBlock];
-    featureData.wormLength  = [featureData.wormLength,  wormLenBlock];
-    featureData.width       = [featureData.width,       wormWidthBlock];
-    featureData.thickness   = [featureData.thickness,   wormThicknessBlock];
-    featureData.fatness     = [featureData.fatness,     wormFatnessBlock];
+    featureData.area        = [featureData.area, wormAreaBlock];
+    featureData.wormLength  = [featureData.wormLength, wormLenBlock];
+    featureData.width       = [featureData.width, wormWidthBlock];
+    featureData.thickness   = [featureData.thickness, wormThicknessBlock];
+    featureData.fatness     = [featureData.fatness, wormFatnessBlock];
     
     % remove the data
     clear('wormAreaBlock', 'wormLenBlock',...
@@ -225,21 +565,22 @@ for blockNo = 1 : length(normBlockList)
         meanOfBendAnglesBlock, stdOfBendAnglesBlock, croninAmplitudeBlock,...
         croninWavelength1Block, croninWavelength2Block, numKinksBlock,...
         skeletonAnglesBlock, skeletonMeanAnglesBlock, projectedAmpsBlock]...
-        = schaferFeatures_process(hObject, eventdata, handles, fileInfo, mainBlock, eigenWorms);
+        = schaferFeatures_process(hObject, ...
+        eventdata, handles, fileInfo, mainBlock, eigenWorms);
     
-    featureData.widthsAtTips       = [featureData.widthsAtTips,         widthsArrayBlock];
-    featureData.eccentricity       = [featureData.eccentricity,         eccentricityArrayBlock];
-    featureData.trackLength        = [featureData.trackLength,          trackLengthBlock];
-    featureData.amplitudeRatio     = [featureData.amplitudeRatio,       amplitudeRatioBlock];
-    featureData.meanBendAngles     = [featureData.meanBendAngles,       meanOfBendAnglesBlock];
-    featureData.stdBendAngles      = [featureData.stdBendAngles,        stdOfBendAnglesBlock];
-    featureData.amplitudeCronin    = [featureData.amplitudeCronin,      croninAmplitudeBlock];
-    featureData.wavelength1        = [featureData.wavelength1,          croninWavelength1Block];
-    featureData.wavelength2        = [featureData.wavelength2,          croninWavelength2Block];
-    featureData.numberOfKinks      = [featureData.numberOfKinks,        numKinksBlock];
-    featureData.skeletonAngles     = [featureData.skeletonAngles,       skeletonAnglesBlock];
-    featureData.skeletonMeanAngles = [featureData.skeletonMeanAngles,   skeletonMeanAnglesBlock];
-    featureData.eigenProjectedAmps = [featureData.eigenProjectedAmps,   projectedAmpsBlock];
+    featureData.widthsAtTips       = [featureData.widthsAtTips, widthsArrayBlock];
+    featureData.eccentricity       = [featureData.eccentricity, eccentricityArrayBlock];
+    featureData.trackLength        = [featureData.trackLength, trackLengthBlock];
+    featureData.amplitudeRatio     = [featureData.amplitudeRatio, amplitudeRatioBlock];
+    featureData.meanBendAngles     = [featureData.meanBendAngles, meanOfBendAnglesBlock];
+    featureData.stdBendAngles      = [featureData.stdBendAngles, stdOfBendAnglesBlock];
+    featureData.amplitudeCronin    = [featureData.amplitudeCronin, croninAmplitudeBlock];
+    featureData.wavelength1        = [featureData.wavelength1, croninWavelength1Block];
+    featureData.wavelength2        = [featureData.wavelength2, croninWavelength2Block];
+    featureData.numberOfKinks      = [featureData.numberOfKinks, numKinksBlock];
+    featureData.skeletonAngles     = [featureData.skeletonAngles, skeletonAnglesBlock];
+    featureData.skeletonMeanAngles = [featureData.skeletonMeanAngles, skeletonMeanAnglesBlock];
+    featureData.eigenProjectedAmps = [featureData.eigenProjectedAmps, projectedAmpsBlock];
     
     clear('widthsArrayBlock', 'eccentricityArrayBlock',...
         'trackLengthBlock', 'amplitudeRatioBlock', 'curvatureBlock',...
@@ -351,19 +692,19 @@ if blockNo == 1
 
     % Get length and frame class
     frameClass = firstBlock{1};
-	stageFlag  = frameClass == 'm';
+	stageFlag = frameClass == 'm';
     angleArray = firstBlock{5};
-    
     [omegaFramesBlock, upsilonFramesBlock] = omegaUpsilonDetectCurvature(angleArray, stageFlag);
-    omegaFramesBlock   = omegaFramesBlock(dataSize(1):dataSize(2))';
+    omegaFramesBlock = omegaFramesBlock(dataSize(1):dataSize(2))';
     upsilonFramesBlock = upsilonFramesBlock(dataSize(1):dataSize(2))';
     
     % save data
-    featureData.omegaFrames   = [featureData.omegaFrames, omegaFramesBlock];
+    featureData.omegaFrames = [featureData.omegaFrames, omegaFramesBlock];
     featureData.upsilonFrames = [featureData.upsilonFrames, upsilonFramesBlock];
     
     [numSegments, ~] = size(angleArray);
-    bodyAngle = nanmean(angleArray(round(numSegments * (1/3) ) + 1:round(numSegments * (2/3)), :));
+    bodyAngle = nanmean(angleArray(round(numSegments * (1/3) ) + 1:...
+        round(numSegments * (2/3)), :));
     bodyAngleBlock = bodyAngle(dataSize(1):dataSize(2))';
     featureData.angleArray = [featureData.angleArray; bodyAngleBlock];
     
@@ -387,17 +728,18 @@ else
     stageFlag = frameClass == 'm';
   
     % Find omega upsilon bends
-    angleArray         = [secondLastBlock{5}(:,lenMid-featureWindow+1:end),lastBlock{5}];
+    angleArray = [secondLastBlock{5}(:,lenMid-featureWindow+1:end),lastBlock{5}];
     [omegaFramesBlock, upsilonFramesBlock] = omegaUpsilonDetectCurvature(angleArray, stageFlag);
-    omegaFramesBlock   = omegaFramesBlock(dataSize(1):dataSize(2))';
+    omegaFramesBlock = omegaFramesBlock(dataSize(1):dataSize(2))';
     upsilonFramesBlock = upsilonFramesBlock(dataSize(1):dataSize(2))';
     
     % save data
-    featureData.omegaFrames   = [featureData.omegaFrames, omegaFramesBlock];
+    featureData.omegaFrames = [featureData.omegaFrames, omegaFramesBlock];
     featureData.upsilonFrames = [featureData.upsilonFrames, upsilonFramesBlock];
     
-    numSegments    = size(angleArray,1);
-    bodyAngle      = nanmean(angleArray(round(numSegments * (1/3) ) + 1:round(numSegments * (2/3)), :));
+    [numSegments, ~] = size(angleArray);
+    bodyAngle = nanmean(angleArray(round(numSegments * (1/3) ) + 1:...
+        round(numSegments * (2/3)), :));
     bodyAngleBlock = bodyAngle(dataSize(1):dataSize(2))';
     featureData.angleArray = [featureData.angleArray; bodyAngleBlock];
     
@@ -414,8 +756,8 @@ end
 %--------------------------------------------------------------------------
 % First we will clean up the angle array
 % We need to normalize angles accounting for dropped frames 
-maxFrames  = round(fps/2);
-lastAngle  = tailToHeadDirection(1);
+maxFrames = round(fps/2);
+lastAngle = tailToHeadDirection(1);
 gapCounter = 0;
 wormDataFixed = nan(size(tailToHeadDirection));
 for i = 2:length(tailToHeadDirection)
@@ -556,7 +898,8 @@ featureData.pathKurtosis = kurtosis(distanceFromCenter, 0);
 failedFrames = [];
 load(fileInfo.expList.failedFramesFile, 'failedFrames');
 
-% We have three kinds of labels each of them will have a number value assigned.
+% We have three kinds of labels each of them will have a number value
+% assigned.
 % 1. from 1-10 general labels
 % 2. from 11-100 normWorm labels
 % 3. from 101-1000 segmentation labels
@@ -610,6 +953,7 @@ centroidPathX = featureData.outlineCentroid(1,:);
 centroidPathY = featureData.outlineCentroid(2,:);
 wormSamples   = NUMBER_OF_POINTS;
 
+
 %% Worm events computations
 %--------------------------------------------------------------------------
 %Make videos of the events.
@@ -619,8 +963,8 @@ wormFile = datNameIn;
 
 speed = velocity.midbody.speed;
 
-frameCodes    = numFrameLabel;
-omegaFrames   = featureData.omegaFrames;
+frameCodes = numFrameLabel;
+omegaFrames = featureData.omegaFrames;
 upsilonFrames = featureData.upsilonFrames;
 
 % *** COPY STARTS HERE
@@ -651,7 +995,8 @@ locomotionBends = wormBends(wormFile, motionEvents.mode, ventralMode);
 coilFrames = wormTouchFrames(frameCodes, fps);
 
 % Compute the coiled statistics.
-[coilEventStats, coiledStats] = events2stats(coilFrames, fps, distance, [], 'interDistance');
+[coilEventStats coiledStats] = events2stats(coilFrames, fps, ...
+    distance, [], 'interDistance');
 
 % Reorganize everything for the feature file.
 coilFrames = coilEventStats;
@@ -662,9 +1007,9 @@ if ~isempty(coiledStats)
     coilTimeRatio = coiledStats.ratio.time;
 end
 coils = struct( ...
-    'frames',       coilFrames, ...
-    'frequency',    coilFrequency, ...
-    'timeRatio',    coilTimeRatio);
+    'frames', coilFrames, ...
+    'frequency', coilFrequency, ...
+    'timeRatio', coilTimeRatio);
 
 
 %% Compute the omega turns.
@@ -678,9 +1023,9 @@ omegaFrames = cat(2, omegaFramesVentral, omegaFramesDorsal);
 isOmegaVentral = [true(1, length(omegaFramesVentral)), ...
     false(1, length(omegaFramesDorsal))];
 if ~isempty(omegaFramesVentral) && ~isempty(omegaFramesDorsal)
-    [~, orderI]     = sort([omegaFrames.start]);
-    omegaFrames     = omegaFrames(orderI);
-    isOmegaVentral  = isOmegaVentral(orderI);
+    [~, orderI] = sort([omegaFrames.start]);
+    omegaFrames = omegaFrames(orderI);
+    isOmegaVentral = isOmegaVentral(orderI);
 end
 
 % Compute the omega statistics.
@@ -695,9 +1040,9 @@ if ~isempty(omegaFrames)
     for i = 1:size(omegaCells, 2)
         omegaCells{end, i} = isOmegaVentral(i);
     end
-    omegaFieldNames          = fieldnames(omegaFrames);
+    omegaFieldNames = fieldnames(omegaFrames);
     omegaFieldNames{end + 1} = 'isVentral';
-    omegaFrames              = cell2struct(omegaCells, omegaFieldNames, 1);
+    omegaFrames = cell2struct(omegaCells, omegaFieldNames, 1);
 end
 
 % Reorganize everything for the feature file.
@@ -777,9 +1122,9 @@ pathScale = sqrt(2) / meanWidth;
 headI = 1;
 tailI = wormSamples;
 wormSegSize = round(tailI / 6);
-headIs      = headI:(headI + wormSegSize - 1);
-midbodyIs   = (headI + wormSegSize):(tailI - wormSegSize);
-tailIs      = (tailI - wormSegSize + 1):tailI;
+headIs = headI:(headI + wormSegSize - 1);
+midbodyIs = (headI + wormSegSize):(tailI - wormSegSize);
+tailIs = (tailI - wormSegSize + 1):tailI;
 
 % Compute the skeleton points.
 points = { ...
@@ -789,13 +1134,14 @@ points = { ...
     tailIs};
 
 % Compute the path duration and organize everything for the feature file.
-[arena, durations] = wormPathTime(postureXSkeletons, postureYSkeletons, points, pathScale, fps);
+[arena, durations] = wormPathTime(postureXSkeletons, postureYSkeletons, ...
+    points, pathScale, fps);
 pathDuration = struct( ...
-    'arena',    arena, ...
-    'worm',     durations(1), ...
-    'head',     durations(2), ...
-    'midbody',  durations(3), ...
-    'tail',     durations(4));
+    'arena', arena, ...
+    'worm', durations(1), ...
+    'head', durations(2), ...
+    'midbody', durations(3), ...
+    'tail', durations(4));
 
 
 
@@ -803,33 +1149,33 @@ pathDuration = struct( ...
 %--------------------------------------------------------------------------
 
 
-lengths   = featureData.wormLength;
-areas     = featureData.area;
-fatness   = featureData.fatness;
+lengths = featureData.wormLength;
+areas = featureData.area;
+fatness = featureData.fatness;
 thickness = featureData.thickness;
-headPosMeanBends      = featureData.meanBendAngles(1,:);
-headPosStdDevBends    = featureData.stdBendAngles(1,:);
-neckPosMeanBends      = featureData.meanBendAngles(2,:);
-neckPosStdDevBends    = featureData.stdBendAngles(2,:);
-midbodyPosMeanBends   = featureData.meanBendAngles(3,:);
+headPosMeanBends = featureData.meanBendAngles(1,:);
+headPosStdDevBends = featureData.stdBendAngles(1,:);
+neckPosMeanBends = featureData.meanBendAngles(2,:);
+neckPosStdDevBends = featureData.stdBendAngles(2,:);
+midbodyPosMeanBends = featureData.meanBendAngles(3,:);
 midbodyPosStdDevBends = featureData.stdBendAngles(3,:);
-hipsPosMeanBends      = featureData.meanBendAngles(4,:);
-hipsPosStdDevBends    = featureData.stdBendAngles(4,:);
-tailPosMeanBends      = featureData.meanBendAngles(5,:);
-tailPosStdDevBends    = featureData.stdBendAngles(5,:);
+hipsPosMeanBends = featureData.meanBendAngles(4,:);
+hipsPosStdDevBends = featureData.stdBendAngles(4,:);
+tailPosMeanBends = featureData.meanBendAngles(5,:);
+tailPosStdDevBends = featureData.stdBendAngles(5,:);
 
 maximumAmpPosture = featureData.amplitudeCronin;
-ratioAmpPosture   = featureData.amplitudeRatio;
-wavelength1       = featureData.wavelength1;
-wavelength2       = featureData.wavelength2;
+ratioAmpPosture = featureData.amplitudeRatio;
+wavelength1 = featureData.wavelength1;
+wavelength2 = featureData.wavelength2;
 
 tailToHeadDirection = featureData.tailToHeadDirection;
-headPosDirection    = featureData.headDirection;
-tailPosDirection    = featureData.tailDirection;
+headPosDirection = featureData.headDirection;
+tailPosDirection = featureData.tailDirection;
 
-trackLength  = featureData.trackLength;
+trackLength = featureData.trackLength;
 eccentricity = featureData.eccentricity;
-kinks        = featureData.numberOfKinks;
+kinks = featureData.numberOfKinks;
 
 % featureData.movementMode - remove use evs motionModes
 %motionModes
@@ -869,17 +1215,17 @@ tailPosStdDevBends(tailBendsSign) = -tailPosStdDevBends(tailBendsSign);
 
 % The worm widths.
 widths = struct( ...
-    'head',     headWidths,     ...
-    'midbody',  midbodyWidths,  ...
-    'tail',     tailWidths);
+    'head', headWidths, ...
+    'midbody', midbodyWidths, ...
+    'tail', tailWidths);
 
 %% The worm morphology.
 morphology = struct( ...
-    'length',           lengths,    ...
-    'width',            widths,     ....
-    'area',             areas,      ...
-    'areaPerLength',    fatness,    ...
-    'widthPerLength',   thickness);
+    'length', lengths, ...
+    'width', widths, ....
+    'area', areas, ...
+    'areaPerLength', fatness, ...
+    'widthPerLength', thickness);
 
 %% The worm posture data.
 
@@ -918,11 +1264,11 @@ wavelengths = struct( ...
 
 % % The worm coils.
 % coilFrames = struct( ...
-%     'start',          coilStartFrames, ...
-%     'end',            coilEndFrames, ...
-%     'time',           coilTimes, ...
-%     'interTime',      coilInterTimes, ...
-%     'interDistance',  coilInterDistances);
+%     'start', coilStartFrames, ...
+%     'end', coilEndFrames, ...
+%     'time', coilTimes, ...
+%     'interTime', coilInterTimes, ...
+%     'interDistance', coilInterDistances);
 % coils = struct( ...
 %     'frames', coilFrames, ...
 %     'frequency', coilFrequency, ...
@@ -930,9 +1276,9 @@ wavelengths = struct( ...
 
 % The worm posture directions.
 postureDirections = struct( ...
-    'tail2head',    tailToHeadDirection, ...
-    'head',         headPosDirection, ...
-    'tail',         tailPosDirection);
+    'tail2head', tailToHeadDirection, ...
+    'head', headPosDirection, ...
+    'tail', tailPosDirection);
 
 % The worm posture skeletons.
 % Note: the orientation is from head to tail in the rows; row 1 is the
@@ -950,15 +1296,15 @@ postureSkeletons = struct( ...
 
 %% The worm posture.
 posture = struct( ...
-    'bends',        postureBends, ...
-    'amplitude',    postureAmplitudes, ...
-    'wavelength',   wavelengths, ...
-    'tracklength',  trackLength, ...
+    'bends', postureBends, ...
+    'amplitude', postureAmplitudes, ...
+    'wavelength', wavelengths, ...
+    'tracklength', trackLength, ...
     'eccentricity', eccentricity, ...
-    'kinks',        kinks, ...
-    'coils',        coils, ...
-    'directions',   postureDirections, ...
-    'skeleton',     postureSkeletons, ...
+    'kinks', kinks, ...
+    'coils', coils, ...
+    'directions', postureDirections, ...
+    'skeleton', postureSkeletons, ...
     'eigenProjection', eigenProjections);
 
 
@@ -982,42 +1328,42 @@ posture = struct( ...
 
 % % The worm backward motion.
 % backwardFrames = struct( ...
-%     'start',          backwardStartFrames, ...
-%     'end',            backwardEndFrames, ...
-%     'time',           backwardTimes, ...
-%     'distance',       backwardDistances, ...
-%     'interTime',      backwardInterTimes, ...
-%     'interDistance',  backwardInterDistances);
+%     'start', backwardStartFrames, ...
+%     'end', backwardEndFrames, ...
+%     'time', backwardTimes, ...
+%     'distance', backwardDistances, ...
+%     'interTime', backwardInterTimes, ...
+%     'interDistance', backwardInterDistances);
 % backwardRatios = struct( ...
-%     'time',       backwardTimeRatio, ...
-%     'distance',   backwardDistanceRatio);
+%     'time', backwardTimeRatio, ...
+%     'distance', backwardDistanceRatio);
 % backward = struct( ...
-%     'frames',     backwardFrames, ...
-%     'frequency',  backwardFrequency, ...
-%     'ratio',      backwardRatios);
+%     'frames', backwardFrames, ...
+%     'frequency', backwardFrequency, ...
+%     'ratio', backwardRatios);
 %
 % % The worm paused motion.
 % pausedFrames = struct( ...
-%     'start',      pausedStartFrames, ...
-%     'end',        pausedEndFrames, ...
-%     'time',       pausedTimes, ...
-%     'distance',   pausedDistances, ...
-%     'interTime',  pausedInterTimes, ...
+%     'start', pausedStartFrames, ...
+%     'end', pausedEndFrames, ...
+%     'time', pausedTimes, ...
+%     'distance', pausedDistances, ...
+%     'interTime', pausedInterTimes, ...
 %     'interDistance', pausedInterDistances);
 % pausedRatios = struct( ...
-%     'time',       pausedTimeRatio, ...
-%     'distance',   pausedDistanceRatio);
+%     'time', pausedTimeRatio, ...
+%     'distance', pausedDistanceRatio);
 % paused = struct( ...
-%     'frames',     pausedFrames, ...
-%     'frequency',  pausedFrequency, ...
-%     'ratio',      pausedRatios);
+%     'frames', pausedFrames, ...
+%     'frequency', pausedFrequency, ...
+%     'ratio', pausedRatios);
 
 % % The worm motion.
 % motion = struct( ...
-%     'mode',       motionModes, ...
-%     'forward',    forward, ...
-%     'backward',   backward, ...
-%     'paused',     paused);
+%     'mode', motionModes, ...
+%     'forward', forward, ...
+%     'backward', backward, ...
+%     'paused', paused);
 
 % % The worm velocity.
 % headTipVelocity = struct( ...
@@ -1091,7 +1437,7 @@ posture = struct( ...
 
 % The worm locomotion turns.
 locomotionTurns = struct( ...
-    'omegas',   omegas, ...
+    'omegas', omegas, ...
     'upsilons', upsilons);
 
 % The worm locomotion path centroid coordinates.
@@ -1101,10 +1447,10 @@ centroidCoordinates = struct( ...
 
 %% The worm locomotion.
 locomotion = struct( ...
-    'motion',   motionEvents, ...
+    'motion', motionEvents, ...
     'velocity', velocity, ...
-    'bends',    locomotionBends, ...
-    'turns',    locomotionTurns);
+    'bends', locomotionBends, ...
+    'turns', locomotionTurns);
 
 %% The worm path data.
 
@@ -1141,17 +1487,17 @@ locomotion = struct( ...
 
 %% The worm path.
 wormPath = struct( ...
-    'range',        pathRange, ...
-    'duration',     pathDuration, ...
-    'coordinates',  centroidCoordinates, ...
-    'curvature',    pathCurvature);
+    'range', pathRange, ...
+    'duration', pathDuration, ...
+    'coordinates', centroidCoordinates, ...
+    'curvature', pathCurvature);
 
 %% The worm data.
 worm = struct(...
-    'morphology',   morphology, ...
-    'posture',      posture, ...
-    'locomotion',   locomotion, ...
-    'path',         wormPath);  %#ok
+    'morphology', morphology, ...
+    'posture', posture, ...
+    'locomotion', locomotion, ...
+    'path', wormPath);  %#ok
 
 
 
@@ -1168,7 +1514,13 @@ video = struct( ...
     'resolution',   resolution, ...
     'annotations',  videoAnnotations);
 
-
+% The overall information
+info = struct( ...
+    'wt2',      wt2, ...
+    'video',    video, ...
+    'experiment', experiment, ...
+    'files',    expFiles, ...
+    'lab',      expLab); %#ok
 
 %% Save the output
 
@@ -1177,3 +1529,95 @@ save(featuresOutName, 'info', 'worm');
 %save(featuresOutName, 'info', 'worm', 'featureData');
 %%
 
+if handles.preferences.useDB
+    newRootDir = 'results-12-06-28';
+    % Define the destination directory depending on the table selected
+    if strcmpi(analysisTableName, 'segmentationExperimentList')
+        nasDir = ['\\nas207-2\Data\',newRootDir,'\'];
+        
+    elseif strcmpi(analysisTableName, 'victoriaExperimentList')
+        nasDir = '\\nas207-2\Data\victoria-run-13-01-2012\features\';
+        
+	elseif strcmpi(analysisTableName, 'mariosExperimentList')
+        nasDir = '\\nas207-2\Data\other-runs\marios-14-05-2012\';
+        
+    elseif strcmpi(analysisTableName, 'hobertExperimentList')
+        nasDir = '\\nas207-2\Data\hobert-run-04-04-2012\';
+        
+    else
+        nasDir = '\\nas207-2\Data\other-runs\features\';
+    end
+    
+    % Get the path dictated by the annotation
+    experimentId = getExperimentId(conn, fileInfo.expList.fileName);
+    expPath = makeNasDir(conn, experimentId);
+    
+    dirTempCopy = fullfile(nasDir, expPath);
+    
+    % Check if nas dir exists
+    if ~isdir(dirTempCopy)
+            mkdir(dirTempCopy);
+    end
+    % Formulate new output file path and copy to NAS
+    newOutputName = fullfile(dirTempCopy, [fileInfo.expList.fileName,'_features.mat']);
+    copyfile(featuresOutName, newOutputName);
+    
+    % Compute the histograms
+    % featuresOutName = the feature file name (the file must already exist since we'll be using it) 
+    histFilename = strrep(featuresOutName, 'features.mat', 'hist.mat');
+    % make the histogram filename 
+    worm2histogram(histFilename, featuresOutName); 
+    %worm2histogram(histFilename, newOutputName); 
+    
+    % this puts the histogram file in the NAS
+    
+    newHistOutputName = fullfile(dirTempCopy, [fileInfo.expList.fileName,'_hist.mat']);
+    newHistOutputName = strrep(newHistOutputName, ...
+        ['\\nas207-2\Data\', newRootDir, '\'], ...
+        ['\\nas207-2\Data\', newRootDir, '_hist\']);
+    
+    % Check if the dir exists
+    [dir1, ~, ~] = fileparts(newHistOutputName);
+    if ~isdir(dir1)
+        mkdir(dir1);
+    end
+    
+    copyfile(histFilename, newHistOutputName);
+
+    % Delete the original to save space
+    if exist(featuresOutName, 'file') == 2
+	   delete(featuresOutName);
+    end    
+    
+     % Delete the original to save space
+    if exist(histFilename, 'file') == 2
+        delete(histFilename);
+    end
+    
+    
+    %-----------------------------
+    %     % Copy normalized folder
+    %     dirTempCopy = '\\nas207-1\Data\victoriaExperimentList\';
+    %     destinationDir = [dirTempCopy, fileInfo.expList.fileName];
+    %     if ~isdir(destinationDir)
+    %         mkdir(destinationDir);
+    %     end
+    %     sourceDir = [fileInfo.expList.segDatDir, filesep, 'normalized'];
+    %     [ret, errorMsg] = copyfile(sourceDir, destinationDir);
+    
+    %     % Copy stage motion file as well
+    %     destinationStageMotion = fullfile(dirTempCopy, fileInfo.expList.fileName, [fileInfo.expList.fileName,'_stageMotion']);
+    %     [ret, errorMsg] = copyfile(fileInfo.expList.stageMotion, destinationStageMotion);
+    %
+end
+%----------------------------------------------------------------------
+% record the status file
+
+fileInfo.features.version = mydata.preferences.version;
+fileInfo.features.completed = 1;
+fileInfo.features.timeStamp = datestr(now);
+
+save(fileInfo.expList.status, 'fileInfo');
+
+mydata.experimentList{mydata.currentFile} = fileInfo.expList;
+guidata(hObject,mydata);
