@@ -82,5 +82,5 @@ worm.path = seg_worm.feature_calculator.getPathFeatures(nw,FPS,VENTRAL_MODE);
 
 fprintf('Total Run Time %0.2g\n',toc(t_final));
 
-seg_worm.feature_calculator.verifyResult(worm,feature_mat_path);
+%seg_worm.feature_calculator.verifyResult(worm,feature_mat_path);
 
