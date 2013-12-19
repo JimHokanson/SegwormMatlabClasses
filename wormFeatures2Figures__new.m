@@ -141,11 +141,17 @@ featureFiles = {featureFiles.name};
 for i = 1:length(featureFiles)
     featureFile = [controlFeaturesDir '/' featureFiles{i}];
     load(featureFile, 'info');
-    info.experiment.worm.strain = controlName;
+    
+    %Why is this modified ????
+    info.experiment.worm.strain   = controlName;
     info.experiment.worm.genotype = controlName;
+    
+    
+    
     save(featureFile, 'info', '-append');
 end
 
+%--------------------------------------------------------------------------
 % Move the experiment feature files to a subdirectory.
 for i = 1:length(experimentDirs)
     
@@ -180,8 +186,10 @@ for i = 1:length(experimentDirs)
         featureFile = [experimentFeaturesDir '/' featureFiles{j}];
         info = [];
         load(featureFile, 'info');
-        info.experiment.worm.strain = experimentNames{i};
+        
+        info.experiment.worm.strain   = experimentNames{i};
         info.experiment.worm.genotype = experimentNames{i};
+        
         save(featureFile, 'info', '-append');
     end
 end
@@ -205,6 +213,8 @@ for i = 1: length(featureFiles)
         strrep(featureFiles{i}, featuresSuffix, histogramSuffix)];
     if ~exist(['./' histogramFile], 'file')
         disp(['*** Converting "' featureFile '" to "' histogramFile '".']);
+        
+        
         worm2histogram(histogramFile, featureFile, [], 1);
     end
 end

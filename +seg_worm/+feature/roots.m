@@ -114,7 +114,7 @@ pathType       = 'p';
 % 'path.duration.head'
 % 'path.duration.midbody'
 % 'path.duration.tail'};
-durationField = {'times'};  %?? This doesn't follow the same format ...
+DURATION_FIELD = {'times'};  %?? This doesn't follow the same format ...
 
 %EVENT NOTES
 %----------------------------------------------------------------
@@ -250,6 +250,7 @@ for iField = 1:length(locomotion_motion_fields)
    info(end).isTimeSeries = true; 
 end
 
+%LOCOMOTION MOTION --------------------------------------------------------
 locomotion_event_fields = {
     'locomotion.motion.forward'
     'locomotion.motion.paused'
@@ -263,6 +264,7 @@ for iField = 1:length(locomotion_event_fields)
    info(end).isTimeSeries = true; 
 end
 
+%LOCOMOTION EVENTS --------------------------------------------------------
 locomotion_turn_fields = {
     'locomotion.turns.omegas'
     'locomotion.turns.upsilons'};
@@ -275,6 +277,7 @@ for iField = 1:length(locomotion_turn_fields)
    info(end).isTimeSeries = true; 
 end
 
+%PATH MOTION --------------------------------------------------------------
 path_motion_fields = {
     'path.range'
     'path.curvature'};
@@ -286,6 +289,7 @@ for iField = 1:length(path_motion_fields)
    info(end).isTimeSeries = true; 
 end
 
+%PATH SIMPLE -------------------------------------------------------------
 path_simple_fields = {
     'path.duration.worm'
     'path.duration.head'
@@ -294,273 +298,8 @@ path_simple_fields = {
 
 for iField = 1:length(path_simple_fields)
    info(end+1).field      = path_simple_fields{iField}; %#ok<AGROW>
-   info(end).subFields    = durationField;
+   info(end).subFields    = DURATION_FIELD;
    info(end).type         = simpleDataType;
    info(end).category     = pathType;
    info(end).isTimeSeries = false; 
-end
-
-
-%Old way of doing it ...
-%% Organize the morphology data.
-% % % % info(end).field = 'morphology.length';
-% % % % info(end).type  = motionDataType;
-% % % % info(end).category = morphologyType;
-% % % % info(end).isTimeSeries = true;
-% % % % info(end + 1).field = 'morphology.width.head';
-% % % % info(end).type = motionDataType;
-% % % % info(end).category = morphologyType;
-% % % % info(end).isTimeSeries = true;
-% % % % info(end + 1).field = 'morphology.width.midbody';
-% % % % info(end).type = motionDataType;
-% % % % info(end).category = morphologyType;
-% % % % info(end).isTimeSeries = true;
-% % % % info(end + 1).field = 'morphology.width.tail';
-% % % % info(end).type = motionDataType;
-% % % % info(end).category = morphologyType;
-% % % % info(end).isTimeSeries = true;
-% % % % info(end + 1).field = 'morphology.area';
-% % % % info(end).type = motionDataType;
-% % % % info(end).category = morphologyType;
-% % % % info(end).isTimeSeries = true;
-% % % % info(end + 1).field = 'morphology.areaPerLength';
-% % % % info(end).type = motionDataType;
-% % % % info(end).category = morphologyType;
-% % % % info(end).isTimeSeries = true;
-% % % % info(end + 1).field = 'morphology.widthPerLength';
-% % % % info(end).type = motionDataType;
-% % % % info(end).category = morphologyType;
-% % % % info(end).isTimeSeries = true;
-
-
-
-%% Organize the posture data.
-% % % % % info(end + 1).field = 'posture.bends.head.mean';
-% % % % % info(end).type = motionDataType;
-% % % % % info(end).category = postureType;
-% % % % % info(end).isTimeSeries = true;
-% % % % % info(end + 1).field = 'posture.bends.neck.mean';
-% % % % % info(end).type = motionDataType;
-% % % % % info(end).category = postureType;
-% % % % % info(end).isTimeSeries = true;
-% % % % % info(end + 1).field = 'posture.bends.midbody.mean';
-% % % % % info(end).type = motionDataType;
-% % % % % info(end).category = postureType;
-% % % % % info(end).isTimeSeries = true;
-% % % % % info(end + 1).field = 'posture.bends.hips.mean';
-% % % % % info(end).type = motionDataType;
-% % % % % info(end).category = postureType;
-% % % % % info(end).isTimeSeries = true;
-% % % % % info(end + 1).field = 'posture.bends.tail.mean';
-% % % % % info(end).type = motionDataType;
-% % % % % info(end).category = postureType;
-% % % % % info(end).isTimeSeries = true;
-% % % % % info(end + 1).field = 'posture.bends.head.stdDev';
-% % % % % info(end).type = motionDataType;
-% % % % % info(end).category = postureType;
-% % % % % info(end).isTimeSeries = true;
-% % % % % info(end + 1).field = 'posture.bends.neck.stdDev';
-% % % % % info(end).type = motionDataType;
-% % % % % info(end).category = postureType;
-% % % % % info(end).isTimeSeries = true;
-% % % % % info(end + 1).field = 'posture.bends.midbody.stdDev';
-% % % % % info(end).type = motionDataType;
-% % % % % info(end).category = postureType;
-% % % % % info(end).isTimeSeries = true;
-% % % % % info(end + 1).field = 'posture.bends.hips.stdDev';
-% % % % % info(end).type = motionDataType;
-% % % % % info(end).category = postureType;
-% % % % % info(end).isTimeSeries = true;
-% % % % % info(end + 1).field = 'posture.bends.tail.stdDev';
-% % % % % info(end).type = motionDataType;
-% % % % % info(end).category = postureType;
-% % % % % info(end).isTimeSeries = true;
-% % % % % info(end + 1).field = 'posture.amplitude.max';
-% % % % % info(end).type = motionDataType;
-% % % % % info(end).category = postureType;
-% % % % % info(end).isTimeSeries = true;
-% % % % % info(end + 1).field = 'posture.amplitude.ratio';
-% % % % % info(end).type = motionDataType;
-% % % % % info(end).category = postureType;
-% % % % % info(end).isTimeSeries = true;
-% % % % % info(end + 1).field = 'posture.wavelength.primary';
-% % % % % info(end).type = motionDataType;
-% % % % % info(end).category = postureType;
-% % % % % info(end).isTimeSeries = true;
-% % % % % info(end + 1).field = 'posture.wavelength.secondary';
-% % % % % info(end).type = motionDataType;
-% % % % % info(end).category = postureType;
-% % % % % info(end).isTimeSeries = true;
-% % % % % info(end + 1).field = 'posture.tracklength';
-% % % % % info(end).type = motionDataType;
-% % % % % info(end).category = postureType;
-% % % % % info(end).isTimeSeries = true;
-% % % % % info(end + 1).field = 'posture.eccentricity';
-% % % % % info(end).type = motionDataType;
-% % % % % info(end).category = postureType;
-% % % % % info(end).isTimeSeries = true;
-% % % % % info(end + 1).field = 'posture.kinks';
-% % % % % info(end).type = motionDataType;
-% % % % % info(end).category = postureType;
-% % % % % info(end).isTimeSeries = true;
-% % % % % info(end + 1).field = 'posture.directions.tail2head';
-% % % % % info(end).type = motionDataType;
-% % % % % info(end).category = postureType;
-% % % % % info(end).isTimeSeries = true;
-% % % % % info(end + 1).field = 'posture.directions.head';
-% % % % % info(end).type = motionDataType;
-% % % % % info(end).category = postureType;
-% % % % % info(end).isTimeSeries = true;
-% % % % % info(end + 1).field = 'posture.directions.tail';
-% % % % % info(end).type = motionDataType;
-% % % % % info(end).category = postureType;
-% % % % % info(end).isTimeSeries = true;
-% % % % % info(end + 1).field = 'posture.eigenProjection';
-% % % % % info(end).type = motionDataType;
-% % % % % info(end).category = postureType;
-% % % % % info(end).isTimeSeries = true;
-% % % % % info(end + 1).field = 'posture.coils';
-% % % % % info(end).subFields = coilEventFields;
-% % % % % info(end).type = eventDataType;
-% % % % % info(end).category = postureType;
-% % % % % info(end).isTimeSeries = true;
-
-%% Organize the locomotion data.
-% % % % % info(end + 1).field = 'locomotion.motion.forward';
-% % % % % info(end).subFields = motionEventFields;
-% % % % % info(end).type = eventDataType;
-% % % % % info(end).category = locomotionType;
-% % % % % info(end).isTimeSeries = true;
-% % % % % info(end + 1).field = 'locomotion.motion.paused';
-% % % % % info(end).subFields = motionEventFields;
-% % % % % info(end).type = eventDataType;
-% % % % % info(end).category = locomotionType;
-% % % % % info(end).isTimeSeries = true;
-% % % % % info(end + 1).field = 'locomotion.motion.backward';
-% % % % % info(end).subFields = motionEventFields;
-% % % % % info(end).type = eventDataType;
-% % % % % info(end).category = locomotionType;
-% % % % % info(end).isTimeSeries = true;
-
-% % % % info(end + 1).field = 'locomotion.velocity.headTip.speed';
-% % % % info(end).type = motionDataType;
-% % % % info(end).category = locomotionType;
-% % % % info(end).isTimeSeries = true;
-% % % % info(end + 1).field = 'locomotion.velocity.head.speed';
-% % % % info(end).type = motionDataType;
-% % % % info(end).category = locomotionType;
-% % % % info(end).isTimeSeries = true;
-% % % % info(end + 1).field = 'locomotion.velocity.midbody.speed';
-% % % % info(end).type = motionDataType;
-% % % % info(end).category = locomotionType;
-% % % % info(end).isTimeSeries = true;
-% % % % info(end + 1).field = 'locomotion.velocity.tail.speed';
-% % % % info(end).type = motionDataType;
-% % % % info(end).category = locomotionType;
-% % % % info(end).isTimeSeries = true;
-% % % % info(end + 1).field = 'locomotion.velocity.tailTip.speed';
-% % % % info(end).type = motionDataType;
-% % % % info(end).category = locomotionType;
-% % % % info(end).isTimeSeries = true;
-% % % % info(end + 1).field = 'locomotion.velocity.headTip.direction';
-% % % % info(end).type = motionDataType;
-% % % % info(end).category = locomotionType;
-% % % % info(end).isTimeSeries = true;
-% % % % info(end + 1).field = 'locomotion.velocity.head.direction';
-% % % % info(end).type = motionDataType;
-% % % % info(end).category = locomotionType;
-% % % % info(end).isTimeSeries = true;
-% % % % info(end + 1).field = 'locomotion.velocity.midbody.direction';
-% % % % info(end).type = motionDataType;
-% % % % info(end).category = locomotionType;
-% % % % info(end).isTimeSeries = true;
-% % % % info(end + 1).field = 'locomotion.velocity.tail.direction';
-% % % % info(end).type = motionDataType;
-% % % % info(end).category = locomotionType;
-% % % % info(end).isTimeSeries = true;
-% % % % info(end + 1).field = 'locomotion.velocity.tailTip.direction';
-% % % % info(end).type = motionDataType;
-% % % % info(end).category = locomotionType;
-% % % % info(end).isTimeSeries = true;
-% % % % info(end + 1).field = 'locomotion.bends.foraging.amplitude';
-% % % % info(end).type = motionDataType;
-% % % % info(end).category = locomotionType;
-% % % % info(end).isTimeSeries = true;
-% % % % info(end + 1).field = 'locomotion.bends.head.amplitude';
-% % % % info(end).type = motionDataType;
-% % % % info(end).category = locomotionType;
-% % % % info(end).isTimeSeries = true;
-% % % % info(end + 1).field = 'locomotion.bends.midbody.amplitude';
-% % % % info(end).type = motionDataType;
-% % % % info(end).category = locomotionType;
-% % % % info(end).isTimeSeries = true;
-% % % % info(end + 1).field = 'locomotion.bends.tail.amplitude';
-% % % % info(end).type = motionDataType;
-% % % % info(end).category = locomotionType;
-% % % % info(end).isTimeSeries = true;
-% % % % info(end + 1).field = 'locomotion.bends.foraging.angleSpeed';
-% % % % info(end).type = motionDataType;
-% % % % info(end).category = locomotionType;
-% % % % info(end).isTimeSeries = true;
-% % % % info(end + 1).field = 'locomotion.bends.head.frequency';
-% % % % info(end).type = motionDataType;
-% % % % info(end).category = locomotionType;
-% % % % info(end).isTimeSeries = true;
-% % % % info(end + 1).field = 'locomotion.bends.midbody.frequency';
-% % % % info(end).type = motionDataType;
-% % % % info(end).category = locomotionType;
-% % % % info(end).isTimeSeries = true;
-% % % % info(end + 1).field = 'locomotion.bends.tail.frequency';
-% % % % info(end).type = motionDataType;
-% % % % info(end).category = locomotionType;
-% % % % info(end).isTimeSeries = true;
-
-
-
-% % % % info(end + 1).field = 'locomotion.turns.omegas';
-% % % % info(end).subFields = turnEventFields;
-% % % % info(end).type = eventDataType;
-% % % % info(end).category = locomotionType;
-% % % % info(end).isTimeSeries = true;
-% % % % info(end + 1).field = 'locomotion.turns.upsilons';
-% % % % info(end).subFields = turnEventFields;
-% % % % info(end).type = eventDataType;
-% % % % info(end).category = locomotionType;
-% % % % info(end).isTimeSeries = true;
-
-
-
-%% Organize the path data.
-% % % % % info(end + 1).field = 'path.range';
-% % % % % info(end).type = motionDataType;
-% % % % % info(end).category = pathType;
-% % % % % info(end).isTimeSeries = true;
-% % % % % info(end + 1).field = 'path.curvature';
-% % % % % info(end).type = motionDataType;
-% % % % % info(end).category = pathType;
-% % % % % info(end).isTimeSeries = true;
-% % % % % 
-% % % % % 
-% % % % % 
-% % % % % info(end + 1).field = 'path.duration.worm';
-% % % % % info(end).subFields = durationField;
-% % % % % info(end).type = simpleDataType;
-% % % % % info(end).category = pathType;
-% % % % % info(end).isTimeSeries = false;
-% % % % % info(end + 1).field = 'path.duration.head';
-% % % % % info(end).subFields = durationField;
-% % % % % info(end).type = simpleDataType;
-% % % % % info(end).category = pathType;
-% % % % % info(end).isTimeSeries = false;
-% % % % % info(end + 1).field = 'path.duration.midbody';
-% % % % % info(end).subFields = durationField;
-% % % % % info(end).type = simpleDataType;
-% % % % % info(end).category = pathType;
-% % % % % info(end).isTimeSeries = false;
-% % % % % info(end + 1).field = 'path.duration.tail';
-% % % % % info(end).subFields = durationField;
-% % % % % info(end).type = simpleDataType;
-% % % % % info(end).category = pathType;
-% % % % % info(end).isTimeSeries = false;
-
 end

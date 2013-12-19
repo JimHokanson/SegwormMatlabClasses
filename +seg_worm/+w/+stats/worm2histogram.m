@@ -226,6 +226,9 @@ for i = 1:length(dataInfo)
             if ~isempty(dataInfo(i).subFields)
                 field = [field '.' dataInfo(i).subFields{1}];
             end
+%             if strcmp(field,'posture.eigenProjection')
+%                keyboard 
+%             end
             data = h__motion2histograms(wormFiles, field, subFields, histInfo, motionNames, motionEvents);
             eval([wormName '.' field '=data;']);
             
@@ -407,6 +410,8 @@ end
 for i = 1:size(data{1}, 1) %Why would this have more than one entry ?????
     %??? - it looks like size(data{1},1) might always be 1 ...
     
+    %Not for eigen projections 
+    
     % Compute the data histogram.
     subData = cellfun(@(x) x(i,:), data, 'un', 0);
     histData(i).histogram = seg_worm.util.histogram(subData, resolution, isZeroBin, isSigned);
@@ -450,6 +455,20 @@ for i = 1:size(data{1}, 1) %Why would this have more than one entry ?????
         end
     end
 end
+
+%# of elements in histData - equal to size of array
+%Normally this is 1, but is 6 for eigen projections ...
+
+%     histData(1)
+% 
+%     ans = 
+% 
+%         histogram: [1x1 struct]
+%           forward: [1x1 struct]
+%            paused: [1x1 struct]
+%          backward: [1x1 struct]
+
+
 end
 
 
