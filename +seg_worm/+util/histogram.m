@@ -3,6 +3,9 @@ function histData = histogram(data, varargin)
 %   
 %   histData = seg_worm.util.histogram(data, *resolution, *isZeroBin, *isSigned, *verbose)
 %
+%   I'm moving this code to:
+%   seg_worm.stats.hist.initObject
+%
 %   Inputs:
 %       data       - the data for the histogram(s) (a cell array of observed sets)
 %       resolution - the data resolution;

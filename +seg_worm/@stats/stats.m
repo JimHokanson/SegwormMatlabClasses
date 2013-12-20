@@ -1,6 +1,7 @@
 classdef stats < handle
     %
-    %
+    %   Class:
+    %   seg_worm.stats
     %
     %   Important Files
     %   ---------------------------------------------------------
@@ -26,6 +27,7 @@ classdef stats < handle
     %{
     
     feature_path = '/Users/jameshokanson/Dropbox/worm_data/video/testing_with_GUI/results/mec-4 (u253) off food x_2010_04_21__17_19_20__1_features.mat'
+    feature_path = 'F:\worm_data\segworm_data\video\testing_with_GUI\results\mec-4 (u253) off food x_2010_04_21__17_19_20__1_features.mat'
     seg_worm.stats.hist.createHistograms(feature_path);
     
     %}

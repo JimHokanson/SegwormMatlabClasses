@@ -6,6 +6,13 @@ function createHistograms(feature_file_path)
 %   OLD_NAME: seg_worm.w.stats.worm2histogram 
 %
 %
+%   JAH: Currently working on this file ...
+%
+%   Code snippet for running in:
+%   seg_worm.stats
+%   
+%
+%
 %   Called by:
 %   worm2Histogram_GUI
 %   This also seems like it could be a top level file
@@ -93,6 +100,16 @@ end
 specs = [temp_specs{:}];
 %--------------------------------------------------------------------------
 
+
+
+%Motion Expanded Features
+%--------------------------------------------------------------------------
+%Always contains at least 4 values, for during forward, backward, paused,
+%and all motions ...
+%
+%Might contain 
+
+
 n_specs = length(specs);
 
 %feature_file_path
@@ -127,7 +144,7 @@ for iField = 1:n_specs
             
             %Examples
             %-----------------------------------------
-            
+            continue
             keyboard
             
             temp = seg_worm.stats.hist(data,resolution,is_zero_bin,is_signed);
@@ -144,13 +161,13 @@ for iField = 1:n_specs
             
         % Compute the motion histogram.
         case 'm'
+
+            data = eval([WORM_NAME cur_spec.field]);
             
+            %TODO: Add index check ...
             
-            %????? - where would this be the case ???
-            if ~isempty(cur_sub_fields)
-                cur_field = [cur_field '.' cur_sub_fields{1}];
-                keyboard
-            end
+            obj = seg_worm.stats.hist(data,cur_spec.resolution,cur_spec.is_zero_bin,cur_spec.is_signed);
+
             
             %{
             
@@ -218,10 +235,6 @@ for iField = 1:n_specs
             %}
     end
 end
-
-% Save the histograms.
-save(filename, wormName, '-append', '-v7.3');
-
 
 end
 
@@ -320,19 +333,24 @@ else
     isSigned   = info.isSigned;
 end
 
-% Get the data.
-dataField = field;
-if ~isempty(subFields)
-    dataField = [dataField '.' subFields{1}];
-end
+
+%Where is this done ??????
+
+%{
+
+Im = find([r.type] == 'm');
+
+I = find([r.type] == 'm' & arrayfun(@(x) ~isempty(x.subFields),r));
+
+%We never have subFields for movement events
+
+%}
+
+
+
+
 data = h__loadWormFiles(wormFiles, dataField);
 
-% Check the data.
-for i = 1:length(data)
-    if isempty(data{i})
-        warning('worm2histogram:NoData', ['"' field '" in "' wormFiles{i} '" contains no data']);
-    end
-end
 
 % Initialize the histogram data.
 histData(size(data{1}, 1)).histogram = [];

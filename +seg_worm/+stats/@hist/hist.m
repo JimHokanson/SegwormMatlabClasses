@@ -97,6 +97,9 @@ classdef hist < handle
             %
             %
             %   obj = seg_worm.stats.hist(data,resolution,is_zero_bin,is_signed);
+            %
+            %   Called by:
+            %   seg_worm.stats.hist.createHistograms
             
             initObject(obj,data,resolution,is_zero_bin,is_signed)
             

@@ -1,9 +1,10 @@
-function initObject(obj)
+function initObject(obj,data,resolution,is_zero_bin,is_signed)
 %
 %   seg_worm.stats.hist.initObject()
 %
 %
-%   This is essentially the constructor code.
+%   This is essentially the constructor code. I moved it in here to avoid
+%   the indenting.
 %
 
 
@@ -18,127 +19,16 @@ if n_samples == 0
     return
 end
 
-%Compute the data range & padding
-%------------------------------------------------
-min_data = min(data);
-max_data = max(data);
-
-% Compute the padding.
-if min_data < 0
-    minPad = resolution - abs(rem(min_data, resolution));
-else
-    minPad = abs(rem(min_data, resolution));
-end
-if max_data < 0
-    maxPad = abs(rem(max_data, resolution));
-else
-    maxPad = resolution - abs(rem(max_data, resolution));
-end
-
-% Translate the bins by half the resolution to create a zero bin.
-% Note: we compute just enough padding to capture the data.
-half_resolution = resolution / 2;
-if isZeroBin
-    if minPad > half_resolution
-        minPad = minPad - half_resolution;
-    else
-        minPad = minPad + half_resolution;
-    end
-    if maxPad > half_resolution
-        maxPad = maxPad - half_resolution;
-    else
-        maxPad = maxPad + half_resolution;
-    end
-end
-
-% Compute the edge range.
-minEdge = min_data - minPad;
-maxEdge = max_data + maxPad;
-
-% Compute the bins and their edges.
-% Note: histc fills all bins with edges(k) <= data < edges(k + 1).
-% The last bin is filled with data == edges(end).
-% Therefore, we keep the last bin empty and throw it away to preserve
-% equal bin sizes. For this reason the bin centers are spaced for
-% their final composition (what they will look like after tossing away
-% the empty last bin).
-numBins = round((maxEdge - minEdge) / resolution);
-
-%???? Why go in and not out????
-%1 4
-%3 - resolution 1
-%
-%4 - 1 => 3/1 => 3
-%
-%minEdge
-bins    = linspace(minEdge + half_resolution, maxEdge - half_resolution, numBins);
-edges   = bins - half_resolution;
-edges(end + 1) = edges(end) + resolution;
-
-% Fix the zero bin.
-% Note: IEEE floating point issues may shift us just off zero.
-if is_zero_bin
-    [zeroBin, zeroI] = min(abs(bins));
-    if zeroBin < half_resolution / 2
-        bins(zeroI) = 0;
-    end
-end
+[bins,edges] = h_computeBinInfo(data,resolution);
 
 % Compute the histogram counts for all the data.
 counts = histc(data, edges);
-if length(edges) > 1
-    
-    % Add the very last bin.
-    if counts(1,end) > 0
-        %???? When would this ever run????
-        bins(end + 1) = bins(end) + resolution;
-        
-        % Strip off the empty last bin.
-    else
-        counts(end) = [];
-    end
-    
-    % Strip off the empty first bin.
-    if counts(1,1) == 0
-        bins(1) = [];
-        counts(1) = [];
-    end
-end
+counts(end) = []; %Remove the extra bin at the end (for overflow)
 
-% Compute the counts for the data set.
-allCounts(1,:) = counts;
-if length(data) == 1
-    pdfs(1,:) = counts ./ sum(counts);
-    
-    % Compute the normalized histogram for the data sets.
-else
-    counts = zeros(length(data), length(edges));
-    pdfs   = zeros(length(data), length(edges));
-    for i = 1:length(data)
-        if ~empty(i)
-            counts(i,:) = histc(data{i}, edges);
-            pdfs(i,:)   = counts(i,:) ./ sum(counts(i,:));
-        end
-    end
-    pdfs = mean(pdfs, 1);
-    
-    % Strip off the empty bin.
-    if length(edges) > 1
-        
-        % Add a bin (this should never happen).
-        if any(counts(:,end) > 0)
-            bins(end + 1) = bins(end) + resolution;
-            warning('histogram:LastBinNotEmpty', ...
-                ['The last bin in the histogram is not empty like it ' ...
-                'should be. Please contact the programmer)']);
-            
-            % Strip off the empty bin.
-        else
-            counts(:,end) = [];
-            pdfs(:,end) = [];
-        end
-    end
-end
+pdfs = counts./sum(counts);
+
+%JAH TODO: At this point ...
+
 
 % Compute the means of the data sets.
 means   = cellfun(@nanmean, data);
@@ -195,3 +85,48 @@ histData.bins = bins;
 histData.resolution = resolution;
 histData.isZeroBin  = isZeroBin;
 histData.isSigned   = isSigned;
+end
+
+function [bins,edges] = h_computeBinInfo(data,resolution)
+%
+%
+%   NOTE: This version may have an extra bin than the previous version but
+%   this one is MUCH simpler and merging should be much simpler as edges
+%   should always align ...
+%
+%   
+%   min -65.4
+%   max 20.01
+%   resolution 1
+%   Old:
+%   edges -65.5 to 20.5
+%   New:
+%   edges -70 to 21
+%
+%   
+
+
+MAX_N = 1e6;
+
+%JAH: I find this code to be very confusing ...
+
+
+%Compute the data range & padding
+%------------------------------------------------
+min_data = min(data);
+max_data = max(data);
+
+min_edge = floor(min_data/resolution)*resolution;
+max_edge = ceil(max_data/resolution)*resolution;
+
+n_values = (max_edge - min_edge)/resolution + 1;
+
+if n_values > MAX_N
+    %TODO: Make the error more explicit
+    error('Given specified resolution there are too many data bins')
+end
+
+edges = min_edge:resolution:max_edge;
+bins  = edges(1:end-1) + resolution/2;
+
+end
