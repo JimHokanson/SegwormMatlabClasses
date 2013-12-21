@@ -2,20 +2,32 @@ classdef hist < handle
     %
     %   Class:
     %   seg_worm.stats.hist
-    
-    %Output normally contains three things
     %
-    %Which of these are important?????
+    %   See Also:
+    %   seg_worm.util.histogram
+    %   seg_worm.w.stats.addWormHistograms 
     %
     %
-    %seg_worm.util.histogram
+    %   Main Code:
+    %   initObject
+    %   
+    %   Questions:
+    %   -----------------------------------------------------------------
+    %   When calculating the stats, how are counts and samples used????
+    %
+    %   TODO:
+    %   --------------------
+    %   cleanup property instantation and documentation ...
     
     properties
         %Identification
         %----------------------------------
-        name %a.b.c.d
-        type
-        sign %-1,0,1,2 (2 all)
+        name 
+        short_name
+        units
+        feature_category %posture, movement, etc ???
+        motion_type %'all' 'forward' 'paused' 'backward'
+        data_type   %'all' 'absolute' 'positive' 'negative'
         resolution
         is_zero_bin
         is_signed
@@ -28,28 +40,22 @@ classdef hist < handle
         %backward
         %paused
         
-        pdf
-        bins
+        pdf      %[1 x n_bins] %probability density value for each bin
+        bins     %[1 x n_bins] %the center of each bin
 
-        counts
-        samples
+        counts   %[n_videos x bins] %The # of values in each bin
+        samples = 0  %# of samples for each video, TODO: This needs to be
+        %clarified, I also don't like the name ...
         
         
-        mean_all
-        std_all
+        mean %[n_videos x 1]
+        std  %[n_videos x 1]
         
-        %TODO: These should probably be for signed data only ...
-        mean_abs
-        std_abs
         
-        mean_pos
-        std_pos
         
-        mean_neg
-        std_neg
     
     %For events:
-%        data: 0.1467
+%        data: 0.1467  %[n_videos x 1]
 %     samples: 1
 %        mean: 0.1467
 %      stdDev: 0
@@ -93,15 +99,29 @@ classdef hist < handle
     %}
     
     methods
-        function obj = hist(data,resolution,is_zero_bin,is_signed)
+        function obj = hist(data,specs,motion_type,data_type)
             %
             %
-            %   obj = seg_worm.stats.hist(data,resolution,is_zero_bin,is_signed);
+            %   obj = seg_worm.stats.hist(data,resolution,is_signed);
             %
             %   Called by:
             %   seg_worm.stats.hist.createHistograms
             
-            initObject(obj,data,resolution,is_zero_bin,is_signed)
+            
+            obj.feature_category = specs.feature_category;
+            obj.resolution       = specs.resolution;
+            obj.is_zero_bin      = specs.is_zero_bin;
+            obj.is_signed        = specs.is_signed;
+            obj.name             = specs.name;
+            obj.short_name       = specs.short_name;
+            obj.units            = specs.units;
+            
+            obj.motion_type = motion_type;
+            obj.data_type   = data_type;
+            
+            %TODO: Pass in spec, inherit specs from common spec
+            
+            initObject(obj,data)
             
         end
     end

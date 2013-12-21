@@ -1,4 +1,4 @@
-function initObject(obj,data,resolution,is_zero_bin,is_signed)
+function initObject(obj,data)
 %
 %   seg_worm.stats.hist.initObject()
 %
@@ -15,76 +15,25 @@ data(isinf(data)) = NaN;
 
 n_samples = sum(~isnan(data));
 
+obj.samples = n_samples;
+
 if n_samples == 0
     return
 end
 
-[bins,edges] = h_computeBinInfo(data,resolution);
+[obj.bins,edges] = h_computeBinInfo(data,obj.resolution);
 
 % Compute the histogram counts for all the data.
 counts = histc(data, edges);
 counts(end) = []; %Remove the extra bin at the end (for overflow)
 
-pdfs = counts./sum(counts);
+obj.counts = counts;
 
-%JAH TODO: At this point ...
+obj.pdf = counts./sum(counts);
 
+obj.mean = nanmean(data);
+obj.std  = nanstd(data);
 
-% Compute the means of the data sets.
-means   = cellfun(@nanmean, data);
-stdDevs = cellfun(@nanstd, data);
-if isSigned
-    
-    % Compute the absolute value statisitics.
-    absData    = cellfun(@(x) abs(x), data, 'UniformOutput', false);
-    absMeans   = cellfun(@(x) nanmean(x), absData);
-    absStdDevs = cellfun(@(x) nanstd(x), absData);
-    
-    % Compute the positive value statisitics.
-    posData    = cellfun(@(x) x(x > 0), data, 'UniformOutput', false);
-    posMeans   = cellfun(@(x) nanmean(x), posData);
-    posStdDevs = cellfun(@(x) nanstd(x), posData);
-    
-    % Compute the negative value statisitics.
-    negData    = cellfun(@(x) x(x < 0), data, 'UniformOutput', false);
-    negMeans   = cellfun(@(x) nanmean(x), negData);
-    negStdDevs = cellfun(@(x) nanstd(x), negData);
-end
-
-
-
-
-%Data - What we care about ...
-%===========================================
-
-% Organize the histogram data sets.
-histData.data.counts          = counts;
-histData.data.samples(:,1)    = n_samples; %Yikes, I think is is to force a colum vector ...
-histData.data.mean.all(:,1)   = means;
-histData.data.stdDev.all(:,1) = stdDevs;
-if isSigned
-    
-    % Compute the absolute value statisitics.
-    histData.data.mean.abs(:,1)   = absMeans;
-    histData.data.stdDev.abs(:,1) = absStdDevs;
-    
-    % Compute the positive value statisitics.
-    histData.data.mean.pos(:,1)   = posMeans;
-    histData.data.stdDev.pos(:,1) = posStdDevs;
-    
-    % Compute the negative value statisitics.
-    histData.data.mean.neg(:,1)   = negMeans;
-    histData.data.stdDev.neg(:,1) = negStdDevs;
-end
-
-
-
-% Organize the histogram.
-histData.PDF  = pdfs;
-histData.bins = bins;
-histData.resolution = resolution;
-histData.isZeroBin  = isZeroBin;
-histData.isSigned   = isSigned;
 end
 
 function [bins,edges] = h_computeBinInfo(data,resolution)

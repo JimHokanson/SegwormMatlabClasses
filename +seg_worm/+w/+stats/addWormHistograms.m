@@ -126,10 +126,10 @@ end
 clear controlInfo;
 
 % Initialize the data information.
-dataInfo = wormDataInfo();
+dataInfo = seg_worm.feature.roots();
 
 % Save the worm histograms.
-saveHistogram(hist_output_filepath, wormFiles, dataInfo, 'worm', 'worm', isVerbose);
+h__saveHistogram(hist_output_filepath, wormFiles, dataInfo, 'worm', 'worm', isVerbose);
 
 % Are we adding the old controls?
 %
@@ -159,14 +159,14 @@ end
 
 % Save the control histograms.
 if ~isempty(controlFiles)
-    saveHistogram(hist_output_filepath, controlFiles, dataInfo, controlNames,'control', isVerbose);
+    h__saveHistogram(hist_output_filepath, controlFiles, dataInfo, controlNames,'control', isVerbose);
 end
 end
 
 
 
 %% Load worm data from files.
-function data = loadWormFiles(filenames, wormName, field)
+function data = h__loadWormFiles(filenames, wormName, field)
 
 % Fix the data.
 if ~iscell(wormName)
@@ -177,12 +177,12 @@ end
 if length(wormName) > 1
     data = cell(length(wormName), 1);
     for i = 1:length(wormName)
-        data{i} = loadStructField(filenames{i}, wormName{i}, field);
+        data{i} = seg_worm.util.loadStructField(filenames{i}, wormName{i}, field);
     end
     
 % Load all worms using the same name.
 else
-    data = cellfun(@(x) loadStructField(x, wormName{1}, field), ...
+    data = cellfun(@(x) seg_worm.util.loadStructField(x, wormName{1}, field), ...
         filenames, 'UniformOutput', false);
 end
 end
@@ -190,7 +190,7 @@ end
 
 
 %% Save the worm histograms.
-function saveHistogram(filename, wormFiles, dataInfo, loadName, ...
+function h__saveHistogram(filename, wormFiles, dataInfo, loadName, ...
     saveName, isVerbose)
 
 % Initialize the locomotion modes.
@@ -209,12 +209,12 @@ for i = 1:length(dataInfo)
         
         % Combine simple histograms.
         case 's'
-            data = addHistograms(wormFiles, loadName, field);
+            data = h__addHistograms(wormFiles, loadName, field);
             eval([saveName '.' field '=data;']);
             
         % Combine motion histograms.
         case 'm'
-            data = addMotionHistograms(wormFiles, loadName, field, motionNames);
+            data = h__addMotionHistograms(wormFiles, loadName, field, motionNames);
             eval([saveName '.' field '=data;']);
             
         % Combine event histograms.
@@ -224,7 +224,7 @@ for i = 1:length(dataInfo)
             subFields = dataInfo(i).subFields.summary;
             for j = 1:length(subFields);
                 subField = [field '.' subFields{j}];
-                data = addEventData(wormFiles, loadName, subField);
+                data = h__addEventData(wormFiles, loadName, subField);
                 eval([saveName '.' subField '=data;']);
             end
             
@@ -232,7 +232,7 @@ for i = 1:length(dataInfo)
             subFields = dataInfo(i).subFields.data;
             for j = 1:length(subFields);
                 subField = [field '.' subFields{j}];
-                data = addHistograms(wormFiles, loadName, subField);
+                data = h__addHistograms(wormFiles, loadName, subField);
                 eval([saveName '.' subField '=data;']);
             end
     end
@@ -245,22 +245,22 @@ end
 
 
 %% Combine histograms.
-function data = addHistograms(wormFiles, wormName, field)
-addData = loadWormFiles(wormFiles, wormName, field);
+function data = h__addHistograms(wormFiles, wormName, field)
+addData = h__loadWormFiles(wormFiles, wormName, field);
 data(length(addData{1})).histogram = [];
 for i = 1:length(addData{1})
     subData = cellfun(@(x) x(i).histogram, addData, 'UniformOutput', false);
-    data(i).histogram = addHistogramData(subData);
+    data(i).histogram = h__addHistogramData(subData);
 end
 end
 
 
 
 %% Combine motion histograms.
-function data = addMotionHistograms(wormFiles, wormName, field, motionNames)
+function data = h__addMotionHistograms(wormFiles, wormName, field, motionNames)
 
 % Get the data.
-addData = loadWormFiles(wormFiles, wormName, field);
+addData = h__loadWormFiles(wormFiles, wormName, field);
 
 % Combine the histograms.
 data(length(addData{1})).histogram = [];
@@ -268,13 +268,12 @@ for i = 1:length(addData{1})
     
     % Combine the data histograms.
     subData = cellfun(@(x) x(i).histogram, addData, 'UniformOutput', false);
-    data(i).histogram = addHistogramData(subData);
+    data(i).histogram = h__addHistogramData(subData);
     
     % Combine the motion histograms.
     for j = 1:length(motionNames)
-        subData = cellfun(@(x) x(i).(motionNames{j}).histogram, addData, ...
-            'UniformOutput', false);
-        data(i).(motionNames{j}).histogram = addHistogramData(subData);
+        subData = cellfun(@(x) x(i).(motionNames{j}).histogram, addData,'UniformOutput', false);
+        data(i).(motionNames{j}).histogram = h__addHistogramData(subData);
     end
 end
 end
@@ -282,7 +281,7 @@ end
 
 
 %% Combine histograms.
-function data = addHistogramData(addData)
+function data = h__addHistogramData(addData)
 
 % Initialize the histogram information and check for consistency.
 data       = [];
@@ -311,7 +310,7 @@ for i = 1:length(addData)
         elseif resolution ~= addData{i}.resolution || isZeroBin ~= addData{i}.isZeroBin
             warning('addWormHistograms:UnequalBins', ...
                 'Two or more histograms have inconsistent bins');
-            data = nanHistogram(isSigned, numSets);
+            data = seg_worm.util.nanHistogram(isSigned, numSets);
             return;
 
         % Sign the data.
@@ -323,7 +322,7 @@ end
 
 % Is there any data?
 if isempty(resolution)
-    data = nanHistogram(isSigned, numSets);
+    data = seg_worm.util.nanHistogram(isSigned, numSets);
     return;
 end
 
@@ -512,8 +511,8 @@ minBin = min(cellfun(@(x) x(1), bins));
 if isnan(minBin)
     return;
 end
-maxBin = max(cellfun(@(x) x(end), bins));
-numBins = round((maxBin - minBin) / resolution) + 1;
+maxBin   = max(cellfun(@(x) x(end), bins));
+numBins  = round((maxBin - minBin) / resolution) + 1;
 normBins = linspace(minBin, maxBin, numBins);
 
 % Normalize the data.
@@ -535,10 +534,10 @@ end
 
 
 %% Combine event data.
-function data = addEventData(wormFiles, wormName, field)
+function data = h__addEventData(wormFiles, wormName, field)
 
 % Initialize the combined histogram.
-addData = loadWormFiles(wormFiles, wormName, field);
+addData = h__loadWormFiles(wormFiles, wormName, field);
 data = [];
 if isempty(addData)
     data.samples = 0;

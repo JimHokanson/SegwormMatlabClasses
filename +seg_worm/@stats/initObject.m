@@ -1,9 +1,9 @@
-function worm2StatsInfo(output_file_path, wormFiles, varargin)
+function initObject(hist_files, control_files, varargin)
 %worm2StatsInfo  Compute worm statistics information and save it to a file.
 %
 %   This appears to be a top level function.
 %
-%   seg_worm.w.stats.worm2StatsInfo(FILENAME, WORMFILES)
+%   Old Code: seg_worm.w.stats.worm2StatsInfo
 %
 %   seg_worm.w.stats.worm2StatsInfo(FILENAME, 
 %                  WORMFILES, 
@@ -231,163 +231,24 @@ function worm2StatsInfo(output_file_path, wormFiles, varargin)
 % you must reproduce all copyright notices and other proprietary 
 % notices on any copies of the Software.
 
-% Determine the worm information filters.
-wormInfoFilter = [];
-if ~isempty(varargin)
-    wormInfoFilter = varargin{1};
-end
-
-% Determine the worm feature filters.
-wormFeatFilter = [];
-if length(varargin) > 1
-    wormFeatFilter = varargin{2};
-end
-
-% Determine the control files
-controlFiles = [];
-if length(varargin) > 2
-    controlFiles = varargin{3};
-    
-    % Determine the control information filter.
-    controlInfoFilter = [];
-    if length(varargin) > 3
-        controlInfoFilter = varargin{4};
-    end
-    
-    % Determine the control feature filter.
-    controlFeatFilter = [];
-    if length(varargin) > 4
-        controlFeatFilter = varargin{5};
-    end
-end
-
-% Determine the z-score mode.
-zScoreMode = [];
-if length(varargin) > 5
-    zScoreMode = varargin{6};
-end
-if isempty(zScoreMode)
-    zScoreMode = 'os';
-end
+zScoreMode = 'os';
 
 % Are we permuting the data?
 permutations = [];
-if length(varargin) > 6
-    permutations = varargin{7};
-end
 
 % Are we displaying the progress?
 isVerbose = false;
-if length(varargin) > 7
-    isVerbose = varargin{8};
-end
 
-% Delete the file if it already exists.
-if exist(output_file_path, 'file')
-    delete(output_file_path);
-end
-
-% Fix the worm files.
-if ~iscell(wormFiles)
-    wormFiles =  {wormFiles};
-end
-
-% Fix the control files.
-if ~isempty(controlFiles)
-    if ~iscell(controlFiles)
-        controlFiles =  {controlFiles};
-    end
-end
-%--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 
 
 
+%JAH: Removed filters ...
 
-% Load the worm files.
-useWorm  = cell(length(wormFiles), 1);
-wormInfo = [];
-wormData = cell(length(wormFiles), 1);
-for i = 1:length(wormFiles)
-    
-    % Filter the worms by their information.
-    data = load(wormFiles{i});
-    if isempty(wormInfoFilter)
-        useWorm{i} = true(length(data.wormInfo), 1);
-    else
-        [useWorm{i}, ~] = filterWormInfo(data.wormInfo, wormInfoFilter);
-    end
-    
-    % Filter the worms by their features.
-    if ~isempty(wormFeatFilter)
-        useWorm{i} = useWorm{i} & filterWormHist(data.worm, wormFeatFilter);
-    end
-    
-    % Organize the worms.
-    wormInfo    = cat(1, wormInfo, data.wormInfo(useWorm{i}));
-    wormData{i} = data.worm;
-end
-
-% Is there any worm data?
-if length(wormInfo) <= 1
-    warning('worm2StatsInfo:InsufficientWormData','Insufficient worm data was found');
-    return;
-end
-
-% Sort the worm information by date.
-dates = cell2mat(arrayfun(@(x) datenum(x.experiment.environment.timestamp), wormInfo, 'un', 0));
-wormSortI = 1:length(wormInfo);
-if length(dates) == length(wormInfo)
-    [~, wormSortI] = sort(dates);
-    wormInfo       = wormInfo(wormSortI);
-end
-
-% Load the control files.
-if ~isempty(controlFiles)
-    useControl = cell(length(controlFiles), 1);
-    controlInfo = [];
-    controlData = cell(length(controlFiles), 1);
-    for i = 1:length(controlFiles)
-        
-        % Filter the controls by their information.
-        data = load(controlFiles{i});
-        if isempty(controlInfoFilter)
-            useControl{i} = true(length(data.wormInfo), 1);
-        else
-            [useControl{i}, ~] = ...
-                filterWormInfo(data.wormInfo, controlInfoFilter);
-        end
-        
-        % Filter the controls by their features.
-        if ~isempty(controlFeatFilter)
-            useControl{i} = useControl{i} & ...
-                filterWormHist(data.worm, controlFeatFilter);
-        end
-        
-        % Organize the controls.
-        controlInfo = cat(1, controlInfo, data.wormInfo(useControl{i}));
-        controlData{i} = data.worm;
-    end
-    
-    % Is there any control data?
-    if length(controlInfo) <= 1
-        warning('worm2StatsInfo:InsufficientControlData', ...
-            'Insufficient control data was found');
-        controlFiles = [];
-    end
-    
-    % Sort the control information by date.
-    dates = cell2mat(arrayfun(@(x) ...
-        datenum(x.experiment.environment.timestamp), controlInfo, ...
-        'UniformOutput', false));
-    controlSortI = 1:length(controlInfo);
-    if length(dates) == length(controlInfo)
-        [~, controlSortI] = sort(dates);
-        controlInfo = controlInfo(controlSortI);
-    end
-end
+worm_hist_data    = load();
+control_hist_data = load();
 
 
 %--------------------------------------------------------------------------
@@ -401,72 +262,45 @@ end
 
 
 
-% Initialize the worm file formats.
-%--------------------------------------------------------------------------
-%NOTE: This seems like it is a switch to allow the histogram file format or
-%the statistics file format ...
-histStr    = 'histogram';
-statStr    = 'statistics';
-isWormHist = cellfun(@(x) isfield(x.morphology.length, histStr), wormData);
-wormField  = cell(length(isWormHist), 1);
-for i = 1:length(isWormHist)
-    if isWormHist(i)
-        wormField{i} = histStr;
-    else
-        wormField{i} = statStr;
-    end
-end
 
-% Initialize the control file formats.
-if ~isempty(controlFiles)
-    isControlHist = ...
-        cellfun(@(x) isfield(x.morphology.length, histStr), controlData);
-    controlField = cell(length(isControlHist), 1);
-    for i = 1:length(isWormHist)
-        if isControlHist(i)
-            controlField{i} = histStr;
-        else
-            controlField{i} = statStr;
-        end
-    end
-end
+worm_field = 'histogram';
+control_field = 'histogram';
+
+
 
 % Initialize the feature information.
 dataInfo = seg_worm.w.stats.wormStatsInfo();
 
 % Organize the worm features.
-wormData = h__worm2data(dataInfo, useWorm, wormSortI, wormData, wormField, isVerbose);
-if ~isempty(controlFiles)
-    controlData = h__worm2data(dataInfo, useControl, controlSortI, controlData, controlField, isVerbose);
-end
+wormData    = h__worm2data(dataInfo, useWorm, wormSortI, wormData, wormField, isVerbose);
+controlData = h__worm2data(dataInfo, useControl, controlSortI, controlData, controlField, isVerbose);
+
 
 % Normalize the worm features.
-if ~isempty(controlFiles)
+%--------------------------------------------------------------------------
+if ~isempty(control_files)
     
     % Find exclusive features.
-    isNaNWorm = isnan([wormData.dataMeans]);
+    isNaNWorm    = isnan([wormData.dataMeans]);
     isNaNControl = isnan([controlData.dataMeans]);
-    isExclusive = (all(isNaNWorm) & ~any(isNaNControl)) | ...
-        (~any(isNaNWorm) & all(isNaNControl));
-    exclusiveI = find(isExclusive);
+    isExclusive  = (all(isNaNWorm) & ~any(isNaNControl)) | (~any(isNaNWorm) & all(isNaNControl));
+    exclusiveI   = find(isExclusive);
     
     % Normalize the worm features.
-    wormData = h__normalizeData(wormData, controlData, isExclusive, ...
-        zScoreMode(1));
+    wormData = h__normalizeData(wormData, controlData, isExclusive, zScoreMode(1));
     if length(zScoreMode) > 1
-        controlData = h__normalizeData(controlData, wormData, isExclusive, ...
-        zScoreMode(2));
+        controlData = h__normalizeData(controlData, wormData, isExclusive, zScoreMode(2));
     else
-        controlData = h__normalizeData(controlData, wormData, isExclusive, ...
-        zScoreMode(1));
+        controlData = h__normalizeData(controlData, wormData, isExclusive, zScoreMode(1));
     end
 end
 
 % Determine the significance of the worm features.
+%--------------------------------------------------------------------------
 significance.worm.pValue = [];
 significance.worm.qValue = [];
 significance.features = [];
-if ~isempty(controlFiles)
+if ~isempty(control_files)
     
     % Correct the Shapiro-Wilk for multiple testing.
     pNormal = [wormData.pNormal; controlData.pNormal];
@@ -476,7 +310,7 @@ if ~isempty(controlFiles)
         qNormal(~isnan(pNormal)) = mafdr(nonNaNPNormal);
     end
     for i = 1:size(qNormal,2)
-        wormData(i).qNormal = qNormal(1,i);
+        wormData(i).qNormal    = qNormal(1,i);
         controlData(i).qNormal = qNormal(2,:);
     end
     
@@ -517,38 +351,12 @@ if ~isempty(controlFiles)
     significance.features(length(dataInfo), 1).pTValue = [];
     significance.features(length(dataInfo), 1).pWValue = [];
     for i = 1:length(significance.features)
-        
-        
-        % The feature exclusively occurs within the worm or its control.
-%         if isExclusive(i)
-%             significance.features(i).pTValue = 0;
-%             significance.features(i).qTValue = 0;
-%             significance.features(i).pWValue = 0;
-%             significance.features(i).qWValue = 0;
-%             significance.features(i).power = 1;
-            
-%         % There is insufficient information to measure significance.
-%         elseif any(isNaNWorm(:,i)) || any(isNaNControl(:,i))
-%             significance.features(i).pTValue = NaN;
-%             significance.features(i).qTValue = NaN;
-%             significance.features(i).pWValue = NaN;
-%             significance.features(i).qWValue = NaN;
-%             significance.features(i).power = NaN;
-            
+                    
         % The feature significance was measured.
         significance.features(i).pTValue = pTValues(i);
         significance.features(i).qTValue = qTValues(i);
         significance.features(i).pWValue = pWValues(i);
         significance.features(i).qWValue = qWValues(i);
-%         if controlData(i).stdDev > 0
-%             significance.features(i).power = sampsizepwr('t', ...
-%                 [controlData(i).mean controlData(i).stdDev], ...
-%                 wormData(i).mean, [], wormData(i).samples);
-%         elseif isnan(controlData(i).stdDev)
-%             significance.features(i).power = NaN;
-%         else
-%             significance.features(i).power = 1;
-%         end
     end
     
     % Compute the worm significance.
@@ -557,7 +365,7 @@ if ~isempty(controlFiles)
 end
 
 % Save the features.
-if isempty(controlFiles)
+if isempty(control_files)
     save(output_file_path, 'dataInfo', 'wormInfo', 'wormData', '-v7.3');
 else
     save(output_file_path, 'dataInfo', 'wormInfo', 'wormData', 'controlInfo', 'controlData', 'significance', '-v7.3');
@@ -567,7 +375,21 @@ end
 
 
 %% Organize the features.
-function data = h__worm2data(info, useWorm, wormSortI, wormData, wormField, isVerbose)
+function data = h__worm2data(info, useWorm, wormSortI, wormData, wormField)
+
+%For the field of interest, grab:
+%means
+%std_devs
+%samples
+%
+%Compute:
+%mean
+%stdev
+%samples - this is the length of the means
+%pNormal - seg_worm.fex.swtest - only do this when more than 3 samples ...
+%qNormal - 
+
+
 
 % Organize the worm features.
 data(length(info),1).zScore      = [];
@@ -575,12 +397,8 @@ data(length(info),1).dataMeans   = [];
 data(length(info),1).dataStdDevs = [];
 data(length(info),1).dataSamples = [];
 for i = 1:length(info)
-    
-    % Are we displaying the progress?
-    if isVerbose
-        disp(['Organizing "' info(i).name '" ...']);
-    end
-    
+    %each feature
+
     % The feature is not indexed.
     if isnan(info(i).index)
         for j = 1:length(wormData)
@@ -641,20 +459,14 @@ for i = 1:length(info)
         for j = 1:length(wormData)
             
             
-            %posture.eigenProjection(1).histogram.data.mean.all
+            %Basically all of this convoluted code obtains the field of
+            %interest ...
             
             % Get the feature data.
             field = info(i).field.(wormField{j});
             indexI = strfind(field, ')');
             subField = [];
             eval(['subField = wormData{j}.' field(1:indexI) ';']);
-            
-%            subField = 
-%     histogram: [1x1 struct]
-%       forward: [1x1 struct]
-%        paused: [1x1 struct]
-%      backward: [1x1 struct]
-            
             dataMeans = seg_worm.util.getStructField(subField, field((indexI + 2):end), true);
             
             % Organize the feature data.
@@ -671,14 +483,10 @@ for i = 1:length(info)
                 data(i).dataStdDevs = cat(1, data(i).dataStdDevs, nan(sum(useWorm{j}), 1));
                 data(i).dataSamples = cat(1, data(i).dataSamples, nan(sum(useWorm{j}), 1));
             else
-                dataStdDevs = seg_worm.util.getStructField(subField, ...
-                    h__field2StdDev(field((indexI + 2):end)), true);
-                dataSamples = seg_worm.util.getStructField(subField, ...
-                    h__field2Samples(field((indexI + 2):end)), true);
-                data(i).dataStdDevs = ...
-                    cat(1, data(i).dataStdDevs, dataStdDevs(useWorm{j}));
-                data(i).dataSamples = ...
-                    cat(1, data(i).dataSamples, dataSamples(useWorm{j}));
+                dataStdDevs = seg_worm.util.getStructField(subField, h__field2StdDev(field((indexI + 2):end)), true);
+                dataSamples = seg_worm.util.getStructField(subField, h__field2Samples(field((indexI + 2):end)), true);
+                data(i).dataStdDevs = cat(1, data(i).dataStdDevs, dataStdDevs(useWorm{j}));
+                data(i).dataSamples = cat(1, data(i).dataSamples, dataSamples(useWorm{j}));
             end
         end
         
