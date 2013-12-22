@@ -1,5 +1,6 @@
 function testing_code
 
+    %seg_worm.stats.testing_code
  
     %Newer code
     
@@ -15,6 +16,10 @@ function testing_code
     feature_files = sl.dir.rdir([base_path '\**\*.mat']);
     
     wormFiles = {feature_files.name};
+    
+    hist_objs = seg_worm.stats.hist.createHistograms(wormFiles(1:10));
+    
+    
     
     for iFile = 1:10
         cur_file_path = wormFiles{iFile};

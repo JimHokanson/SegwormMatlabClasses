@@ -3,6 +3,16 @@
 % you must reproduce all copyright notices and other proprietary notices
 % on any copies of the Software.
 
+%Functions:
+%worm2histogram
+%addWormHistograms
+%worm2StatsInfo
+%wormStats2Matrix
+%worm2TIF
+
+%Folder format?????
+
+
 function main()
 
 %% WHAT SHOULD WE DO?
@@ -25,7 +35,7 @@ logFile = 'log.txt';
 % Initialize the worm and feature filters.
 % Note: these filters permit you to eliminate bad experiments with poor
 % quality worm segmentations and/or improbable measurement results.
-wormInfoFilter = [];
+wormInfoFilter    = [];
 wormFeatureFilter = [];
 
 % Initialize the quality of the TIF file.
@@ -37,24 +47,24 @@ TIFquality = 2;
 figureFeatureIndices = [];
 
 % Initialize the control and experiment directory prefixes.
-controlDirStr = 'Control-';
+controlDirStr    = 'Control-';
 experimentDirStr = 'Experiment-';
 
 % Initialize the directory names.
-featuresDir = 'features'; % features directory
+featuresDir   = 'features'; % features directory
 histogramsDir = 'histograms'; % histograms directory
 statisticsDir = 'statistics'; % statistics directory
-tifDir = 'TIFs'; % TIFs directory
-figureDir = 'figures'; % figures directory
+tifDir        = 'TIFs'; % TIFs directory
+figureDir     = 'figures'; % figures directory
 
 % Initialize the file names.
 statisticsCSVFile = 'statistics.csv'; % statistics spreadsheet file
 allStatisticsFile = 'all_statistics.mat'; % all statistics file
-figureDataFile = 'figure_data.mat'; % figure data file
+figureDataFile    = 'figure_data.mat'; % figure data file
 
 % Initialize the file suffixes.
-featuresSuffix = '_features.mat'; % features suffix
-histogramSuffix = '_histogram.mat'; % histogram suffix
+featuresSuffix   = '_features.mat'; % features suffix
+histogramSuffix  = '_histogram.mat'; % histogram suffix
 histogramsSuffix = '_histograms.mat'; % all experiment histograms suffix
 statisticsSuffix = '_statistics.mat'; % statistics suffix
 
@@ -63,10 +73,13 @@ statisticsSuffix = '_statistics.mat'; % statistics suffix
 %% PLEASE DO NOT EDIT BELOW THIS LINE!!!
 
 %% SET THE WORKING DIRECTORY.
-workingDir = uigetdir('~');
-if ~workingDir
-    return;
-end
+
+workingDir = 'F:\worm_data\segworm_data\stats_testing';
+
+% workingDir = uigetdir('~');
+% if ~workingDir
+%     return;
+% end
 cd(workingDir);
 
 %% LOG EVERYTHING.
@@ -178,8 +191,7 @@ for i = 1:length(experimentDirs)
     end
 
     % Fix the experiment's strain name in the features files.
-    disp(['*** Fixing the "' experimentDir '" strains to "' ...
-        experimentNames{i} '".']);
+    disp(['*** Fixing the "' experimentDir '" strains to "' experimentNames{i} '".']);
     featureFiles = dir([experimentFeaturesDir '/*' featuresSuffix]);
     featureFiles = {featureFiles.name};
     for j = 1:length(featureFiles)

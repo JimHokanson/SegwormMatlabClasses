@@ -18,6 +18,14 @@ classdef hist < handle
     %   TODO:
     %   --------------------
     %   cleanup property instantation and documentation ...
+    %
+    %   Missing Features:
+    %   -----------------------------------------
+    %   - saving to disk
+    %   - version comparison
+    %   - 
+    %
+    %
     
     properties
         %Identification
@@ -25,88 +33,48 @@ classdef hist < handle
         name 
         short_name
         units
-        feature_category %posture, movement, etc ???
-        motion_type %'all' 'forward' 'paused' 'backward'
-        data_type   %'all' 'absolute' 'positive' 'negative'
-        resolution
-        is_zero_bin
-        is_signed
+        feature_category    %posture, locomotion, morphology, path
         
-        %motion
-        %--------------------------------
-        %direction
-        %all_directions
-        %forward
-        %backward
-        %paused
+        hist_type  %'motion' 'simple' 'event'
+        
+        motion_type %'all' 'forward'    'paused'    'backward'
+        %This is what the midbody of the worm is doing while these values
+        %are obtained
+        
+        data_type   %'all' 'absolute'   'positive'  'negative'
+        %This is an additional filter on the values of the data. Either all
+        %values are included or:
+        %
+        %   - the absolute values are used
+        %   - only positive values are used
+        %   - only negative values are used
+        
+        resolution      %
+        is_zero_bin     %This might be useless
+        is_signed       %
+
         
         pdf      %[1 x n_bins] %probability density value for each bin
         bins     %[1 x n_bins] %the center of each bin
 
+        
         counts   %[n_videos x bins] %The # of values in each bin
         samples = 0  %# of samples for each video, TODO: This needs to be
         %clarified, I also don't like the name ...
         
         
-        mean %[n_videos x 1]
-        std  %[n_videos x 1]
-        
-        
-        
-    
-    %For events:
-%        data: 0.1467  %[n_videos x 1]
-%     samples: 1
-%        mean: 0.1467
-%      stdDev: 0
-        
+        mean = NaN  %[n_videos x 1]
+        std  = NaN  %[n_videos x 1]
     end
-    
-    %Events
-    %----------------------
-    %{
-    
-    worm.locomotion.motion.backward
-    
-        frequency: [1x1 struct]
-                       data: 0.1467
-                    samples: 1
-                       mean: 0.1467
-                     stdDev: 0
-            ratio: [1x1 struct]
-                .time
-                       data: 0.1467
-                    samples: 1
-                       mean: 0.1467
-                     stdDev: 0
-                .distance
-                       data: 0.1467
-                    samples: 1
-                       mean: 0.1467
-                     stdDev: 0
-             time: [1x1 struct] - .histogram
-         distance: [1x1 struct] - .histogram
-        interTime: [1x1 struct] - .histogram
-    interDistance: [1x1 struct] - .histogram
-    
-    worm.locomotion.turns.upsilons
-            frequency: [1x1 struct]
-            timeRatio: [1x1 struct]
-                 time: [1x1 struct]
-            interTime: [1x1 struct]
-        interDistance: [1x1 struct]
-    
-    %}
-    
+
     methods
-        function obj = hist(data,specs,motion_type,data_type)
+        function obj = hist(data,specs,hist_type,motion_type,data_type)
             %
             %
             %   obj = seg_worm.stats.hist(data,resolution,is_signed);
             %
             %   Called by:
             %   seg_worm.stats.hist.createHistograms
-            
             
             obj.feature_category = specs.feature_category;
             obj.resolution       = specs.resolution;
@@ -116,21 +84,96 @@ classdef hist < handle
             obj.short_name       = specs.short_name;
             obj.units            = specs.units;
             
+            obj.hist_type   = hist_type;
             obj.motion_type = motion_type;
             obj.data_type   = data_type;
-            
-            %TODO: Pass in spec, inherit specs from common spec
-            
+                        
             initObject(obj,data)
+        end
+%         function stats = getStats(obj)
+%            %
+%            %    Old Name:
+%            %    worm2StatsInfo
+%            %
+%         end
+    end
+    
+    methods (Static)
+        all_hists = createHistograms(feature_file_path)
+        function objs = mergeObjects(hist_cell_array)
+        %
+        %
+        %   objs = seg_worm.stats.hist.mergeObjects(hist_cell_array)
+        
+        %??? - what gets merged, see addWormHistograms
+        
+        %Merging involves:
+        %- adding samples
+        %- checking hists for consistency of props
+        %- concatenate props that are by n_videos
+        %
+        %??? what about pdf and bins
+        
+        %See end of class for how this works, needs to be rewritten ...
+        [counts,bins] = normBinData(counts, bins, resolution);
+
+        
+        
+        % Combine the PDFs.
+        %==============================
+% % % data.bins = bins;
+% % % data.PDF = zeros(1, length(bins));
+% % % numSets = 0;
+% % % for i = 1:length(data.data.samples)
+% % %     if data.data.samples(i) > 0
+% % %         data.PDF = data.PDF + data.data.counts(i,:) ./ data.data.samples(i);
+% % %         numSets = numSets + 1;
+% % %     end
+% % % end
+        
+        keyboard
             
         end
     end
     
-    methods (Static)
-        createHistograms(feature_file_path)
+end
+
+%% Normalize binned data.
+function [normData,normBins] = normBinData(data, bins, resolution)
+
+% Initialize the normalized data and bins.
+normData = [];
+normBins = [];
+if isempty(data)
+    return;
+end
+
+% Compute the normalized bins.
+minBin = min(cellfun(@(x) x(1), bins));
+if isnan(minBin)
+    return;
+end
+maxBin   = max(cellfun(@(x) x(end), bins));
+numBins  = round((maxBin - minBin) / resolution) + 1;
+normBins = linspace(minBin, maxBin, numBins);
+
+% Normalize the data.
+normData = zeros(length(data), numBins);
+for i = 1:length(data)
+    
+    % No data.
+    if isnan(bins{i})
+        continue;
     end
     
+    % Copy the data.
+    startI = round((bins{i}(1) - minBin) / resolution) + 1;
+    endI = round((bins{i}(end) - minBin) / resolution) + 1;
+    normData(i, startI:endI) = data{i};
 end
+end
+
+
 
 %{
 

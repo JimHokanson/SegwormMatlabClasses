@@ -31,8 +31,8 @@ classdef stats < handle
     end
     
     methods (Static)
-       %seg_worm.stats.initObject(hist_files, control_files)
-       initObject(hist_files, control_files)
+       %seg_worm.stats.initObject(hist_objs)
+       initObject(hist_objs)
     end
     
 end
