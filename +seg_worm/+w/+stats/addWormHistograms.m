@@ -408,15 +408,18 @@ if isSigned
     data.allData.stdDev.neg = NaN; % unrecoverable
 end
 
+%This is the part that really matters ...
+
 % Combine the data.
+%==========================================================================
 data.data.counts     = counts;
 data.data.samples    = [];
 data.data.mean.all   = [];
 data.data.stdDev.all = [];
 for i = 1:length(addData)
     if isempty(addData{i})
-        data.data.samples = cat(1, data.data.samples, 0);
-        data.data.mean.all = cat(1, data.data.mean.all, NaN);
+        data.data.samples    = cat(1, data.data.samples, 0);
+        data.data.mean.all   = cat(1, data.data.mean.all, NaN);
         data.data.stdDev.all = cat(1, data.data.stdDev.all, NaN);
     else
         data.data.samples = ...
@@ -438,11 +441,11 @@ if isSigned
     data.data.stdDev.neg = [];
     for i = 1:length(addData)
         if isempty(addData{i})
-            data.data.mean.abs = cat(1, data.data.mean.abs, NaN);
+            data.data.mean.abs   = cat(1, data.data.mean.abs, NaN);
             data.data.stdDev.abs = cat(1, data.data.stdDev.abs, NaN);
-            data.data.mean.pos = cat(1, data.data.mean.pos, NaN);
+            data.data.mean.pos   = cat(1, data.data.mean.pos, NaN);
             data.data.stdDev.pos = cat(1, data.data.stdDev.pos, NaN);
-            data.data.mean.neg = cat(1, data.data.mean.neg, NaN);
+            data.data.mean.neg   = cat(1, data.data.mean.neg, NaN);
             data.data.stdDev.neg = cat(1, data.data.stdDev.neg, NaN);
         else
             data.data.mean.abs = ...
@@ -460,6 +463,9 @@ if isSigned
         end
     end
 end
+
+%==========================================================================
+
 
 % Combine the sets.
 data.sets.samples = sum(~isnan(data.data.mean.all));

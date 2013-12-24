@@ -115,21 +115,74 @@ classdef hist < handle
         %??? what about pdf and bins
         
         %See end of class for how this works, needs to be rewritten ...
+        
+        %Eeek, this is for 708 features, not just 1!
+        
+        
+        %The goal of this function is to go from n collections of 708
+        %histogram summaries of features each, to one set of 708 histogram
+        %summaries, that has n elements, one for each video
+        %
+        %i.e. from something like:
+        %{a.b a.b a.b a.b} where .b may have size [1 x m]
+        %
+        %to:
+        %
+        %a.b, where .b is of size [n x m], in this case [4 x m]
+        %
+        %This requires merging histograms that are computed using different
+        %bins. IMPORTANTLY, because of the way that we do the bin
+        %definitions, bin edges will always match if they are close, i.e.
+        %we'll NEVER have:
+        %edges 1: 1,2,3,4,5
+        %edges 2: 3.5,4.5,5.5,6.5
+        %
+        %Instead we might have:
+        %edges 2: 3,4,5,6,7,8
+        %
+        %This simplifies the merging process a bit
+        
+        n_features = length(hist_cell_array{1});
+        
+        temp_results = cell(1,n_features);
+        
+        for iFeature = 1:n_features 
+        
+        temp = cellfun(@(x) x(iFeature),hist_cell_array,'un',0);
+        cur_feature_array = [temp{:}]; %cellfun doesn't support arrays of objects
+        
+        keyboard
+        
+        %JAH: At this point ...
+            
+        all_bins   = cellfun(@(x) x.bins,hist_cell_array,'un',0);
+        all_counts = cellfun(@(x) x.counts,hist_cell_array,'un',0);
+        
+        min_bin = min(cellfun(@(x) x(1),all_bins));
+        max_bin = max(cellfun(@(x) x(end),all_bins));
+        
+        
+        
+        keyboard
+        
         [counts,bins] = normBinData(counts, bins, resolution);
 
-        
-        
         % Combine the PDFs.
         %==============================
-% % % data.bins = bins;
-% % % data.PDF = zeros(1, length(bins));
-% % % numSets = 0;
-% % % for i = 1:length(data.data.samples)
-% % %     if data.data.samples(i) > 0
-% % %         data.PDF = data.PDF + data.data.counts(i,:) ./ data.data.samples(i);
-% % %         numSets = numSets + 1;
-% % %     end
-% % % end
+        % % % data.bins = bins;
+        % % % data.PDF = zeros(1, length(bins));
+        % % % numSets = 0;
+        % % % for i = 1:length(data.data.samples)
+        % % %     if data.data.samples(i) > 0
+        % % %         data.PDF = data.PDF + data.data.counts(i,:) ./ data.data.samples(i);
+        % % %         numSets = numSets + 1;
+        % % %     end
+        % % % end
+
+        
+        end
+        
+
         
         keyboard
             
@@ -168,7 +221,7 @@ for i = 1:length(data)
     
     % Copy the data.
     startI = round((bins{i}(1) - minBin) / resolution) + 1;
-    endI = round((bins{i}(end) - minBin) / resolution) + 1;
+    endI   = round((bins{i}(end) - minBin) / resolution) + 1;
     normData(i, startI:endI) = data{i};
 end
 end
