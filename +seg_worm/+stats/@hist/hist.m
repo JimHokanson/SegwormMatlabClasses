@@ -74,17 +74,35 @@ classdef hist < handle
         is_signed       %
         %--------------------------------------------------------------
         
-        pdf      %[1 x n_bins] %probability density value for each bin
-        bins     %[1 x n_bins] %the center of each bin
+        pdf     = NaN %[1 x n_bins] %probability density value for each bin
+        bins    = NaN %[1 x n_bins] %the center of each bin
 
         
-        counts   %[n_videos x bins] %The # of values in each bin
+        counts  = 0 %[n_videos x bins] %The # of values in each bin
         samples = 0  %[n_videos x 1] # of samples for each video, TODO: This needs to be
         %clarified, I also don't like the name ...
         
         
         mean = NaN  %[n_videos x 1]
         std  = NaN  %[n_videos x 1]
+    end
+    
+    properties (Hidden, Dependent)
+       first_bin
+       last_bin
+       n_bins
+    end
+    
+    methods
+        function value = get.first_bin(obj)
+           value = obj.bins(1);
+        end
+        function value = get.last_bin(obj)
+           value = obj.bins(end);
+        end
+        function value = get.n_bins(obj)
+           value = length(obj.bins);
+        end
     end
 
     methods
@@ -216,24 +234,26 @@ classdef hist < handle
         
         %Align all bins
         %----------------------------------------------------------------
-        n_bins      = arrayfun(@(x) length(x.bins),cur_feature_array);
-        %TODO: Incorporate missing data => n_bins == 0
-        
-        start_bins  = arrayfun(@(x) x.bins(1),cur_feature_array);
-        
-        min_bin     = min(start_bins);
-        max_bin     = max(arrayfun(@(x) x.bins(end),cur_feature_array));
+        n_bins     = [cur_feature_array.n_bins];
+        start_bins = [cur_feature_array.first_bin];
+        min_bin    = min(start_bins);
+        max_bin    = max([cur_feature_array.last_bin]);
         
         cur_resolution = final_obj.resolution;
         new_bins       = min_bin:cur_resolution:max_bin;
         
-        start_indices = (start_bins - min_bin)./cur_resolution + 1;
+        %Colon operator was giving warnings about non-integer indices :/
+        start_indices = round((start_bins - min_bin)./cur_resolution + 1);
         end_indices   = start_indices + n_bins - 1;
         
         new_counts = zeros(length(new_bins),n_videos);
         
         for iVideo = 1:n_videos
-           new_counts(start_indices(iVideo):end_indices(iVideo),iVideo) = cur_feature_array(iVideo).counts;
+           cur_start = start_indices(iVideo);
+           if ~isnan(cur_start)
+           cur_end   = end_indices(iVideo);
+           new_counts(cur_start:cur_end,iVideo) = cur_feature_array(iVideo).counts;
+           end
         end
         
         %Update final properties
