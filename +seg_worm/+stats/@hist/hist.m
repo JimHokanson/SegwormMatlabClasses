@@ -24,12 +24,32 @@ classdef hist < handle
     %   - saving to disk
     %   - version comparison
     %   - 
-    %
-    %
+    
+    %{
+    
+    Comparison to old code:
+    ------------------------------------------------------------------
+    This version of the histogram differs significantly from the old
+    SegWorm histogram code. Notably:
+    
+    1) There is much less reliance on saving values to disk. There is no
+    need to actually save files to disk.
+    2) Two types of data are missing from the histogram.
+        - stats computed on all video data merged together
+        - stats computed on the stats, i.e. the mean of the means
+    3) No special code is given to "experimental" vs "control" data.
+    4) Signed histograms are separate objects instead of different
+    properties in one object. This leads to more hist objects for a given
+    set of features, but makes the code more straighforward. 
+    
+    Functionally nothing should be lost by doing this.
+    
+    %}
+    
     
     properties
         %Identification
-        %----------------------------------
+        %--------------------------------------------------------------
         name 
         short_name
         units
@@ -52,14 +72,14 @@ classdef hist < handle
         resolution      %
         is_zero_bin     %This might be useless
         is_signed       %
-
+        %--------------------------------------------------------------
         
         pdf      %[1 x n_bins] %probability density value for each bin
         bins     %[1 x n_bins] %the center of each bin
 
         
         counts   %[n_videos x bins] %The # of values in each bin
-        samples = 0  %# of samples for each video, TODO: This needs to be
+        samples = 0  %[n_videos x 1] # of samples for each video, TODO: This needs to be
         %clarified, I also don't like the name ...
         
         
@@ -76,6 +96,11 @@ classdef hist < handle
             %   Called by:
             %   seg_worm.stats.hist.createHistograms
             
+            %Added this to allow deep copy code to work
+            if nargin == 0
+                return
+            end
+            
             obj.feature_category = specs.feature_category;
             obj.resolution       = specs.resolution;
             obj.is_zero_bin      = specs.is_zero_bin;
@@ -89,6 +114,34 @@ classdef hist < handle
             obj.data_type   = data_type;
                         
             initObject(obj,data)
+        end
+        function obj_out = createCopy(obj_in)
+            %
+            %   This is used to create a merged object without affecting 
+            %   the originals ...
+            %
+            %   obj_out = seg_worm.stats.hist.createCopy(obj_in)
+            %
+            %   NOTE: The stats are not currently copied as this is
+            %   primarily for merging objects where the stats will be
+            %   overwritten.
+            
+            
+            obj_out = seg_worm.stats.hist;
+           
+            obj_out.feature_category = obj_in.feature_category;
+            obj_out.resolution       = obj_in.resolution;
+            obj_out.is_zero_bin      = obj_in.is_zero_bin;
+            obj_out.is_signed        = obj_in.is_signed;
+            obj_out.name             = obj_in.name;
+            obj_out.short_name       = obj_in.short_name;
+            obj_out.units            = obj_in.units;
+            
+            obj_out.hist_type   = obj_in.hist_type;
+            obj_out.motion_type = obj_in.motion_type;
+            obj_out.data_type   = obj_in.data_type;
+            
+           
         end
 %         function stats = getStats(obj)
 %            %
@@ -104,21 +157,20 @@ classdef hist < handle
         %
         %
         %   objs = seg_worm.stats.hist.mergeObjects(hist_cell_array)
-        
-        %??? - what gets merged, see addWormHistograms
-        
-        %Merging involves:
-        %- adding samples
-        %- checking hists for consistency of props
-        %- concatenate props that are by n_videos
         %
-        %??? what about pdf and bins
+        %   Inputs
+        %   ==============================================================
+        %
+        %   Outputs
+        %   ==============================================================
+        %
+        %
+        %
+        %
+        %   Currently each object should only contain a single set of data
+        %   (i.e. single video) prior to merging. This could be changed.
         
-        %See end of class for how this works, needs to be rewritten ...
-        
-        %Eeek, this is for 708 features, not just 1!
-        
-        
+
         %The goal of this function is to go from n collections of 708
         %histogram summaries of features each, to one set of 708 histogram
         %summaries, that has n elements, one for each video
@@ -134,6 +186,7 @@ classdef hist < handle
         %bins. IMPORTANTLY, because of the way that we do the bin
         %definitions, bin edges will always match if they are close, i.e.
         %we'll NEVER have:
+        %
         %edges 1: 1,2,3,4,5
         %edges 2: 3.5,4.5,5.5,6.5
         %
@@ -142,89 +195,102 @@ classdef hist < handle
         %
         %This simplifies the merging process a bit
         
+        %TODO: Add check for multiple videos in any object, this is not yet
+        %supported ...
+        
+        n_videos   = length(hist_cell_array);
         n_features = length(hist_cell_array{1});
         
         temp_results = cell(1,n_features);
         
         for iFeature = 1:n_features 
         
+        %Here we are indexing into arrays of objects that are encased in a
+        %cell array:
         temp = cellfun(@(x) x(iFeature),hist_cell_array,'un',0);
         cur_feature_array = [temp{:}]; %cellfun doesn't support arrays of objects
-        
-        keyboard
-        
-        %JAH: At this point ...
-            
-        all_bins   = cellfun(@(x) x.bins,hist_cell_array,'un',0);
-        all_counts = cellfun(@(x) x.counts,hist_cell_array,'un',0);
-        
-        min_bin = min(cellfun(@(x) x(1),all_bins));
-        max_bin = max(cellfun(@(x) x(end),all_bins));
-        
-        
-        
-        keyboard
-        
-        [counts,bins] = normBinData(counts, bins, resolution);
+                
+        %Create an output object with same meta properties
+        final_obj   =  cur_feature_array(1).createCopy();
 
-        % Combine the PDFs.
-        %==============================
-        % % % data.bins = bins;
-        % % % data.PDF = zeros(1, length(bins));
-        % % % numSets = 0;
-        % % % for i = 1:length(data.data.samples)
-        % % %     if data.data.samples(i) > 0
-        % % %         data.PDF = data.PDF + data.data.counts(i,:) ./ data.data.samples(i);
-        % % %         numSets = numSets + 1;
-        % % %     end
-        % % % end
-
+        
+        %Align all bins
+        %----------------------------------------------------------------
+        n_bins      = arrayfun(@(x) length(x.bins),cur_feature_array);
+        %TODO: Incorporate missing data => n_bins == 0
+        
+        start_bins  = arrayfun(@(x) x.bins(1),cur_feature_array);
+        
+        min_bin     = min(start_bins);
+        max_bin     = max(arrayfun(@(x) x.bins(end),cur_feature_array));
+        
+        cur_resolution = final_obj.resolution;
+        new_bins       = min_bin:cur_resolution:max_bin;
+        
+        start_indices = (start_bins - min_bin)./cur_resolution + 1;
+        end_indices   = start_indices + n_bins - 1;
+        
+        new_counts = zeros(length(new_bins),n_videos);
+        
+        for iVideo = 1:n_videos
+           new_counts(start_indices(iVideo):end_indices(iVideo),iVideo) = cur_feature_array(iVideo).counts;
+        end
+        
+        %Update final properties
+        %------------------------------------------------------------------
+        final_obj.bins    = new_bins;
+        final_obj.counts  = new_counts;
+        final_obj.samples = [cur_feature_array.samples]';
+        final_obj.mean    = [cur_feature_array.mean]';
+        final_obj.std     = [cur_feature_array.std]';
+        final_obj.pdf     = sum(final_obj.counts,2)./sum(final_obj.samples);
+        
+        %Hold onto final object for output
+        temp_results{iFeature} = final_obj;
         
         end
         
-
-        
-        keyboard
-            
+        objs = [temp_results{:}];
+                    
         end
     end
     
 end
 
-%% Normalize binned data.
-function [normData,normBins] = normBinData(data, bins, resolution)
-
-% Initialize the normalized data and bins.
-normData = [];
-normBins = [];
-if isempty(data)
-    return;
-end
-
-% Compute the normalized bins.
-minBin = min(cellfun(@(x) x(1), bins));
-if isnan(minBin)
-    return;
-end
-maxBin   = max(cellfun(@(x) x(end), bins));
-numBins  = round((maxBin - minBin) / resolution) + 1;
-normBins = linspace(minBin, maxBin, numBins);
-
-% Normalize the data.
-normData = zeros(length(data), numBins);
-for i = 1:length(data)
-    
-    % No data.
-    if isnan(bins{i})
-        continue;
-    end
-    
-    % Copy the data.
-    startI = round((bins{i}(1) - minBin) / resolution) + 1;
-    endI   = round((bins{i}(end) - minBin) / resolution) + 1;
-    normData(i, startI:endI) = data{i};
-end
-end
+% % %% Normalize binned data.
+% % function [normData,normBins] = normBinData(data, bins, resolution)
+% % 
+% % % Initialize the normalized data and bins.
+% % normData = [];
+% % normBins = [];
+% % if isempty(data)
+% %     return;
+% % end
+% % 
+% % % Compute the normalized bins.
+% % minBin = min(cellfun(@(x) x(1), bins));
+% % if isnan(minBin)
+% %     return;
+% % end
+% % maxBin   = max(cellfun(@(x) x(end), bins));
+% % numBins  = round((maxBin - minBin) / resolution) + 1;
+% % normBins = linspace(minBin, maxBin, numBins);
+% % 
+% % % Normalize the data.
+% % normData = zeros(length(data), numBins);
+% % for i = 1:length(data)
+% %     
+% %     % No data.
+% %     if isnan(bins{i})
+% %         continue;
+% %     end
+% %     
+% %     % Copy the data.
+% %     startI = round((bins{i}(1) - minBin) / resolution) + 1;
+% %     endI   = round((bins{i}(end) - minBin) / resolution) + 1;
+% %     normData(i, startI:endI) = data{i};
+% % end
+% % end
 
 
 
