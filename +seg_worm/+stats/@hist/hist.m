@@ -3,17 +3,22 @@ classdef hist < handle
     %   Class:
     %   seg_worm.stats.hist
     %
-    %   See Also:
-    %   seg_worm.util.histogram
-    %   seg_worm.w.stats.addWormHistograms 
+    %   Old Names: (NOTE: The last part of the names are the SegWorm names)
+    %   - seg_worm.w.stats.worm2histogram 
+    %   - seg_worm.util.histogram
+    %   - seg_worm.util.nanHistogram
+    %   - seg_worm.w.stats.addWormHistograms
+    %
+    %   Current Status:
+    %   -----------------------------------------------------------------
+    %   Working but could be optimized a bit and there are some missing
+    %   features. At this point however it will work for computing the
+    %   statistics objects. Documentation could also be improved.
     %
     %
-    %   Main Code:
-    %   initObject
-    %   
     %   Questions:
     %   -----------------------------------------------------------------
-    %   When calculating the stats, how are counts and samples used????
+    %
     %
     %   TODO:
     %   --------------------
@@ -23,7 +28,13 @@ classdef hist < handle
     %   -----------------------------------------
     %   - saving to disk
     %   - version comparison
-    %   - 
+    %   -
+    %
+    %   File Dependencies
+    %   ------------------------------------------------------------------
+    %
+    %
+    %
     
     %{
     
@@ -40,7 +51,7 @@ classdef hist < handle
     3) No special code is given to "experimental" vs "control" data.
     4) Signed histograms are separate objects instead of different
     properties in one object. This leads to more hist objects for a given
-    set of features, but makes the code more straighforward. 
+    set of features, but makes the code more straighforward.
     
     Functionally nothing should be lost by doing this.
     
@@ -50,9 +61,9 @@ classdef hist < handle
     properties
         %Identification
         %--------------------------------------------------------------
-        name 
+        name
         short_name
-        units
+        units               %units associated with the bin values
         feature_category    %posture, locomotion, morphology, path
         
         hist_type  %'motion' 'simple' 'event'
@@ -69,18 +80,19 @@ classdef hist < handle
         %   - only positive values are used
         %   - only negative values are used
         
-        resolution      %
-        is_zero_bin     %This might be useless
+        resolution      %Bin resolution
+        is_zero_bin     %This might be useless ...
         is_signed       %
+        
         %--------------------------------------------------------------
         
-        pdf     = NaN %[1 x n_bins] %probability density value for each bin
-        bins    = NaN %[1 x n_bins] %the center of each bin
-
+        pdf     = NaN %[1 x n_bins] %Probability density value for each bin
+        bins    = NaN %[1 x n_bins] %The center of each bin
         
-        counts  = 0 %[n_videos x bins] %The # of values in each bin
-        samples = 0  %[n_videos x 1] # of samples for each video, TODO: This needs to be
-        %clarified, I also don't like the name ...
+        
+        counts    = 0 %[n_videos x bins] %The # of values in each bin
+        n_samples = 0 %[n_videos x 1] # of samples for each video, TODO: This
+        %needs to be clarified, I also don't like the name ...
         
         
         mean = NaN  %[n_videos x 1]
@@ -88,54 +100,46 @@ classdef hist < handle
     end
     
     properties (Hidden, Dependent)
-       first_bin
-       last_bin
-       n_bins
+        n_videos   %# of videos that the object contains ...
+        first_bin
+        last_bin
+        n_bins
     end
     
     methods
+        function value = get.n_videos(obj)
+            value = length(obj.mean);
+        end
         function value = get.first_bin(obj)
-           value = obj.bins(1);
+            value = obj.bins(1);
         end
         function value = get.last_bin(obj)
-           value = obj.bins(end);
+            value = obj.bins(end);
         end
         function value = get.n_bins(obj)
-           value = length(obj.bins);
+            value = length(obj.bins);
         end
     end
-
+    
     methods
-        function obj = hist(data,specs,hist_type,motion_type,data_type)
+        function objs = hist(feature_file_paths)
             %
             %
-            %   obj = seg_worm.stats.hist(data,resolution,is_signed);
+            %   obj = seg_worm.stats.hist;
             %
-            %   Called by:
-            %   seg_worm.stats.hist.createHistograms
+            %   TODO: Allow loading from saved file as well.
             
             %Added this to allow deep copy code to work
             if nargin == 0
                 return
             end
             
-            obj.feature_category = specs.feature_category;
-            obj.resolution       = specs.resolution;
-            obj.is_zero_bin      = specs.is_zero_bin;
-            obj.is_signed        = specs.is_signed;
-            obj.name             = specs.name;
-            obj.short_name       = specs.short_name;
-            obj.units            = specs.units;
+            objs = seg_worm.stats.hist.initObjects(feature_file_paths);
             
-            obj.hist_type   = hist_type;
-            obj.motion_type = motion_type;
-            obj.data_type   = data_type;
-                        
-            initObject(obj,data)
         end
         function obj_out = createCopy(obj_in)
             %
-            %   This is used to create a merged object without affecting 
+            %   This is used to create a merged object without affecting
             %   the originals ...
             %
             %   obj_out = seg_worm.stats.hist.createCopy(obj_in)
@@ -146,7 +150,7 @@ classdef hist < handle
             
             
             obj_out = seg_worm.stats.hist;
-           
+            
             obj_out.feature_category = obj_in.feature_category;
             obj_out.resolution       = obj_in.resolution;
             obj_out.is_zero_bin      = obj_in.is_zero_bin;
@@ -159,161 +163,133 @@ classdef hist < handle
             obj_out.motion_type = obj_in.motion_type;
             obj_out.data_type   = obj_in.data_type;
             
-           
+            
         end
-%         function stats = getStats(obj)
-%            %
-%            %    Old Name:
-%            %    worm2StatsInfo
-%            %
-%         end
+        %         function stats = getStats(obj)
+        %            %
+        %            %    Old Name:
+        %            %    worm2StatsInfo
+        %            %
+        %         end
     end
     
+    
+    
     methods (Static)
-        all_hists = createHistograms(feature_file_path)
+        all_hists = initObjects(feature_file_path)
         function objs = mergeObjects(hist_cell_array)
-        %
-        %
-        %   objs = seg_worm.stats.hist.mergeObjects(hist_cell_array)
-        %
-        %   Inputs
-        %   ==============================================================
-        %
-        %   Outputs
-        %   ==============================================================
-        %
-        %
-        %
-        %
-        %   Currently each object should only contain a single set of data
-        %   (i.e. single video) prior to merging. This could be changed.
-        
-
-        %The goal of this function is to go from n collections of 708
-        %histogram summaries of features each, to one set of 708 histogram
-        %summaries, that has n elements, one for each video
-        %
-        %i.e. from something like:
-        %{a.b a.b a.b a.b} where .b may have size [1 x m]
-        %
-        %to:
-        %
-        %a.b, where .b is of size [n x m], in this case [4 x m]
-        %
-        %This requires merging histograms that are computed using different
-        %bins. IMPORTANTLY, because of the way that we do the bin
-        %definitions, bin edges will always match if they are close, i.e.
-        %we'll NEVER have:
-        %
-        %edges 1: 1,2,3,4,5
-        %edges 2: 3.5,4.5,5.5,6.5
-        %
-        %Instead we might have:
-        %edges 2: 3,4,5,6,7,8
-        %
-        %This simplifies the merging process a bit
-        
-        %TODO: Add check for multiple videos in any object, this is not yet
-        %supported ...
-        
-        n_videos   = length(hist_cell_array);
-        n_features = length(hist_cell_array{1});
-        
-        temp_results = cell(1,n_features);
-        
-        for iFeature = 1:n_features 
-        
-        %Here we are indexing into arrays of objects that are encased in a
-        %cell array:
-        temp = cellfun(@(x) x(iFeature),hist_cell_array,'un',0);
-        cur_feature_array = [temp{:}]; %cellfun doesn't support arrays of objects
+            %
+            %
+            %   objs = seg_worm.stats.hist.mergeObjects(hist_cell_array)
+            %
+            %   Inputs
+            %   ==============================================================
+            %
+            %   Outputs
+            %   ==============================================================
+            %
+            %
+            %
+            %
+            %   Currently each object should only contain a single set of data
+            %   (i.e. single video) prior to merging. This could be changed.
+            
+            
+            %The goal of this function is to go from n collections of 708
+            %histogram summaries of features each, to one set of 708 histogram
+            %summaries, that has n elements, one for each video
+            %
+            %i.e. from something like:
+            %{a.b a.b a.b a.b} where .b may have size [1 x m]
+            %
+            %to:
+            %
+            %a.b, where .b is of size [n x m], in this case [4 x m]
+            %
+            %This requires merging histograms that are computed using different
+            %bins. IMPORTANTLY, because of the way that we do the bin
+            %definitions, bin edges will always match if they are close, i.e.
+            %we'll NEVER have:
+            %
+            %edges 1: 1,2,3,4,5
+            %edges 2: 3.5,4.5,5.5,6.5
+            %
+            %Instead we might have:
+            %edges 2: 3,4,5,6,7,8
+            %
+            %This simplifies the merging process a bit. This is accomplished by
+            %always setting bin edges at multiples of the resolution. This was
+            %not done previously ...
+            
+            all_objs = [hist_cell_array{:}];
+            
+            n_videos_per_object = [all_objs(1,:).n_videos];
+            
+            if any(n_videos_per_object ~= 1)
+                error('Multiple videos per object not yet implemented')
+            end
+            
+            n_videos   = size(all_objs,2);
+            n_features = size(all_objs,1);
+            
+            temp_results = cell(1,n_features);
+            
+            for iFeature = 1:n_features
                 
-        %Create an output object with same meta properties
-        final_obj   =  cur_feature_array(1).createCopy();
-
-        
-        %Align all bins
-        %----------------------------------------------------------------
-        n_bins     = [cur_feature_array.n_bins];
-        start_bins = [cur_feature_array.first_bin];
-        min_bin    = min(start_bins);
-        max_bin    = max([cur_feature_array.last_bin]);
-        
-        cur_resolution = final_obj.resolution;
-        new_bins       = min_bin:cur_resolution:max_bin;
-        
-        %Colon operator was giving warnings about non-integer indices :/
-        start_indices = round((start_bins - min_bin)./cur_resolution + 1);
-        end_indices   = start_indices + n_bins - 1;
-        
-        new_counts = zeros(length(new_bins),n_videos);
-        
-        for iVideo = 1:n_videos
-           cur_start = start_indices(iVideo);
-           if ~isnan(cur_start)
-           cur_end   = end_indices(iVideo);
-           new_counts(cur_start:cur_end,iVideo) = cur_feature_array(iVideo).counts;
-           end
-        end
-        
-        %Update final properties
-        %------------------------------------------------------------------
-        final_obj.bins    = new_bins;
-        final_obj.counts  = new_counts;
-        final_obj.samples = [cur_feature_array.samples]';
-        final_obj.mean    = [cur_feature_array.mean]';
-        final_obj.std     = [cur_feature_array.std]';
-        final_obj.pdf     = sum(final_obj.counts,2)./sum(final_obj.samples);
-        
-        %Hold onto final object for output
-        temp_results{iFeature} = final_obj;
-        
-        end
-        
-        objs = [temp_results{:}];
-                    
+                cur_feature_array = all_objs(iFeature,:);
+                
+                %Create an output object with same meta properties
+                final_obj   =  cur_feature_array(1).createCopy();
+                
+                
+                %Align all bins
+                %----------------------------------------------------------------
+                n_bins     = [cur_feature_array.n_bins];
+                start_bins = [cur_feature_array.first_bin];
+                min_bin    = min(start_bins);
+                max_bin    = max([cur_feature_array.last_bin]);
+                
+                cur_resolution = final_obj.resolution;
+                new_bins       = min_bin:cur_resolution:max_bin;
+                
+                %Colon operator was giving warnings about non-integer indices :/
+                start_indices = round((start_bins - min_bin)./cur_resolution + 1);
+                end_indices   = start_indices + n_bins - 1;
+                
+                new_counts = zeros(length(new_bins),n_videos);
+                
+                for iVideo = 1:n_videos
+                    cur_start = start_indices(iVideo);
+                    if ~isnan(cur_start)
+                        cur_end   = end_indices(iVideo);
+                        new_counts(cur_start:cur_end,iVideo) = cur_feature_array(iVideo).counts;
+                    end
+                end
+                
+                %Update final properties
+                %------------------------------------------------------------------
+                final_obj.bins      = new_bins;
+                final_obj.counts    = new_counts;
+                final_obj.n_samples = [cur_feature_array.n_samples]';
+                final_obj.mean      = [cur_feature_array.mean]';
+                final_obj.std       = [cur_feature_array.std]';
+                final_obj.pdf       = sum(final_obj.counts,2)./sum(final_obj.n_samples);
+                
+                %Hold onto final object for output
+                temp_results{iFeature} = final_obj;
+                
+            end
+            
+            objs = [temp_results{:}];
+            
         end
     end
     
 end
 
-% % %% Normalize binned data.
-% % function [normData,normBins] = normBinData(data, bins, resolution)
-% % 
-% % % Initialize the normalized data and bins.
-% % normData = [];
-% % normBins = [];
-% % if isempty(data)
-% %     return;
-% % end
-% % 
-% % % Compute the normalized bins.
-% % minBin = min(cellfun(@(x) x(1), bins));
-% % if isnan(minBin)
-% %     return;
-% % end
-% % maxBin   = max(cellfun(@(x) x(end), bins));
-% % numBins  = round((maxBin - minBin) / resolution) + 1;
-% % normBins = linspace(minBin, maxBin, numBins);
-% % 
-% % % Normalize the data.
-% % normData = zeros(length(data), numBins);
-% % for i = 1:length(data)
-% %     
-% %     % No data.
-% %     if isnan(bins{i})
-% %         continue;
-% %     end
-% %     
-% %     % Copy the data.
-% %     startI = round((bins{i}(1) - minBin) / resolution) + 1;
-% %     endI   = round((bins{i}(end) - minBin) / resolution) + 1;
-% %     normData(i, startI:endI) = data{i};
-% % end
-% % end
 
 
-
+%Old plotting code ...
 %{
 
  % Show the results.

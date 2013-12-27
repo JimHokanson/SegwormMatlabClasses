@@ -709,8 +709,8 @@ if ~isempty(pValues)
     %-------------------------------
     %???What are the defaults ????
     
-    qNormal = pValues;
-    %[~, qNormal] = mafdr(pValues);
+    %qNormal = pValues;
+    [~, qNormal] = mafdr(pValues);
 end
 qAllValues = nan(length(data), 1);
 qAllValues(~isnan(pAllValues)) = qNormal;

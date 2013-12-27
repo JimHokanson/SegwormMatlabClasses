@@ -2,13 +2,15 @@ function testing_code
 
     %seg_worm.stats.testing_code
  
+    %seg_worm.w.stats.worm2histogram - create a hist file for a feature file
+    
+    
     %Newer code
     
     feature_path = '/Users/jameshokanson/Dropbox/worm_data/video/testing_with_GUI/results/mec-4 (u253) off food x_2010_04_21__17_19_20__1_features.mat';
     feature_path = 'F:\worm_data\segworm_data\video\testing_with_GUI\results\mec-4 (u253) off food x_2010_04_21__17_19_20__1_features.mat';
-    seg_worm.stats.hist.createHistograms(feature_path);
     
-    %Old code for testing
+    
     
     base_path = 'F:\worm_data\segworm_data\features\gene_NA\allele_NA';
     hist_path = 'F:\worm_data\segworm_data\histograms';
@@ -17,10 +19,12 @@ function testing_code
     
     wormFiles = {feature_files.name};
     
-    hist_objs = seg_worm.stats.hist.createHistograms(wormFiles(1:10));
+    hist_objs = seg_worm.stats.hist(wormFiles(1:10));
     
+    seg_worm.stats(hist_objs);
     
-    
+    %Old code for testing
+    %----------------------------------------------------------------------
     for iFile = 1:10
         cur_file_path = wormFiles{iFile};
         [~,cur_name]  = fileparts(cur_file_path);
