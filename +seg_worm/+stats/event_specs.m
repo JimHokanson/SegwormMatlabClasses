@@ -16,7 +16,7 @@ classdef event_specs < seg_worm.stats.specs
             %
             %
             
-           csv_path = fullfile(sl.dir.getMyBasePath,'event_features.csv');
+           csv_path = fullfile(sl.dir.getMyBasePath,'docs','event_features.csv');
            
            info = {'feature_field'      1
                    'sub_field'          1

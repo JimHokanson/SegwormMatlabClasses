@@ -3,10 +3,12 @@ classdef features < handle
     %   Class:
     %   seg_worm.features
     %
-    %   TODO: I think this object will be the container for the features
-    %   file.
-    %
-    %   TODO:
+    %   TODOS
+    %   ===================================================================
+    %   1) Implement info usage
+    %   2) Implement saving and loading from struct
+    %   3) Finish comparison function ...
+    %   4) Implement options for processing and debugging ...
     
     properties
         morphology
@@ -22,11 +24,16 @@ classdef features < handle
             %    seg_worm.features
             %
             %    Inputs
-            %    ====================================
+            %    ===================================================
+            %    nw   : seg_worm.normalized_worm
+            %    info : seg_worm.info
+            %
+            %    Optional Inputs
+            %    ====================================================
             %    p_opts : seg_worm.features.processing_options
             %    d_opts : seg_worm.features.debug_options
             
-            
+            %TODO: Extract these from info
             FPS = 25.8398;
             VENTRAL_MODE = 0;  %??? I think this is set manually, but I'm not sure
             %where I should get this from at this point ...
