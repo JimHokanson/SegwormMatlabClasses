@@ -302,11 +302,11 @@ end
 
 % Include NaNs at the start and end.
 %----------------------------------------------------------------------
-if all(isnan(data(1:starts(1))))
+if all(isnan(data(1:(starts(1)-1))))
     starts(1) = 1;
 end
 
-if all(isnan(data(stops(end):end)))
+if all(isnan(data((stops(end)+1):end)))
     stops(end) = length(data);
 end
 
