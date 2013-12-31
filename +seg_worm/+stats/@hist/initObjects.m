@@ -10,6 +10,8 @@ function hist_objs = initObjects(feature_file_paths)
 %   Improvements
 %   -----------------------------------------------------------------------
 %   - We could optimize the histogram calculation data for motion data
+%   - for event data, we should remove partial events (events that start at
+%   the first frame or end at the last frame)
 
 %Loop over all feature files and get histogram objects for each
 %--------------------------------------------------------------------------
@@ -203,6 +205,13 @@ function e_hists = h_computeEHists(h,specs)
 n_specs    = length(specs);
 temp_hists = cell(1,n_specs);
 
+%TODO: Need to incorporate removing partial events :/, this is made more
+%difficult since all the fields are broken out as separate instructions ...
+%
+%- check if start is 1
+%- check if end is equal to the total # of frames ...
+%- need to get video info for knowing # of frames
+
 for iSpec = 1:n_specs
    
    cur_specs = specs(iSpec);
@@ -220,11 +229,11 @@ for iSpec = 1:n_specs
       %for example.
       %
       %It is also used for event.ratio.time and event.ratio.distance
-      %going from:
-      %ratio (structure or [])
-      %to:
-      %   ratio.time
-      %   ratio.distance
+      %     going from:
+      %         ratio (structure or [])
+      %     to:
+      %         ratio.time
+      %         ratio.distance
       %
       %
       cur_data = [cur_data.(cur_specs.sub_field)];

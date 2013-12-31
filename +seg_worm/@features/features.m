@@ -3,21 +3,58 @@ classdef features < handle
     %   Class:
     %   seg_worm.features
     %
-    %   I'm not sure what I want out of this class. I might remove
-    %   it and change it to the following:
-    %   - feature
-    %   - feature_manager
+    %   TODO: I think this object will be the container for the features
+    %   file.
     %
-    %
-    %
-    %   Another relevant directory:
-    %   --------------------------------------------------
-    %   +seg_worm\+w\+stats
+    %   TODO:
     
     properties
+        morphology
+        posture
+        locomotion
+        path
+        info
     end
     
     methods
+        function obj = features(nw,info,p_opts,d_opts)
+            %
+            %    seg_worm.features
+            %
+            %    Inputs
+            %    ====================================
+            %    p_opts : seg_worm.features.processing_options
+            %    d_opts : seg_worm.features.debug_options
+            
+            
+            FPS = 25.8398;
+            VENTRAL_MODE = 0;  %??? I think this is set manually, but I'm not sure
+            %where I should get this from at this point ...
+            
+            
+            if ~exist('p_opts','var')
+                p_opts = seg_worm.features.processing_options();
+            end
+            
+            if ~exist('d_opts','var')
+                d_opts = seg_worm.features.debug_options();
+            end
+            
+            %processing_options - where we will specify how to process
+            %things ...
+            %debug_options - NYI
+            
+            obj.info = info;
+            obj.morphology = seg_worm.features.morphology(nw,d_opts);
+            obj.locomotion = seg_worm.features.locomotion(nw,FPS,VENTRAL_MODE);
+            
+            midbody_distance = abs(obj.locomotion.velocity.midbody.speed/FPS);
+            
+            obj.posture    = seg_worm.features.posture(nw,midbody_distance,FPS,p_opts);
+            
+            obj.path = seg_worm.features.path(nw,FPS,VENTRAL_MODE);
+            
+        end
     end
     
 end

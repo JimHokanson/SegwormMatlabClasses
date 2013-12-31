@@ -44,15 +44,16 @@ function bends = getPostureBends(bend_angles)
 %   dorsal-ventral orientation. When the worm has its ventral side internal
 %   to the bend, the bending angle is signed negatively.
 
-SI          = seg_worm.skeleton_indices;
-ALL_INDICES = SI.ALL_NORMAL_INDICES;
-FIELDS      = SI.ALL_NORMAL_NAMES;
+SI = seg_worm.skeleton_indices;
+
+ALL_NORMAL_INDICES = SI.ALL_NORMAL_INDICES;
+FIELDS             = SI.ALL_NORMAL_NAMES;
 
 n_fields = length(FIELDS);
 
 bends = struct;
 for iField = 1:n_fields
-    cur_indices = ALL_INDICES{iField};
+    cur_indices = ALL_NORMAL_INDICES{iField};
     cur_name    = FIELDS{iField};
     bends.(cur_name).mean   = nanmean(bend_angles(cur_indices,:));
     bends.(cur_name).stdDev = nanstd(bend_angles(cur_indices,:));
