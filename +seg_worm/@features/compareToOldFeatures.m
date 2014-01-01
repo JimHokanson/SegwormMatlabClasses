@@ -10,133 +10,79 @@ function compareToOldFeatures(new_worm,feature_mat_path)
 %This is meant to be a quick script that checks that our processing code
 %produces the same (or similar) results that their code does.
 
-
 h = load(feature_mat_path);
 old_worm = h.worm;
 
+h_new.worm = new_worm;
+h_old.worm = old_worm;
 
-
-%Morphology
+%Movement Tests
 %==========================================================================
-mn = new_worm.morphology;
-mo = old_worm.morphology;
 
-instr = {'length'           1 []
-         'width.head'       1 []
-         'width.midbody'    1 []
-         'width.tail'       1 []
-         'area'             1 []
-         'areaPerLength'    1 []
-         'widthPerLength'   1 []};
+m_specs = seg_worm.stats.movement_specs.getSpecs;
 
-h__runInstructions(mo,mn,'morphology',instr)     
-     
+all_field_names = {m_specs.feature_field};
 
-%Locomotion
-%==========================================================================
-ln = new_worm.locomotion;
-lo = old_worm.locomotion;
+min_corr_values = 0.99*ones(size(all_field_names));
+
+amp_wavelength_names = {...
+    'worm.posture.amplitude.ratio'
+    'worm.posture.wavelength.primary'
+    'worm.posture.wavelength.secondary'}';
+
+min_corr_values(ismember(all_field_names,amp_wavelength_names)) = 0.97;
 
 
-%motion.forward - old [1 x n]   new is [n x 1]
-%frequency - not the same ...
-%.ratio - slightly different
+%Expected differences
+%---------------------------------------------------
+%amplitude.ratio - different algorithm
+%wavelengths - error in deep function that I am not going to bother to change ...
 
-%TODO: Why the discrepancy between 
+passed_movement = true;
+for iSpec = 1:length(m_specs)
 
-keyboard
+cur_deep_field_name = m_specs(iSpec).feature_field; 
+    
+x = eval(['h_old.' cur_deep_field_name]);
+y = eval(['h_new.' cur_deep_field_name]);
 
-instr = {'motion.forward'               4         [] %Event
-         'motion.backward'              4         []
-         'motion.paused'                4         []
-         'motion.mode'                  1         []
-         'velocity.headTip.speed'       1         []
-         'velocity.headTip.direction'   1         []
-         'velocity.head.speed'          1         []
-         'width.tail'                   1         []};
-
-h__runInstructions(lo,ln,'locomotion',instr)     
-
-keyboard
-
-%Posture
-%==========================================================================
-pn = new_worm.posture;
-po = old_worm.posture;
-
-keyboard
-
-
-%Due to changes in indices used, the values are all shifted just slightly
-%...
-assert3(pn.bends.head.mean,po.bends.head.mean,0.99,'posture.bends.head.mean');
-
-
-%h__summarize(pn.bends.head.mean,po.bends.head.mean)
-
-plot(h__percentDiff(pn.bends.head.mean,po.bends.head.mean))
-
-%NOTE: Different algorithms yield slightly different results, I had to
-%increase the % comparision on this just a bit ...
-%
-%More points would make this more accurate ...
-assert2(pn.eccentricity,po.eccentricity,0.03,'Different eccentricities');
-%plot(abs((po.eccentricity - pn.eccentricity)./po.eccentricity))
-
-
-assert2(pn.amplitude.max,po.amplitude.max,0.01,'posture.amplitude.max')
-assert2(pn.amplitude.ratio,po.amplitude.ratio,0.01,'posture.amplitude.ratio')
-%plot(abs((po.amplitude.max - pn.amplitude.max)./po.amplitude.max))
-
-%Their wavelength code has errors ...
-%--------------------------------------------------------------------------
-% % % assert3(pn.wavelength.primary,po.wavelength.primary,0.95,'posture.wavelength.primary')
-% % % assert3(pn.secondary.ratio,po.secondary.ratio,0.95,'posture.wavelength.secondary')
-% % % 
-% % % r1 = h__corrValue(pn.wavelength.primary,po.wavelength.primary);
-% % % r2 = h__corrValue(pn.wavelength.secondary,po.wavelength.secondary);
-% % % 
-% % % plot(pn.wavelength.primary,po.wavelength.primary,'o')
-% % % 
-% % % plot(pn.wavelength.secondary,po.wavelength.secondary,'o')
-
-
-%Directions
-%----------------------------------
-dn = pn.directions;
-do = po.directions;
-assert1(dn.tail2head,do.tail2head,'Different tail2head directions')
-assert1(dn.head,do.head,'Different head directions')
-assert1(dn.tail,do.tail,'Different tail directions')
-
-%Skeletons
-%----------------------------------
-assert1(pn.skeleton,po.skeleton,'Different Skeletons')
-
-%EigenProjections
-%----------------------------------
-assert2(pn.eigenProjection,po.eigenProjection,0.01,'posture.eigenProjection')
-%h__summarize(pn.eigenProjection(1,:)',po.eigenProjection(1,:)')
-
-%               bends: [1x1 struct]
-%        eccentricity: DONE
-%           amplitude:
-%                   .max   - DONE
-%                   .ratio - DONE
-%          wavelength: - their code has errors in it
-%         trackLength: [1x4642 double]
-%               kinks: [1x4642 double]
-%               coils: [1x1 struct]
-%          directions: DONE - incorrect currently
-%            skeleton: DONE
-%     eigenProjection: DONE
+if isequaln(x,y)
+    fprintf(1,'%s are exactly equal!\n',cur_deep_field_name);
+    continue
+end
+r = h__corrValue(x,y);
+if r < min_corr_values(iSpec)
+    passed_movement = false;
+    fprintf(2,'%s not exactly equal: r = %0.3f\n',cur_deep_field_name,r);
+else
+    fprintf(1,'[\b close:  %0.3f, %s]\b\n',r,cur_deep_field_name);
+end
 
 end
 
-function h__compareEventStructs(sn,so)
+if ~passed_movement
+   error('Failed movement tests') 
+end
 
-%The new event structs are 1 based indexing instead of 0, compare
-%after this change has been made ...
+%Simple Tests
+%==========================================================================
+
+s_specs = seg_worm.stats.simple_specs.getSpecs;
+
+%The simple specs might have different lengths as they are not 
+
+%Event Tests
+%==========================================================================
+
+e_specs = seg_worm.stats.event_specs.getSpecs;
+
+for iSpec = 1:length(e_specs)
+   %TODO: Still need to implement this
+   %
+   %In spec, implement data retrieval given head object ...
+end
+
+
 
 
 end
@@ -176,41 +122,4 @@ function h__summarize(new,old)
     plot(h__percentDiff(old,new))
     title(sprintf('r: %0.3f',h__corrValue(old,new)))
     
-end
-
-function h__runInstructions(so,sn,main_name,instr)
-
-n_instr = size(instr,1);
-
-for iInstr = 1:n_instr
-   cur_deep_field_name = instr{iInstr,1};
-   cur_test_number     = instr{iInstr,2};
-   option              = instr{iInstr,3};
-   
-   x = eval(['so.' cur_deep_field_name]);
-   y = eval(['sn.' cur_deep_field_name]);
-   
-   error_msg = sprintf('%s.%s',main_name,cur_deep_field_name);
-   
-   try
-   switch cur_test_number
-       case 1
-           assert(isequaln(x,y),error_msg)
-       case 2
-           assert(all(h__percentDiff(x,y) < option),error_msg)
-       case 3
-           assert(h__corrValue(x,y) > option,error_msg);
-   end
-   catch ME
-       h__summarize(x,y)
-       rethrow(ME)
-   end
-    
-end
-
-
-assert1 = @(x,y,z)(assert(isequaln(x,y),z));
-assert2 = @(x,y,z,w)(assert(all(h__percentDiff(x,y) < z),w));
-assert3 = @(x,y,z,w) (assert(h__corrValue(x,y) > z,w));
-
 end

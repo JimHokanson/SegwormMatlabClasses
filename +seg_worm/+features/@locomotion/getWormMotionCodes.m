@@ -79,7 +79,7 @@ PAUSE_THRESHOLD_PCT   = 0.025;
 EVENT_FRAMES_THRESHOLD = 0.5; %Half a second
 EVENT_MIN_INTER_FRAMES_THRESHOLD = 0.25;
 
-DATA_SUM_NAME = 'distance';
+DATA_SUM_NAME       = 'distance';
 INTER_DATA_SUM_NAME = 'interDistance';
 
 
@@ -141,9 +141,9 @@ for iType = 1:3
     %----------------------------------------------------------------------
     ef = seg_worm.feature.event_finder;
     
-    ef.include_at_thr = true;
-    ef.min_frames_thr = worm_event_frames_threshold;
-    ef.min_sum_thr    = min_distance{iType};
+    ef.include_at_thr       = true;
+    ef.min_frames_thr       = worm_event_frames_threshold;
+    ef.min_sum_thr          = min_distance{iType};
     ef.include_at_sum_thr   = true;
     ef.data_for_sum_thr     = distance;
     ef.min_inter_frames_thr = worm_event_min_interframes_threshold;

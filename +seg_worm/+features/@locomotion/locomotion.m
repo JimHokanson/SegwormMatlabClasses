@@ -4,25 +4,39 @@ classdef locomotion < handle
     %   seg_worm.features.locomotion
     
     properties
-        motion
         velocity
+        %   .headTip
+        %       .speed
+        %       .direction
+        %   .head
+        %       .speed
+        %       .direction
+        %   .midbody
+        %       .speed
+        %       .direction
+        %   .tail
+        %       .speed
+        %       .direction
+        %   .tailTip
+        %       .speed
+        %       .direction
+        motion
         bends
         turns
     end
     
     methods
-        function obj = locomotion(nw,FPS,VENTRAL_MODE)
+        function obj = locomotion(nw,FPS,VENTRAL_MODE,p_opts,d_opts)
+            
             %Velocity
             %--------------------------------------------------------------
-            obj.getWormVelocity(nw.x,nw.y,FPS,VENTRAL_MODE);
-            
+            obj.getWormVelocity(nw.x,nw.y,FPS,VENTRAL_MODE,d_opts);
             
             
             %Motion
             %--------------------------------------------------------------
             midbody_speed     = obj.velocity.midbody.speed;
             obj.getWormMotionCodes(midbody_speed, nw.lengths, FPS);
-            
             
             
             %Crawling - part of bends
@@ -33,11 +47,9 @@ classdef locomotion < handle
             obj.getLocomotionBends(nw.angles, is_paused, nw.is_segmented, FPS);
             
             
-            
             %Foraging - part of bends
             %--------------------------------------------------------------
             obj.getForaging(nw.x,nw.y,nw.is_segmented,VENTRAL_MODE,FPS);
-            
             
             
             %Turns

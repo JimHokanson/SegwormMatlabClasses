@@ -1,7 +1,7 @@
-function orientation = getEccentricity(obj, xOutline, yOutline, n_grid_points)
-% getEccentricity   
+function orientation = getEccentricity(obj, x_outline, y_outline, n_grid_points)
+%getEccentricity   
 %
-%   [eccentricity, orientation] = seg_worm.feature_helpers.posture.getEccentricity(xOutline, yOutline, gridSize)
+%   orientation = seg_worm.features.posture.getEccentricity(xOutline, yOutline, gridSize, n_grid_points)
 %
 %   Given x and y coordinates of the outline of a region of interest, fill
 %   the outline with a grid of evenly spaced points and use these points in
@@ -18,7 +18,8 @@ function orientation = getEccentricity(obj, xOutline, yOutline, n_grid_points)
 %   be made when the worm doesn't bend back on itself at all.
 %
 %
-%   OldName: getEccentricity.m
+%   OldName: 
+%   - getEccentricity.m
 %
 %
 %   Inputs:
@@ -31,9 +32,12 @@ function orientation = getEccentricity(obj, xOutline, yOutline, n_grid_points)
 %              gives a more accurate estimate of the ellipse but increases
 %              the calculation time.
 %
-%   Outputs:
+%   Populates:
 %   =======================================================================
 %   eccentricity - [1 x n_frames] The eccentricity of the equivalent ellipse
+%
+%   Outputs:
+%   =======================================================================
 %   orientation  - [1 x n_frames] The orientation angle of the equivalent ellipse
 %
 %   Nature Methods Description
@@ -51,11 +55,8 @@ function orientation = getEccentricity(obj, xOutline, yOutline, n_grid_points)
 %   The code below is finished although I want to break it up into smaller
 %   functions. I also need to submit a bug report for the inpoly FEX code.
 
-TOL = 1.0e-12; %We need a bit of a tolerance on whether or not a point is 
-%in the worm or outside the worm
-
 %Reasons for rotating are given in the function
-[xo,yo,rot_angle] = h__centerAndRotateOutlines(xOutline,yOutline);
+[xo,yo,rot_angle] = h__centerAndRotateOutlines(x_outline,y_outline);
 
 %In this function we detect "simple worms" and if they are detected
 %get interpolated y-contour values at each x grid location.
@@ -65,7 +66,7 @@ grid_spacings = x_interp(2,:) - x_interp(1,:);
 
 [y_bottom_bounds,y_top_bounds] = h__computeYBoundsOfSimpleWorms(y_interp_bottom,y_interp_top,grid_spacings);
 
-n_frames = size(xOutline,2);
+n_frames = size(x_outline,2);
 eccentricity = NaN(1,n_frames);
 orientation  = NaN(1,n_frames);
 

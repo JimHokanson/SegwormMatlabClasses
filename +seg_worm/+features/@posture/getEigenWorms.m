@@ -1,6 +1,8 @@
 function getEigenWorms(obj,sx,sy,eigen_worms,N_EIGENWORMS_USE)
 %
 %
+%   seg_worm.features.posture.getEigenWorms
+%
 %   Inputs
 %   =======================================================================
 %   sx  : [49 x n_frames]

@@ -1,4 +1,4 @@
-function getAmplitudeAndWavelength(obj, theta_d,sx,sy,worm_lengths)
+function getAmplitudeAndWavelength(obj,theta_d,sx,sy,worm_lengths,d_opts)
 %
 %
 %   Inputs
@@ -18,19 +18,18 @@ function getAmplitudeAndWavelength(obj, theta_d,sx,sy,worm_lengths)
 %                    on the y-axis, ratio is computed to be less than 1
 %   wavelength   :
 %       .primary   - [1 x n_frames]
-%       .secondary - [1 x n_frames] this might not always be valid, even 
+%       .secondary - [1 x n_frames] this might not always be valid, even
 %                     when the primary wavelength is defined
 %   trackLength  : [1 x n_frames]
 %
-%   
-%   Old Name: getAmpWavelength.m
-%   TODO: This function was missing from some of the original code
-%   distributions. I need to make sure I upload it.
+%
+%   Old Name:
+%   - getAmpWavelength.m
 %
 %
 %   Nature Methods Description
 %   =======================================================================
-%   Amplitude. 
+%   Amplitude.
 %   ------------------
 %   Worm amplitude is expressed in two forms: a) the maximum
 %   amplitude found along the worm body and, b) the ratio of the maximum
@@ -86,7 +85,7 @@ HALF_N_FFT     = N_POINTS_FFT/2;
 MIN_DIST_PEAKS = 5; %NOTE: Unfortunately the distance is in normalized
 %frequency units (indices really), not in real frequency units
 WAVELENGTH_PCT_MAX_CUTOFF = 0.5; %TODO: Describe
-WAVELENGTH_PCT_CUTOFF = 2; %TODO: Describe
+WAVELENGTH_PCT_CUTOFF = 2;       %TODO: Describe
 
 assert(size(sx,1) <= N_POINTS_FFT,'# of points used in the FFT must be more than the # of points in the skeleton')
 
@@ -111,7 +110,7 @@ wwy = bsxfun(@minus,wwy,mean(wwy,1));
 %   ???? - It is surprising that you don't subtract the mean, then rotate,
 %   this is a bit surprising ..., this will be identical here but it is
 %   unclear if the theta calculation is identical ... (see eccentricity
-%   function)   
+%   function)
 
 % Calculate track amplitude
 %--------------------------------------------------------------------------
@@ -168,28 +167,34 @@ for iFrame = 1:length(frames_to_calculate)
     
     temp = fft(iwwy, N_POINTS_FFT);
     
-    iY   = abs(temp(1:HALF_N_FFT)); %NOTE: This is magnitude, not power ...
-    %This is what the supplemental says, not what was done in the previous 
-    %code. I'm not sure what was done for the actual paper, but I would
-    %guess they used power.
-    %
-    %This gets used when determining the secondary wavelength, as it must
-    %be greater than half the maximum to be considered a secondary
-    %wavelength.
-    
-    %NOTE: True Amplitude = 2*abs(fft)/(length_real_data i.e. 48 or 49, not 512)
-    %
-    %i.e. for a sinusoid of a given amplitude, the above formula would give
-    %you the amplitude of the sinusoid
+    if d_opts.mimic_old_behavior
+        iY = temp(1:HALF_N_FFT);
+        iY = iY.* conj(iY) / 512;
+    else
+        iY   = abs(temp(1:HALF_N_FFT)); %NOTE: This is magnitude, not power ...
+        %This is what the supplemental says, not what was done in the previous
+        %code. I'm not sure what was done for the actual paper, but I would
+        %guess they used power.
+        %
+        %This gets used when determining the secondary wavelength, as it must
+        %be greater than half the maximum to be considered a secondary
+        %wavelength.
+        
+        %NOTE: True Amplitude = 2*abs(fft)/(length_real_data i.e. 48 or 49, not 512)
+        %
+        %i.e. for a sinusoid of a given amplitude, the above formula would give
+        %you the amplitude of the sinusoid
+        
+    end
     
     %Find peaks that are greater than the cutoff
     [peaks,indx] = seg_worm.util.maxPeaksDist(iY, MIN_DIST_PEAKS,true,WAVELENGTH_PCT_MAX_CUTOFF*max(iY));
-
+    
     %We sort the peaks so that the largest is at the first index and will
     %be primary, this was not done in the previous version of the code
     [~,I] = sort(-1*peaks); %Sort descending by multiplying by -1
     indx  = indx(I);
-
+    
     frequency_values = (indx-1)/N_POINTS_FFT*spatial_sampling_frequency(cur_frame);
     
     all_wavelengths = 1./frequency_values;
@@ -221,11 +226,27 @@ for iFrame = 1:length(frames_to_calculate)
 end
 
 
+if d_opts.mimic_old_behavior
+    mask = s_wavelength > p_wavelength;
+    [p_wavelength(mask),s_wavelength(mask)] = deal(s_wavelength(mask),p_wavelength(mask));
+end
+
 wavelength.primary   = p_wavelength;
 wavelength.secondary = s_wavelength;
 
-obj.wavelength = wavelength;
-obj.trackLength = trackLength;
-obj.amplitude = amplitude;
+obj.wavelength  = wavelength;
+obj.tracklength = trackLength;
+obj.amplitude   = amplitude;
 
 end
+
+%{
+
+Old Vs New Code:
+  - power instead of magnitude is used for comparison
+  - primary and secondary wavelength may be switched ...
+  - error in maxPeaksDist for distance threshold, not sure where in code
+        - see frame 880 for example
+        - minus 1 just gives new problem - see 1794
+
+%}

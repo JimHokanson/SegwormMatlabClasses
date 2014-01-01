@@ -16,6 +16,12 @@ function window_width_integer = getWindowWidthAsInteger(scale_time,fps)
 %add 1
 window_width_as_samples = scale_time * fps;
 
+half_scale = round(window_width_as_samples/2);
+window_width_integer = 2*half_scale + 1;
+
+%OLD_CODE
+%{
+
 scale_low  = floor(window_width_as_samples);
 scale_high = ceil(window_width_as_samples);
 
@@ -30,5 +36,8 @@ elseif mod(scale_high,2) == 0
 else
     window_width_integer = scale_high;
 end
+
+%}
+
 
 end

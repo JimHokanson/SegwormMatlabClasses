@@ -103,13 +103,20 @@ maxBodyWinTime = 15;
 maxBodyWin     = round(maxBodyWinTime * fps);
 options = struct( ...
     'minWin',   minBodyWin, ...
+    ... %
     'maxWin',   maxBodyWin, ...
+    ... %
     'res',      2^14, ... % the FFT is quantized below this resolution
+    ... %
     'headI',    6:10, ... % centered at the head (1/6 the worm)
+    ... %
     'midI',     23:27, ... % centered at the middle of the worm
+    ... %
     'tailI',    40:44, ... % centered at the tail (1/6 the worm)
+    ... %
     'minFreq',  1 / (4 * maxBodyWinTime), ... % require at least 50% of the wave
-    'maxFreq',  fps / 4, ... % with 4 frames we can resolve 75% of a wave
+    ... %
+    'maxFreq',  fps / 4, ... % with 4 frames we can resolve 75% of a wave ????
     'max_amp_pct_bandwidth', 0.5,...
     'peakEnergyThr',0.5);
 
@@ -139,7 +146,7 @@ end
 
 %Set things up for the loop
 %------------------------------------
-section     = {'head'           'mid'           'tail'};
+section     = {'head'           'midbody'       'tail'};
 all_indices = {options.headI    options.midI    options.tailI};
 
 %Initialize interpolation - we'll interpolate over all frames but no extrapolation

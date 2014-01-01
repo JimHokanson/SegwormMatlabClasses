@@ -1,10 +1,11 @@
-function getWormVelocity(obj, sx, sy, fps, ventral_mode)
+function getWormVelocity(obj, sx, sy, fps, ventral_mode, d_opts)
 %getWormVelocity   Compute the worm velocity (speed & direction) at the
 %head-tip/head/midbody/tail/tail-tip
 %
-%   seg_worm.feature_helpers.locomotion.getWormVelocity
+%   seg_worm.features.locomotion.getWormVelocity
 %
-%   Old Name: wormVelocity.m
+%   Old Name: 
+%   - wormVelocity.m
 %
 %   Inputs:
 %   =======================================================================
@@ -32,12 +33,11 @@ function getWormVelocity(obj, sx, sy, fps, ventral_mode)
 %   =======================================================================
 %   Velocity. 
 %   ----------------------------------
-%   The worm’s velocity is measured at the tip of the head and
-%   tail, at the head and tail themselves, and at the midbody. The velocity
-%   is composed of two parts, speed and direction (expressed as an angular
-%   speed) (Supplementary Fig. 4d). The velocity is signed negatively
-%   whenever the respective body part moves towards the tail (as opposed to
-%   the head).
+%   The worm’s velocity is measured at the tip of the head and tail, at the
+%   head and tail themselves, and at the midbody. The velocity is composed
+%   of two parts, speed and direction (expressed as an angular speed)
+%   (Supplementary Fig. 4d). The velocity is signed negatively whenever the
+%   respective body part moves towards the tail (as opposed to the head).
 % 
 %   The head and tail tips’ instantaneous velocity is measured at each
 %   frame using a 1/4 second up to a 1/2 second window. For each frame, we
@@ -46,20 +46,25 @@ function getWormVelocity(obj, sx, sy, fps, ventral_mode)
 %   location is not known within either the start or end frame, we extend
 %   the search for a known location up to 1/2 second in either direction.
 %   If the worm’s location is still missing at either the start or end, the
-%   velocity is marked unknown at this point. The speed is defined as the
-%   distance between the centroids of the start and end frames (for the
-%   respective body parts) divided by the time between both frames. The
-%   direction is defined as the angle (between centroids) from the start to
-%   the end frame, relative to the worm’s overall body angle, divided by
-%   the time between both frames. The worm’s overall body angle is defined
-%   as the mean orientation of the angles, in the tail-to-head direction,
-%   between subsequent midbody skeleton points. The body angle is used to
-%   sign the velocity. If the head or tail tip’s start-to-end angle exceeds
-%   90°, clockwise or anticlockwise, relative to the overall worm body
-%   angle, the motion is towards the tail. In this case both the speed and
-%   direction are negatively signed. The head, midbody, and tail velocity
-%   are computed identically except they use a 1/2 second up to a 1 second
-%   window for choosing their start and end frames.
+%   velocity is marked unknown at this point.
+%
+%   The speed is defined as the distance between the centroids of the start
+%   and end frames (for the respective body parts) divided by the time
+%   between both frames.
+%
+%   The direction is defined as the angle (between centroids) from the
+%   start to the end frame, relative to the worm’s overall body angle,
+%   divided by the time between both frames.
+%
+%   The worm’s overall body angle is defined as the mean orientation of the
+%   angles, in the tail-to-head direction, between subsequent midbody
+%   skeleton points. The body angle is used to sign the velocity. If the
+%   head or tail tip’s start-to-end angle exceeds 90°, clockwise or
+%   anticlockwise, relative to the overall worm body angle, the motion is
+%   towards the tail. In this case both the speed and direction are
+%   negatively signed. The head, midbody, and tail velocity are computed
+%   identically except they use a 1/2 second up to a 1 second window for
+%   choosing their start and end frames.
 %
 %   See Also:
 %   seg_worm.feature_helpers.computeVelocity
@@ -80,9 +85,13 @@ avg_body_angles_d = atan2(diffY, diffX).*(180 / pi);
 
 % Compute the velocity.
 %--------------------------------------------------------------------------
-FIELD_NAMES       = {'headTip'           'head'          'midbody'       'tail'          'tailTip'};
-INDICES_LIST      = {SI.HEAD_TIP_INDICES SI.HEAD_INDICES SI.MID_INDICES SI.TAIL_INDICES SI.TAIL_TIP_INDICES};
-TIME_SCALE_VALUES = [TIP_DIFF BODY_DIFF BODY_DIFF BODY_DIFF TIP_DIFF];
+FIELD_NAMES       = {'headTip'           'head'          'midbody'       'tail'             'tailTip'};
+INDICES_LIST      = {SI.HEAD_TIP_INDICES SI.HEAD_INDICES  SI.MID_INDICES  SI.TAIL_INDICES   SI.TAIL_TIP_INDICES};
+TIME_SCALE_VALUES = [TIP_DIFF            BODY_DIFF        BODY_DIFF       BODY_DIFF         TIP_DIFF];
+
+if d_opts.mimic_old_behavior
+   INDICES_LIST{3} = 21:29; 
+end
 
 for iField = 1:length(FIELD_NAMES)
    cur_field_name = FIELD_NAMES{iField};
@@ -91,8 +100,8 @@ for iField = 1:length(FIELD_NAMES)
    
    %NOTE: This was moved to a separate function because I found that this
    %same function was being used elsewhere in:
-   %    seg_worm.feature_helpers.path.wormPathCurvature
-   temp = seg_worm.feature_helpers.computeVelocity(...
+   %    seg_worm.features.path.wormPathCurvature
+   temp = seg_worm.features.helpers.computeVelocity(...
        sx, sy, avg_body_angles_d, cur_indices, fps, cur_scale, ventral_mode);
    
    velocity.(cur_field_name) = struct('speed',temp.speed,'direction',temp.angular_speed);
@@ -102,5 +111,19 @@ obj.velocity = velocity;
 
 end
 
+
+%{
+
+Old code notes:
+%--------------------------------------------------------
+headTipI:   1:4    - same
+headI   :   1:8    - same
+midbodyI:   21:29  - I'm using 17:33 now
+tailI:      42:49  - same
+tailTipI:   46:49  - same
+bodyI   :   41:49  - same
+
+
+%}
 
 

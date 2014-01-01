@@ -70,7 +70,7 @@ diffX     = nanmean(diff(x(bodyI,:), 1, 1), 1);
 diffY     = nanmean(diff(y(bodyI,:), 1, 1), 1);
 avg_body_angles_d = atan2(diffY, diffX) * (180 / pi);
 
-velocity = seg_worm.feature_helpers.computeVelocity(...
+velocity = seg_worm.features.helpers.computeVelocity(...
     x, y, avg_body_angles_d, bodyI, fps, BODY_DIFF, ventral_mode);
 
 % Compute the path curvature.
@@ -95,7 +95,7 @@ function curvature = h__computeCurvature(speed, motion_direction, window_width, 
 %   curvature
 
 % The frame scale must be odd.
-frame_scale = seg_worm.feature_helpers.getWindowWidthAsInteger(window_width,fps);
+frame_scale = seg_worm.features.helpers.getWindowWidthAsInteger(window_width,fps);
 half_frame_scale = (frame_scale - 1) / 2;
 
 % Compute the angle differentials and distances.

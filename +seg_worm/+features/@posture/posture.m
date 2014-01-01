@@ -4,24 +4,54 @@ classdef posture < handle
     %   seg_worm.features.posture
     
     properties
+        %Unless specified all sizes are: [1 n_frames]
+        
         bends
-        amplitude
+        %   .head
+        %       .mean
+        %       .stdDev
+        %   .neck
+        %       .mean
+        %       .stdDev
+        %   .midbody
+        %       .mean
+        %       .stdDev
+        %   .hips
+        %       .mean     
+        %       .stdDev  
+        %   .tail
+        %       .mean    
+        %       .stdDev  
+        amplitude 
+        %   .max         
+        %   .ratio       
         wavelength
-        trackLength
+        %   .primary     - 
+        %   .wavelength  
+        tracklength
+        %   
         eccentricity
-        kinks
-        coils
+        
+        kinks %(MF) (AKA Bend Counts) 
+        
+        coils %(EF)
+        
         directions
+        %   .tail2head
+        %   .head
+        %   .tail
         skeleton
+        %   .x
+        %   .y
         eigenProjection  %[6 n_frames]
     end
     
     methods
-        function obj = posture(nw,midbody_distance,FPS,p_opts)
+        function obj = posture(nw,midbody_distance,FPS,p_opts,d_opts)
                         
             %Bends
             %----------------------------------------------
-            obj.getPostureBends(nw.angles);
+            obj.getPostureBends(nw.angles,d_opts);
             
             
             %Eccentricity & Orientation
@@ -31,12 +61,12 @@ classdef posture < handle
             
             %Amplitude, Wavelengths, TrackLength
             %--------------------------------------------------------
-            obj.getAmplitudeAndWavelength(worm_orientation,nw.x,nw.y,nw.lengths);
+            obj.getAmplitudeAndWavelength(worm_orientation,nw.x,nw.y,nw.lengths,d_opts);
             
             
             %Kinks (aka bend counts)
             %--------------------------------------------------------------
-            obj.getWormKinks(nw.angles);
+            obj.getWormKinks(nw.angles,p_opts);
             
             
             %Coils
@@ -63,6 +93,9 @@ classdef posture < handle
             %EigenProjection
             %--------------------------------------------------------------
             obj.getEigenWorms(nw.x,nw.y,nw.eigen_worms,p_opts.N_EIGENWORMS_USE);
+            
+        end
+        function plot(obj)
             
         end
     end

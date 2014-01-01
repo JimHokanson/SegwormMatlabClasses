@@ -1,18 +1,18 @@
-function getWormKinks(obj, worm_angles)
+function getWormKinks(obj, bend_angles,p_opts)
 %
 %
-%   seg_worm.feature_helpers.posture.wormKinks
+%   seg_worm.features.posture.getWormKinks
 %
-%   Old Name: wormKinks.m
-%
+%   Old Name: 
+%   - wormKinks.m
 %
 %   Inputs:
 %   =======================================================================
-%   worm_angles : [48 x n_frames] the worm(s) bend angles at each skeleton point
+%   bend_angles : [48 x n_frames] the worm(s) bend angles at each skeleton point
 %
-%   Outputs:
+%   Populates:
 %   =======================================================================
-%   n_kinks_all : [1 x n_frames] the number of kinks
+%   kinks
 %
 %   Nature Methods Description
 %   =======================================================================
@@ -27,7 +27,8 @@ function getWormKinks(obj, worm_angles)
 %   default alpha of 2.5 and normalized such that the filter integrates to
 %   1, to smooth out any high-frequency changes.
 %
-%   JAH: Why normalize if no threshold on the amplitude?
+%   JAH: No normalization needed as there is currently no amplitude
+%   threshold and we're only counting #, not size
 %
 %   The angles are then sequentially checked from head to tail. Every time
 %   the angle changes sign or hits 0°, the end of a bend has been found and
@@ -35,28 +36,41 @@ function getWormKinks(obj, worm_angles)
 %   must reflect a segment at least 1/12 the skeleton length in order to be
 %   counted. This ignores small bends at the tip of the head and tail.
 
+%{
+
+Missing Old Features
+-------------------------------------
+1) Thresholding the amplitude of a bend to determine whether or not to
+count it. No amplitude threshold was in place so this code was removed.
+Currently any sign change is considered a bend as long as it is long
+enough.
+
+
+%}
+
 
 % Determine the bend segment length threshold.
-length_thr = round(size(worm_angles, 1) / 12); %Threshold is inclusive
+n_angles = size(bend_angles, 1);
+length_threshold = round(n_angles * p_opts.KINK_LENGTH_THRESHOLD_PCT);
 
-% Compute a guassian filter for the angles.
+% Compute a gaussian filter for the angles.
 %--------------------------------------------------------------------------
 %JAH NOTE: This is a nice way of getting the appropriate odd value
 %unlike the other code with so many if statements ...
 %- see window code which tries to get an odd value ...
-half_length_thr = round(length_thr / 2);
+%- I'd like to go back and fix that code ...
+half_length_thr = round(length_threshold / 2);
 gauss_filter    = gausswin(half_length_thr * 2 + 1) / half_length_thr;
 
 
 % Compute the kinks for the worms.
-n_frames    = size(worm_angles, 2);
-n_kinks_all = nan(1, n_frames);
-for iFrame = find(any(worm_angles,1))
+n_frames    = size(bend_angles, 2);
+n_kinks_all = NaN(1, n_frames);
+for iFrame = find(any(bend_angles,1))
     
-    %Smooth bend angles
-    bends = conv(worm_angles(:,iFrame), gauss_filter, 'same');
+    smoothed_bend_angles = conv(bend_angles(:,iFrame), gauss_filter, 'same');
 
-    n_kinks_all(iFrame) = h__computeNumberOfKinks_New(bends,length_thr);
+    n_kinks_all(iFrame) = h__computeNumberOfKinks_New(smoothed_bend_angles,length_threshold);
 end
 
 obj.kinks = n_kinks_all;
@@ -64,20 +78,39 @@ obj.kinks = n_kinks_all;
 
 end
 
-function  n_kinks = h__computeNumberOfKinks_New(bends,lengthThr)
+% % function h__explainFunction(orig_worm_bend_angles,smoothed_bend_angles,sign_change_I,n_bends)
+% %    %Not sure how I want to get access to this information ...
+% %    %
+% %    %Would also be nice to have access to the original worm for plotting the
+% %    %skeleton as well ...
+% %    %
+% %    %Would like to avoid code duplication ...
+% % end
+
+function  n_kinks = h__computeNumberOfKinks_New(smoothed_bend_angles,length_threshold)
     %
     %   We look for sign changes. We get the length of each signed
     %   region and if it is greater than sum length cutoff, we count it as
     %   a kink.
     %
+    %   Inputs
+    %   ===================================================================
+    %   smoothed_bend_angles : [1 x 48]
+    %   length_threshold     : scalar, 
    
     %This code is nearly identical in getForaging
     %-------------------------------------------------------
-    n_frames = length(bends);
+    n_frames = length(smoothed_bend_angles);
 
-    dataSign      = sign(bends);
+    dataSign      = sign(smoothed_bend_angles);
     
     if any(dataSign == 0)
+        %I don't expect that we'll ever actually reach 0
+        %The code for zero was a bit weird, it keeps counting if no sign
+        %change i.e. + + + 0 + + + => all +
+        %
+        %but if counts for both if sign change
+        % + + 0 - - - => 3 +s and 4 -s
         error('Unhandled code case')
     end
     
@@ -87,7 +120,7 @@ function  n_kinks = h__computeNumberOfKinks_New(bends,lengthThr)
     start_I = [1; sign_change_I+1];
 
     %All NaN values are considered sign changes, remove these ...
-    mask = isnan(bends(start_I));
+    mask = isnan(smoothed_bend_angles(start_I));
     start_I(mask) = [];
     end_I(mask)   = [];
     
@@ -95,7 +128,7 @@ function  n_kinks = h__computeNumberOfKinks_New(bends,lengthThr)
     %of the worm. I have not translated that feature to the newer code. I
     %don't think it will ever happen though for a valid frame, only on the
     %edges should you have NaN values.
-    if ~isempty(start_I) && any(isnan(bends(start_I(1):end_I(end))))
+    if ~isempty(start_I) && any(isnan(smoothed_bend_angles(start_I(1):end_I(end))))
        error('Unhandled code case')
     end
     %-------------------------------------------------------
@@ -116,6 +149,6 @@ function  n_kinks = h__computeNumberOfKinks_New(bends,lengthThr)
        end
     end
     
-    n_kinks = sum(lengths >= lengthThr);
-   
+    n_kinks = sum(lengths >= length_threshold);
+       
 end

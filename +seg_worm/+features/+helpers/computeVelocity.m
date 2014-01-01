@@ -1,11 +1,12 @@
 function velocity = computeVelocity(sx, sy, avg_body_angle_d, pointsI, fps, scale_time, ventral_mode)
 %computeVelocity  
 %
-%   seg_worm.feature_helpers.computeVelocity
+%   seg_worm.features.helpers.computeVelocity
 %
 %   This function is needed by: 
-%       seg_worm.feature_helpers.locomotion.getWormVelocities
-%       
+%       seg_worm.features.locomotion.getWormVelocities
+%       seg_worm.features.path.wormPathCurvature
+
 %
 %   Old Name: 
 %   - part of wormVelocity.m
@@ -100,7 +101,7 @@ n_frames = size(sx,2);
 
 %We need to go from a time over which to compute the velocity to a # of
 %samples. The # of samples should be odd.
-scale_samples_final = seg_worm.feature_helpers.getWindowWidthAsInteger(scale_time,fps);
+scale_samples_final = seg_worm.features.helpers.getWindowWidthAsInteger(scale_time,fps);
 
 
 % Do we have enough coordinates?

@@ -53,11 +53,11 @@ classdef features < handle
             
             obj.info = info;
             obj.morphology = seg_worm.features.morphology(nw,d_opts);
-            obj.locomotion = seg_worm.features.locomotion(nw,FPS,VENTRAL_MODE);
+            obj.locomotion = seg_worm.features.locomotion(nw,FPS,VENTRAL_MODE,p_opts,d_opts);
             
             midbody_distance = abs(obj.locomotion.velocity.midbody.speed/FPS);
             
-            obj.posture    = seg_worm.features.posture(nw,midbody_distance,FPS,p_opts);
+            obj.posture    = seg_worm.features.posture(nw,midbody_distance,FPS,p_opts,d_opts);
             
             obj.path = seg_worm.features.path(nw,FPS,VENTRAL_MODE);
             

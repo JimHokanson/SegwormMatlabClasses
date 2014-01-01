@@ -1,5 +1,6 @@
 function t_001__mrcCodeVsNewCode()
 %
+%   seg_worm.testing.features.t_001__mrcCodeVsNewCode
 %
 %   I want this function to test the old code vs my new code for computing
 %   features.
@@ -17,5 +18,8 @@ info = seg_worm.info;
 
 p_opts = seg_worm.features.processing_options;
 d_opts = seg_worm.features.debug_options;
+d_opts.mimic_old_behavior = true;
 
 nf = seg_worm.features(nw,info,p_opts,d_opts);
+
+nf.compareToOldFeatures(fmp);
