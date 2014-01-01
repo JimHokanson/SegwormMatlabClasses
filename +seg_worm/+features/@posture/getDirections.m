@@ -17,7 +17,8 @@ function getDirections(obj, sx,sy)
 %       .head
 %       .tail
 %  
-%   Old Name: featureProcess.m
+%   Old Name: 
+%   - featureProcess.m
 %
 %   Nature Methods Description
 %   ===========================================================
@@ -52,7 +53,7 @@ for iVector = 1:3
    tip_x   = mean(sx(TIP_INDICES{iVector},:),1);
    tip_y   = mean(sy(TIP_INDICES{iVector},:),1);
    tail_x  = mean(sx(TAIL_INDICES{iVector},:),1);   
-   tail_y  = mean(sx(TAIL_INDICES{iVector},:),1);  
+   tail_y  = mean(sy(TAIL_INDICES{iVector},:),1);  
    
    directions.(NAMES{iVector}) = 180/pi*atan2(tip_y - tail_y, tip_x - tail_x);
 end
