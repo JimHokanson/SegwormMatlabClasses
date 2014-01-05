@@ -10,10 +10,6 @@ classdef stats < handle
     %   seg_worm.w.stats.worm2StatsInfo
     %   seg_worm.w.stats.wormStats2Matrix
     %
-    %   TODO:
-    %   ================================================================
-    %   1) Enumerate steps
-    %   2) Create method for aggreating different files ...
     %
     %   QUESTIONS:
     %   ================================================================
@@ -26,13 +22,10 @@ classdef stats < handle
     %   2)
     %
     %
-    %
-    %   JAH: I'm thinking that I'll move some of the old stats stuff to the
-    %   hist class, and that this class will become explicitly for
-    %   comparing the experiment and control data
-    %
-    %
-    %
+    %   Some of the statistics are aggegrate:
+    %   p_value
+    %   q_value
+    %   list of exclusive features
     
   
     
@@ -40,6 +33,8 @@ classdef stats < handle
     properties
         
        %TODO: Move to object that both hist and stats display
+       %
+       %ALSO: We need two, one for experiment and one for controls
        %Definitions in: seg_worm.stats.hist
        name
        short_name
@@ -49,6 +44,15 @@ classdef stats < handle
        motion_type
        data_type 
         
+       %New properties
+       %-------------------------------------------------------------------
+       q_normal_experiment
+       q_normal_control
+       z_score_experiment
+       z_score_control
+       p_significance
+       p_normal
+       
        %-------------------------------------------------------------------
        z_score   %not populated if no controls are provided ...
        mean      %mean of the mean hist values
@@ -61,15 +65,12 @@ classdef stats < handle
     end
     
     methods
-        function objs = stats(hist_objs)
+        function obj = stats()
             %
             %   seg_worm.stats()
             %
-
-            if nargin == 0
-                return
-            end
-            objs = seg_worm.stats.initObject(hist_objs);
+            
+            %obj = obj.initObject(exp_hist,ctl_hist);
         end
     end
     

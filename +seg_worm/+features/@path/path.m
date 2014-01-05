@@ -64,7 +64,7 @@ classdef path < handle
     end
     
     methods
-        function obj = path(nw,FPS,VENTRAL_MODE)
+        function obj = path(nw,FPS,VENTRAL_MODE,d_opts)
             %
             %
             %
@@ -78,7 +78,7 @@ classdef path < handle
             
             %Duration (aka Dwelling)
             %--------------------------------------------------------------
-            obj.getDurationInfo(nw.x, nw.y, nw.widths, FPS);
+            obj.getDurationInfo(nw.x, nw.y, nw.widths, FPS,d_opts);
             
             
             %Coordinates

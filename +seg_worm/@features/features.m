@@ -59,7 +59,7 @@ classdef features < handle
             
             obj.posture    = seg_worm.features.posture(nw,midbody_distance,FPS,p_opts,d_opts);
             
-            obj.path = seg_worm.features.path(nw,FPS,VENTRAL_MODE);
+            obj.path = seg_worm.features.path(nw,FPS,VENTRAL_MODE,d_opts);
             
         end
     end

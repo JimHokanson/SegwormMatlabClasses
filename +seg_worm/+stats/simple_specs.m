@@ -36,6 +36,11 @@ classdef simple_specs < seg_worm.stats.specs
            [objs(:).is_signed]   = deal(false);
         end
     end
+    methods
+        function data = getData(obj,feature_obj)
+           data  = eval(['feature_obj.' obj.feature_field]); 
+        end 
+    end
     
 end
 

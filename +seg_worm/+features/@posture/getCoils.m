@@ -1,4 +1,4 @@
-function getCoils(obj, frame_codes,midbody_distance,FPS)
+function getCoils(obj, frame_codes,midbody_distance,FPS,d_opts)
 %
 %   seg_worm.feature_helpers.posture.getCoils
 %
@@ -34,7 +34,15 @@ DATA_NAME = [];
 
 coiled_frames = h__getWormTouchFrames(frame_codes, FPS);
 
+if d_opts.mimic_old_behavior
+    if ~isempty(coiled_frames) && coiled_frames(end).end == length(frame_codes)
+       coiled_frames(end).end   = coiled_frames(end).end - 1;
+       coiled_frames(end).start = coiled_frames(end).start - 1;
+    end
+end
+
 coiled_events = seg_worm.feature.event(coiled_frames,FPS,midbody_distance,DATA_NAME,INTER_DATA_NAME);
+
 coils = coiled_events.getFeatureStruct;
 
 obj.coils = coils;
@@ -63,9 +71,9 @@ coil_frame_start = 0;
 
 n_coils = 0;
 
-n_frames = length(frameCodes) + 1;
+n_frames_p1 = length(frameCodes) + 1;
 
-for iFrame = 1:n_frames
+for iFrame = 1:n_frames_p1
     if in_coil
         if end_coil_mask(iFrame)
             
@@ -73,9 +81,8 @@ for iFrame = 1:n_frames
             if n_coil_frames >= COIL_FRAME_THRESHOLD
                 n_coils = n_coils + 1;
                 
-                %NOTE: The output is 0 based (for now ...) :/
-                touchFrames(n_coils).start = coil_frame_start - 1; %#ok<AGROW>
-                touchFrames(n_coils).end   = iFrame - 2; %#ok<AGROW> %:/
+                touchFrames(n_coils).start = coil_frame_start; %#ok<AGROW>
+                touchFrames(n_coils).end   = iFrame - 1; %#ok<AGROW> %:/
             end
             in_coil = false;
         end

@@ -1,4 +1,4 @@
-function stats_objs = initObject(hist_objs)
+function stats_objs = initObject(obj,exp_hist,ctl_hist)
 %worm2StatsInfo  Compute worm statistics information and save it to a file.
 %
 %   This appears to be a top level function.
@@ -243,32 +243,87 @@ function stats_objs = initObject(hist_objs)
 %   dataStdDevs i.e. hist.std
 %   dataSamples i.e. hist.n_samples
 %
-n_objs = length(hist_objs);
 
-stats_objs(n_objs) = seg_worm.stats();
+obj.name               = exp_hist.name; 
+obj.short_name         = exp_hist.short_name;
+obj.units              = exp_hist.units;
+obj.feature_category   = exp_hist.feature_category;
+obj.hist_type          = exp_hist.hist_type;
+obj.motion_type        = exp_hist.motion_type;
+obj.data_type          = exp_hist.data_type;
 
-for iObj = 1:n_objs
-   cur_s = stats_objs(iObj);
-   cur_h = hist_objs(iObj);
+
+%==========================================================================
+
+%control    - s
+%experiment - o
    
-   cur_s.name               = cur_h.name; 
-   cur_s.short_name         = cur_h.short_name;
-   cur_s.units              = cur_h.units;
-   cur_s.feature_category   = cur_h.feature_category;
-   cur_s.hist_type          = cur_h.hist_type;
-   cur_s.motion_type        = cur_h.motion_type;
-   cur_s.data_type          = cur_h.data_type;
-   
-   %---------------------------------------------------------
-   cur_s.mean      = nanmean(cur_h.mean);
-   cur_s.std       = nanstd(cur_h.mean);
-   cur_s.n_samples = sum(~isnan(cur_h.mean));
-   if cur_s.n_samples >= 3
-      %TODO: Bring out constants ...
-      [~,cur_s.p_normal]  = seg_worm.fex.swtest(cur_h.mean, 0.05, 0);
-   end
-   
+
+%s - set zscore to 0
+%control but not experiment : -Inf
+%experiment but not control : Inf
+
+switch zScoreMode
+    
+    % Normalize the worm to the Opposing group.
+    case 'o'
+        for i = 1:length(wormData)
+            
+            % Does the worm have any exclusive features?
+            wormData(i).zScore  = NaN;
+            if isExclusive(i)
+                
+                % The worm has a feature not present in its control.
+                if wormData(i).samples > controlData(i).samples
+                    wormData(i).zScore = inf;
+                
+                % The worm lacks a feature present in its control.
+                else
+                    wormData(i).zScore = -inf;
+                end
+                
+            % Normalize the worm to its control.
+            elseif controlData(i).stdDev > 0
+                wormData(i).zScore = (wormData(i).mean - controlData(i).mean) / controlData(i).stdDev;
+            end
+        end
+        
+    % Normalize the worm to itself (Same).
+    case 's'
+        for i = 1:length(wormData)
+            wormData(i).zScore = 0;
+        end
+        
+    % Normalize the worm to both groups (Population).
+    case 'p'
+        for i = 1:length(wormData)
+            
+            % Combine the data.
+            allData = cat(1, wormData(i).dataMeans, controlData(i).dataMeans);
+            
+            % Normalize the worm.
+            wormData(i).zScore  = NaN;
+            zMean   = nanmean(allData);
+            zStdDev = nanstd(allData);
+            if zStdDev > 0
+                wormData(i).zScore  = (wormData(i).mean - zMean) / zStdDev;
+            end
+        end
 end
+
+
+
+
+
+
+
+
+
+
+
+%TODO: Just pass specs object
+
+
 
 %This could be incorrect if we have control data as well ...
 %------------------------------------------------------------

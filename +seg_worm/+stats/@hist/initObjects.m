@@ -41,13 +41,13 @@ function hist_objs = h__getHistsFromFeaturePath(feature_file_path)
 h = load(feature_file_path);
 
 %Movement histograms - DONE
-m_hists = h_computeMHists(h,seg_worm.stats.movement_specs.getSpecs);
+m_hists = h_computeMHists(h.worm,seg_worm.stats.movement_specs.getSpecs);
 
 %Simple histograms - DONE
-s_hists = h_computeSHists(h,seg_worm.stats.simple_specs.getSpecs);
+s_hists = h_computeSHists(h.worm,seg_worm.stats.simple_specs.getSpecs);
 
 %Event histograms - DONE
-e_hists = h_computeEHists(h,seg_worm.stats.event_specs.getSpecs);
+e_hists = h_computeEHists(h.worm,seg_worm.stats.event_specs.getSpecs);
 
 hist_objs = [m_hists s_hists e_hists]';
 
@@ -110,19 +110,17 @@ mask = isinf(data) | isnan(data);
 
 end
 
-
-
 function h__computeStats(obj,data)
  
 
-obj.mean  = mean(data);
+obj.mean_per_video  = mean(data);
 
 %I couldn't resist optimizing this since we've already calculated the mean
 n_samples = length(data);
 if n_samples == 1
-    obj.std = 0;
+    obj.std_per_video = 0;
 else
-    obj.std = sqrt(1/(n_samples-1)*sum((data - obj.mean).^2));
+    obj.std_per_video = sqrt(1/(n_samples-1)*sum((data - obj.mean_per_video).^2));
 end
 
 end
@@ -161,9 +159,6 @@ function [bins,edges] = h__computeBinInfo(data,resolution)
 
 
 MAX_N = 1e6;
-
-%JAH: I find this code to be very confusing ...
-
 
 %Compute the data range & padding
 %------------------------------------------------
@@ -250,7 +245,7 @@ e_hists = [temp_hists{:}];
 
 end
 
-function m_hists = h_computeMHists(h,specs)
+function m_hists = h_computeMHists(feature_obj,specs)
 %
 %   m_hists = h_computeMHists(h,specs)
 %
@@ -286,11 +281,12 @@ function m_hists = h_computeMHists(h,specs)
 MAX_NUM_HIST_OBJECTS = 1000;
 
 %---------------------------------------------------------
-motion_modes = h.worm.locomotion.motion.mode;
+motion_modes = feature_obj.locomotion.motion.mode;
 
 n_frames = length(motion_modes);
 
-indices_use_mask = {true(1,n_frames) ...
+indices_use_mask = {...
+    true(1,n_frames) ...
     motion_modes == 1 ...
     motion_modes == 0 ...
     motion_modes == -1};
@@ -308,18 +304,12 @@ n_specs = length(specs);
 for iSpec = 1:n_specs
    
    cur_specs = specs(iSpec);
-   cur_data  = eval(['h.' cur_specs.feature_field]);
-    
-   %NOTE: We can't filter data here because the data is filtered according
-   %to the value of the data, not according to the velocity of the midbody
-   
-   if ~isnan(cur_specs.index)
-      %This is basically for eigenprojections
-      %JAH: I really don't like the orientation: [Dim x n_frames]
-      cur_data = cur_data(cur_specs.index,:);
-   end
+ 
+   cur_data = cur_specs.getData(feature_obj);
    
    good_data_mask = ~h__getFilterMask(cur_data);
+   
+   
    
    for iMotion = 1:4 
       cur_motion_type = motion_types{iMotion};
@@ -375,7 +365,7 @@ m_hists = [all_hist_objects{1:hist_count}];
 
 end
 
-function s_hists = h_computeSHists(h,specs)
+function s_hists = h_computeSHists(feature_obj,specs)
 
 n_specs = length(specs);
 
@@ -384,7 +374,8 @@ temp_hists = cell(1,n_specs);
 for iSpec = 1:n_specs
    
    cur_specs = specs(iSpec);
-   cur_data  = h__filterData(eval(['h.' cur_specs.feature_field]));
+   cur_data  = h__filterData(cur_specs.getData(feature_obj));
+   %cur_data  = h__filterData(eval(['h.' cur_specs.feature_field]));
     
    temp_hists{iSpec} = h__createIndividualObject(cur_data,cur_specs,'simple','all','all');
    

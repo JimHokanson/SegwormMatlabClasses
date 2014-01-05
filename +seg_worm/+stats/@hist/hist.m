@@ -95,8 +95,24 @@ classdef hist < handle
         %needs to be clarified, I also don't like the name ...
         
         
-        mean = NaN  %[n_videos x 1]
-        std  = NaN  %[n_videos x 1]
+        mean_per_video = NaN  %[n_videos x 1]
+        std_per_video  = NaN  %[n_videos x 1]
+        
+        
+        %{
+        Not included yet ...
+        p_normal, only for n_valid_measurements >= 3
+        [~,cur_s.p_normal]  = seg_worm.fex.swtest(cur_h_e.mean, 0.05, 0);
+        
+        q_normal - 
+        %}
+        
+    end
+    
+    properties (Dependent)
+        mean 
+        std  %Standard deviation of means
+        n_valid_measurements
     end
     
     properties (Hidden, Dependent)
@@ -107,6 +123,15 @@ classdef hist < handle
     end
     
     methods
+        function value = get.mean(obj)
+           value = nanmean(obj.mean_per_video); 
+        end
+        function value = get.std(obj)
+           value = nanstd(obj.mean_per_video); 
+        end
+        function value = get.n_valid_measurements(obj)
+           value = sum(~isnan(obj.mean)); 
+        end
         function value = get.n_videos(obj)
             value = length(obj.mean);
         end
@@ -270,9 +295,9 @@ classdef hist < handle
                 %------------------------------------------------------------------
                 final_obj.bins      = new_bins;
                 final_obj.counts    = new_counts;
-                final_obj.n_samples = [cur_feature_array.n_samples]';
-                final_obj.mean      = [cur_feature_array.mean]';
-                final_obj.std       = [cur_feature_array.std]';
+                final_obj.n_samples       = cat(1,cur_feature_array.n_samples);
+                final_obj.mean_per_video  = cat(1,cur_feature_array.std_per_video);
+                final_obj.std_per_video   = cat(1,cur_feature_array.std_per_video);
                 final_obj.pdf       = sum(final_obj.counts,2)./sum(final_obj.n_samples);
                 
                 %Hold onto final object for output

@@ -75,7 +75,7 @@ classdef posture < handle
             %??? - Would we be able to identify coiled worms by integrating the angles?
             %cumsum(angles) - ensure cumsum never exceeds some value
             
-            obj.getCoils(nw.frame_codes,midbody_distance,FPS);
+            obj.getCoils(nw.frame_codes,midbody_distance,FPS,d_opts);
             
             
             %Directions (AKA orientation)

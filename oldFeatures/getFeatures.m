@@ -1,4 +1,4 @@
-function getFeatures()
+function worm = getFeatures()
 %This code was originally copied from SegWorm/Pipeline/featureProcess.m
 %
 %   This is the old code for getting feature data. We are rewriting this to
@@ -1190,7 +1190,7 @@ toc(t_final);
 %% Save the output
 
 %save eval(featuresOutName) info worm;
-save(featuresOutName, 'info', 'worm');
+%save(featuresOutName, 'info', 'worm');
 %save(featuresOutName, 'info', 'worm', 'featureData');
 %%
 

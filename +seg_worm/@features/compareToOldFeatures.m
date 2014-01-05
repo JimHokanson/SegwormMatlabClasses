@@ -26,9 +26,9 @@ all_field_names = {m_specs.feature_field};
 min_corr_values = 0.99*ones(size(all_field_names));
 
 amp_wavelength_names = {...
-    'worm.posture.amplitude.ratio'
-    'worm.posture.wavelength.primary'
-    'worm.posture.wavelength.secondary'}';
+    'posture.amplitude.ratio'
+    'posture.wavelength.primary'
+    'posture.wavelength.secondary'}';
 
 min_corr_values(ismember(all_field_names,amp_wavelength_names)) = 0.97;
 
@@ -40,28 +40,30 @@ min_corr_values(ismember(all_field_names,amp_wavelength_names)) = 0.97;
 
 passed_movement = true;
 for iSpec = 1:length(m_specs)
-
-cur_deep_field_name = m_specs(iSpec).feature_field; 
     
-x = eval(['h_old.' cur_deep_field_name]);
-y = eval(['h_new.' cur_deep_field_name]);
-
-if isequaln(x,y)
-    fprintf(1,'%s are exactly equal!\n',cur_deep_field_name);
-    continue
-end
-r = h__corrValue(x,y);
-if r < min_corr_values(iSpec)
-    passed_movement = false;
-    fprintf(2,'%s not exactly equal: r = %0.3f\n',cur_deep_field_name,r);
-else
-    fprintf(1,'[\b close:  %0.3f, %s]\b\n',r,cur_deep_field_name);
-end
-
+    cur_spec = m_specs(iSpec);
+    
+    cur_deep_field_name = cur_spec.feature_field;
+    
+    x = cur_spec.getData(old_worm);
+    y = cur_spec.getData(new_worm);
+    
+    if isequaln(x,y)
+        fprintf(1,'%s are exactly equal!\n',cur_deep_field_name);
+    else
+    r = h__corrValue(x,y);
+    if r < min_corr_values(iSpec)
+        passed_movement = false;
+        fprintf(2,'%s not exactly equal: r = %0.3f\n',cur_deep_field_name,r);
+    else
+        fprintf(1,'[\b close:  %0.3f, %s]\b\n',r,cur_deep_field_name);
+    end
+    end
+    
 end
 
 if ~passed_movement
-   error('Failed movement tests') 
+    error('Failed movement tests')
 end
 
 %Simple Tests
@@ -69,57 +71,105 @@ end
 
 s_specs = seg_worm.stats.simple_specs.getSpecs;
 
-%The simple specs might have different lengths as they are not 
+passed_simple = true;
+for iSpec = 1:length(s_specs)
+    
+    cur_spec = s_specs(iSpec);
+
+    cur_deep_field_name = cur_spec.feature_field;
+    
+    x = cur_spec.getData(old_worm);
+    y = cur_spec.getData(new_worm);
+    if isequal(size(x),size(y)) && h__corrValue(x,y) > 0.999
+        fprintf(1,'%s are equal!\n',cur_deep_field_name);
+    else
+        passed_simple = false;
+        fprintf(2,'%s not equal\n',cur_deep_field_name);
+    end
+    
+end
+
+if ~passed_simple
+    error('Failed "simple" data tests')
+end
+
+
+%The simple specs might have different lengths as they are not
 
 %Event Tests
 %==========================================================================
 
 e_specs = seg_worm.stats.event_specs.getSpecs;
 
+passed_events = true;
 for iSpec = 1:length(e_specs)
-   %TODO: Still need to implement this
-   %
-   %In spec, implement data retrieval given head object ...
+    
+    cur_spec = e_specs(iSpec);
+
+    cur_deep_field_name = cur_spec.feature_field;
+    
+    if ~isempty(cur_spec.sub_field)
+        cur_deep_field_name = [cur_deep_field_name '.' cur_spec.sub_field]; %#ok<AGROW>
+    end
+
+    x = cur_spec.getData(old_worm);
+    y = cur_spec.getData(new_worm);
+    
+    %NOTE: Some of the values are singular, can't do correlation on single values ...
+    if isequaln(x,y) || (isequal(size(x),size(y)) && all(h__percentDiff(x,y) < 0.001 | isnan(x) | isnan(y)))
+        fprintf(1,'%s are equal!\n',cur_deep_field_name);
+    else
+        passed_events = false;
+        fprintf(2,'%s not equal\n',cur_deep_field_name);
+    end
 end
 
+%NOT EQUAL
+%----------------------------
+%posture.coils.frames.interTime not equal
+%Final event time difference is just slightly larger ????
+%22.4073   89.5905   37.8873   14.1642       NaN
+%22.4073   89.5905   37.8873   14.2029       NaN
 
-
+if ~passed_events
+    error('Failed "event" tests')
+end
 
 end
 
 %Might replace with max diff or average diff, then do comparison in
 %assertion
 function pd = h__percentDiff(x,y)
-   x = x(:);
-   y = y(:);
-   mask = ~(isnan(x) | isnan(y));
-   pd = zeros(1,length(x));
-   pd(mask) = abs((x(mask) - y(mask))./x(mask));
+x = x(:);
+y = y(:);
+mask = ~(isnan(x) | isnan(y));
+pd = zeros(1,length(x));
+pd(mask) = abs((x(mask) - y(mask))./x(mask));
 end
 
 function r = h__corrValue(x,y)
-    x = x(:);
-    y = y(:);
-   mask = isnan(x) | isnan(y);
-   r = corr(x(~mask),y(~mask));
+x = x(:);
+y = y(:);
+mask = isnan(x) | isnan(y);
+r = corr(x(~mask),y(~mask));
 end
 
 function h__summarize(new,old)
-    subplot(2,2,[1 2])
-    plot(old,'-o')
-    hold all
-    plot(new,'-+')
-    hold off
-    legend({'old' 'new'})
-    
-    subplot(2,2,3)
-    scatter(old,new)
-    axis equal
-    xlabel('old')
-    ylabel('new')
-    
-    subplot(2,2,4)
-    plot(h__percentDiff(old,new))
-    title(sprintf('r: %0.3f',h__corrValue(old,new)))
-    
+subplot(2,2,[1 2])
+plot(old,'-o')
+hold all
+plot(new,'-+')
+hold off
+legend({'old' 'new'})
+
+subplot(2,2,3)
+scatter(old,new)
+axis equal
+xlabel('old')
+ylabel('new')
+
+subplot(2,2,4)
+plot(h__percentDiff(old,new))
+title(sprintf('r: %0.3f',h__corrValue(old,new)))
+
 end

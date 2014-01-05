@@ -89,7 +89,7 @@ classdef event < sl.obj.handle_light
                 if obj.start_Is(1) == 1
                     value = value - 1;
                 end
-                if obj.end_Is(end) == obj.n_events
+                if obj.end_Is(end) == obj.n_video_frames
                     value = value - 1;
                 end
             end

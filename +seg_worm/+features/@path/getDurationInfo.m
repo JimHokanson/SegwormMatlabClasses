@@ -1,17 +1,22 @@
-function getDurationInfo(obj,sx, sy, widths, fps)
+function getDurationInfo(obj,sx, sy, widths, fps, d_opts)
 %   
 %
 %   seg_worm.feature_helpers.path.getDurationInfo
 %
+%   Old Name:
+%   - wormPathTime.m
+%   - featureProcess.m
+%
+%
 %   Compute the time spent at each point along the worm path.
 %
 %   Various parts of the worm are discretized into grid locations. The
-%   discretization is based on the average worm width (excludes neck and
-%   hips :/ ). Once the worm skeletons have been scaled based on the width,
-%   they are rounded to integer values. For each frame, all unique location
-%   values increment a counter at those locations by 1. The end result is
-%   that for each unit in the "arena" there is a count of how many frames
-%   some part of the worm was in that location.
+%   discretization is based on the average worm width. Once the worm
+%   skeletons have been scaled based on the width, they are rounded to
+%   integer values. For each frame, all unique location values increment a
+%   counter at those locations by 1. The end result is that for each unit
+%   in the "arena" there is a count of how many frames some part of the
+%   worm was in that location.
 %
 %
 %   Inputs:
@@ -72,11 +77,25 @@ function getDurationInfo(obj,sx, sy, widths, fps)
 SI = seg_worm.skeleton_indices;
 
 % Compute the skeleton points.
-s_points = {SI.ALL_INDICES SI.HEAD_INDICES SI.MID_INDICES SI.TAIL_INDICES};
+s_points = {SI.ALL_INDICES SI.HEAD_INDICES SI.BODY_INDICES SI.TAIL_INDICES};
 n_points = length(s_points);
 
 %??? - why scale this ????, why not just use microns?
-mean_width = nanmean(mean(widths([s_points{2:4}],:),1),2);
+
+if d_opts.mimic_old_behavior 
+    s_points_temp = {SI.HEAD_INDICES SI.MID_INDICES SI.TAIL_INDICES};
+
+    all_widths = zeros(1,3);
+    for iWidth = 1:3
+        temp = widths(s_points_temp{iWidth},:);
+        all_widths(iWidth) = nanmean(temp(:));
+    end
+    mean_width = mean(all_widths);  
+else
+    mean_width = nanmean(widths(:));
+end
+
+
 scale = sqrt(2)/mean_width;
 %NOTE: The old code omitted the widths at the neck and hips, I'm also doing
 %that here, which is why we use the head, midbody, and tail indices,
