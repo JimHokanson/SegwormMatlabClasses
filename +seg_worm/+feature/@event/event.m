@@ -220,7 +220,12 @@ classdef event < sl.obj.handle_light
             s = struct;
             
             if obj.n_events == 0
-               s = struct('frames',[],'frequency',[],'timeRatio',[]);
+               if isempty(obj.data_sum_name)
+                   s = struct('frames',[],'frequency',[],'timeRatio',[]);
+               else
+                   %ratio = struct('time',[],'distance',[]);
+                   s = struct('frames',[],'frequency',[],'ratio',[]);
+               end
                return
             end
             
