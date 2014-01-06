@@ -19,7 +19,14 @@ function testing_code
     
     wormFiles = {feature_files.name};
     
-    hist_objs = seg_worm.stats.hist(wormFiles(1:10));
+    %TODO: Make this seg_worm.getHists for short
+    hist_man_exp = seg_worm.stats.hist.manager(wormFiles(1:10));
+    hist_man_ctl = seg_worm.stats.hist.manager(wormFiles(11:20));
+    
+    %TODO: Make this seg_worm.getStats for short
+    stats_man = seg_worm.stats.manager(hist_man_exp,hist_man_ctl);
+    
+    hist_man.getStats();
     
     seg_worm.stats(hist_objs);
     

@@ -1,4 +1,4 @@
-function hist_objs = initObjects(feature_file_paths)
+function hist_objs = initObjects(obj,feature_obj)
 %
 %   hist_objs = seg_worm.stats.hist.initObjects(feature_file_paths)
 %
@@ -13,41 +13,14 @@ function hist_objs = initObjects(feature_file_paths)
 %   - for event data, we should remove partial events (events that start at
 %   the first frame or end at the last frame)
 
-%Loop over all feature files and get histogram objects for each
-%--------------------------------------------------------------------------
-if ischar(feature_file_paths)
-    feature_file_paths = {feature_file_paths};
-end
-
-n_files = length(feature_file_paths);
-hist_cell_array = cell(n_files,1);
-
-for iFile  = 1:n_files
-    hist_cell_array{iFile} = h__getHistsFromFeaturePath(feature_file_paths{iFile});
-end
-
-%Merge the objects from each file
-%--------------------------------------------------------------------------
-hist_objs = seg_worm.stats.hist.mergeObjects(hist_cell_array);
-
-
-end
-
-%==========================================================================
-function hist_objs = h__getHistsFromFeaturePath(feature_file_path)
-
-% Initialize the worm data information.
-%--------------------------------------------------------------------------
-h = load(feature_file_path);
-
 %Movement histograms - DONE
-m_hists = h_computeMHists(h.worm,seg_worm.stats.movement_specs.getSpecs);
+m_hists = h_computeMHists(feature_obj,seg_worm.stats.movement_specs.getSpecs);
 
 %Simple histograms - DONE
-s_hists = h_computeSHists(h.worm,seg_worm.stats.simple_specs.getSpecs);
+s_hists = h_computeSHists(feature_obj,seg_worm.stats.simple_specs.getSpecs);
 
 %Event histograms - DONE
-e_hists = h_computeEHists(h.worm,seg_worm.stats.event_specs.getSpecs);
+e_hists = h_computeEHists(feature_obj,seg_worm.stats.event_specs.getSpecs);
 
 hist_objs = [m_hists s_hists e_hists]';
 
@@ -208,7 +181,6 @@ temp_hists = cell(1,n_specs);
 %- need to get video info for knowing # of frames
 
 for iSpec = 1:n_specs
-   
    cur_specs = specs(iSpec);
 
    %NOTE: Because we are doing structure array indexing, we need to capture
@@ -302,7 +274,7 @@ hist_count = 0;
 n_specs = length(specs);
 
 for iSpec = 1:n_specs
-   
+       
    cur_specs = specs(iSpec);
  
    cur_data = cur_specs.getData(feature_obj);
@@ -371,14 +343,11 @@ n_specs = length(specs);
 
 temp_hists = cell(1,n_specs);
 
-for iSpec = 1:n_specs
-   
+for iSpec = 1:n_specs    
    cur_specs = specs(iSpec);
    cur_data  = h__filterData(cur_specs.getData(feature_obj));
-   %cur_data  = h__filterData(eval(['h.' cur_specs.feature_field]));
     
    temp_hists{iSpec} = h__createIndividualObject(cur_data,cur_specs,'simple','all','all');
-   
 end
 
 s_hists = [temp_hists{:}];

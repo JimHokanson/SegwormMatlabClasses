@@ -147,19 +147,14 @@ classdef hist < handle
     end
     
     methods
-        function objs = hist(feature_file_paths)
+        function objs = hist()
             %
             %
             %   obj = seg_worm.stats.hist;
             %
             %   TODO: Allow loading from saved file as well.
             
-            %Added this to allow deep copy code to work
-            if nargin == 0
-                return
-            end
-            
-            objs = seg_worm.stats.hist.initObjects(feature_file_paths);
+            %objs = seg_worm.stats.hist.initObjects(feature_obj);
             
         end
         function obj_out = createCopy(obj_in)
@@ -201,7 +196,7 @@ classdef hist < handle
     
     
     methods (Static)
-        all_hists = initObjects(feature_file_path)
+        %all_hists = initObjects(feature_file_path)
         function objs = mergeObjects(hist_cell_array)
             %
             %

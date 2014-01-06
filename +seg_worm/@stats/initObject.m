@@ -1,6 +1,8 @@
 function stats_objs = initObject(obj,exp_hist,ctl_hist)
 %worm2StatsInfo  Compute worm statistics information and save it to a file.
 %
+%   seg_worm.stats.initObject
+%
 %   This appears to be a top level function.
 %
 %   Old Code: 
