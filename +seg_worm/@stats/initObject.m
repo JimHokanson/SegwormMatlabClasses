@@ -2,249 +2,6 @@ function stats_objs = initObject(obj,exp_hist,ctl_hist)
 %worm2StatsInfo  Compute worm statistics information and save it to a file.
 %
 %   seg_worm.stats.initObject
-%
-%   This appears to be a top level function.
-%
-%   Old Code: 
-%   - seg_worm.w.stats.worm2StatsInfo
-%
-%   seg_worm.w.stats.worm2StatsInfo(FILENAME, 
-%                  WORMFILES, 
-%                  WORMINFOFILTER, 
-%                  WORMFEATFILTER,
-%                  CONTROLFILES, 
-%                  CONTROLINFOFILTER, 
-%                  CONTROLFEATFILTER,
-%                  ZSCOREMODE, 
-%                  PERMUTATIONS, 
-%                  ISVERBOSE)
-%
-%   TOOLBOX FUNCTIONS
-%   -----------------------------------------------------------------------
-%   mafdr - bioinformatics toolbox 
-%   
-%   Implements: [2] Storey, J.D. (2002). A
-%   direct approach to false discovery rates. Journal of the Royal
-%   Statistical Society 64(3), 479–498.
-%
-%   
-%
-%
-%   QUESTIONS
-%   -----------------------------------------------------------------------
-%   1) When only wormFiles are provided - no controls, what do the
-%   statistical values represent?
-%   2) When a file has controls, why are these ignored ????
-%
-%
-%dataInfo = 
-% 
-% 726x1 struct array with fields:
-% 
-%     name
-%     unit
-%     title1
-%     title2
-%     title3
-%     title1I
-%     title2I
-%     title3I
-%     index
-%     field
-%     isMain
-%     category
-%     type
-%     subType
-%     sign
-%
-%wormData = 
-% 
-% 726x1 struct array with fields:
-% 
-%     zScore
-%     dataMeans
-%     dataStdDevs
-%     dataSamples
-%     mean
-%     stdDev
-%     samples
-%     pNormal
-%     qNormal
-%
-%
-%   Outputs
-%   =======================================================================
-%       output_file_path - the file name for the worm statistics information;
-%                  a file containing a structure with fields:
-%
-%                  wormInfo & controlInfo = the worm information
-%
-%                  *******************
-%                  dataInfo: [726 x 1]
-%
-%                  name     = the feature's name
-%                  units    = the feature's units
-%                  title1   = the feature's 1st title
-%                  title1I  = the feature's 1st title index
-%                  title2   = the feature's 2nd title
-%                  title2I  = the feature's 2nd title index
-%                  title3   = the feature's 3rd title
-%                  title3I   = the feature's 3rd title index
-%                  field    = the feature's path; a struct where:
-%
-%                             histogram  = the histogram data path
-%                             statistics = the statistics data path
-%
-%                  index    = the feature's field index
-%                  isMain   = is this a main feature?
-%                  category = the feature's category, where:
-%
-%                             m = morphology
-%                             s = posture (shape)
-%                             l = locomotion
-%                             p = path
-%
-%                  type     = the feature's type, where:
-%
-%                             s = simple data
-%                             m = motion data
-%                             d = event summary data
-%                             e = event data
-%                             i = inter-event data
-%
-%                  subType  = the feature's sub-type, where:
-%
-%                             n = none
-%                             f = forward motion data
-%                             b = backward motion data
-%                             p = paused data
-%                             t = time data
-%                             d = distance data
-%                             h = frequency data (Hz)
-%
-%                  sign     = the feature's sign, where:
-%
-%                             s = signed data   - all signed data
-%                             u = unsigned data - data isn't signed 
-%                             a = the absolute value of the data
-%                             p = the positive data
-%                             n = the negative data
-%
-%                  *******************
-%                  wormData & controlData:
-%
-%                  zScore      = the z-score per feature
-%                                (normalized to the controls)
-%                                Note 1: if no controls are present, the
-%                                 zScore is left empty
-%                                Note 2: if a feature is present in more
-%                                 than one worm but absent in the controls,
-%                                 the z-score is set to infinite;
-%                                 conversely, if a feature is absent from
-%                                 the worms but present in more than 1
-%                                 control, the z-score is set to -infinite.
-%                  dataMeans   = the feature data means
-%                  dataStdDevs = the feature data standard deviations
-%                  dataSamples = the feature data samples
-%                  mean        = the mean per feature
-%                  stdDev      = the standard deviation per feature
-%                  samples     = the number of samples per feature
-%                  pNormal     = the Shapiro-Wilk normality p-values
-%                  qNormal     = the Shapiro-Wilk normality q-values
-%
-%
-%                  significance.worm:
-%
-%                  Note: this field is only present with a control
-%
-%                  pValue              = the worm p-value
-%                  qValue              = the worm q-value
-%                  exclusiveFeaturesI  = the indices for exclusive features
-%
-%
-%                  significance.features:
-%
-%                  Note: this field is only present with a control
-%
-%                  pTValue = the Student's t-test p-value(s), per feature
-%                  qTValue = the Student's t-test q-value(s), per feature
-%                  pWValue = the Wilcoxon rank-sum p-value(s), per feature
-%                  qWValue = the Wilcoxon rank-sum q-value(s), per feature
-%
-%
-%   Inputs
-%   =======================================================================
-%       wormFiles         - the worm histogram or statistics files
-%       wormInfoFilter    - the worm information filtering criteria;
-%                           a structure with any of the fields:
-%
-%              minFPS     = the minimum video frame rate (frames/seconds)
-%              minTime    = the minimum video time (seconds)
-%              maxTime    = the maximum video time (seconds)
-%              minSegTime = the minimum time for segmented video (seconds)
-%              minRatio   = the minimum ratio for segmented video frames
-%              minDate    = the minimum date to use (DATENUM)
-%              maxDate    = the maximum date to use (DATENUM)
-%              years      = the years to use
-%              months     = the months to use (1-12)
-%              weeks      = the weeks to use (1-52)
-%              days       = the days (of the week) to use (1-7)
-%              hours      = the hours to use (1-24)
-%              trackers   = the trackers to use (1-8)
-%
-%       wormFeatFilter    - the worm feature filtering criteria;
-%                           a structure with the fields:
-%
-%               featuresI = the feature indices (see WORMDATAINFO)
-%               minThr    = the minimum feature value (optional)
-%               maxThr    = the maximum feature value (optional)
-%               indices   = the sub indices for the features (optional)
-%               subFields = the subFields for the features (optional)
-%
-%       controlFiles      - the control histogram or statistics files
-%       controlInfoFilter - the control information filtering criteria
-%       controlFeatFilter - the control feature filtering criteria
-%       zScoreMode        - the z-score normalization mode; if one mode is
-%                           provided, it's applied to both the worm and
-%                           control; otherwise, the first mode applies to
-%                           the worm and the second mode is applied to the
-%                           control;
-%                           the default is 'os'.
-%
-%                       o = normalize the worm to the Opposing group
-%                       s = normalize the worm to itself (Same)
-%                       p = normalize the worm to both groups (Population)
-%
-%       permutations     - the number of permutations to run for
-%                          significance testing; if zero or empty, no
-%                          permutations are run;
-%                          the default is none
-%       isVerbose        - verbose mode displays the progress;
-%                          the default is yes (true)
-%
-%   See also:
-%   seg_worm.w.stats.worm2histogram, 
-%   seg_worm.w.stats.worm2stats, 
-%   FILTERWORMINFO, 
-%   seg_worm.w.stats.wormStatsInfo
-%
-%
-% © Medical Research Council 2012
-% You will not remove any copyright or other notices from the Software; 
-% you must reproduce all copyright notices and other proprietary 
-% notices on any copies of the Software.
-
-
-%This little bit reproduces a lot of the code, but doesn't actually do much
-%of anything other than copy hist values
-%
-%I've skipped copying over the mean values ...
-%   i.e., not copied from the old code
-%
-%   dataMeans   i.e. hist.mean
-%   dataStdDevs i.e. hist.std
-%   dataSamples i.e. hist.n_samples
-%
 
 obj.name               = exp_hist.name; 
 obj.short_name         = exp_hist.short_name;
@@ -260,43 +17,19 @@ obj.data_type          = exp_hist.data_type;
 %control    - s
 %experiment - o
    
+keyboard
 
-%s - set zscore to 0
-%control but not experiment : -Inf
-%experiment but not control : Inf
+if isnan(exp_hist.mean)
+    obj.z_score_experiment = -Inf;
+elseif isnan(ctl_hist.mean)
+    obj.z_score_experiment = Inf;
+else
+    %This might need to be means_per_video, not the mean ...
+    obj.z_score_experiment = (exp_hist.mean - ctl_hist.mean)/ctl_hist.std;
+end
 
-switch zScoreMode
-    
-    % Normalize the worm to the Opposing group.
-    case 'o'
-        for i = 1:length(wormData)
-            
-            % Does the worm have any exclusive features?
-            wormData(i).zScore  = NaN;
-            if isExclusive(i)
-                
-                % The worm has a feature not present in its control.
-                if wormData(i).samples > controlData(i).samples
-                    wormData(i).zScore = inf;
-                
-                % The worm lacks a feature present in its control.
-                else
-                    wormData(i).zScore = -inf;
-                end
-                
-            % Normalize the worm to its control.
-            elseif controlData(i).stdDev > 0
-                wormData(i).zScore = (wormData(i).mean - controlData(i).mean) / controlData(i).stdDev;
-            end
-        end
-        
-    % Normalize the worm to itself (Same).
-    case 's'
-        for i = 1:length(wormData)
-            wormData(i).zScore = 0;
-        end
-        
-    % Normalize the worm to both groups (Population).
+%Not reimplemented ...
+%{
     case 'p'
         for i = 1:length(wormData)
             
@@ -311,16 +44,14 @@ switch zScoreMode
                 wormData(i).zScore  = (wormData(i).mean - zMean) / zStdDev;
             end
         end
-end
+%}
 
 
 
-
-
-
-
-
-
+%s - set zscore to 0
+%in control but not experiment : -Inf
+%in experiment but not control : Inf
+%???? - What about if in neither?????
 
 
 %TODO: Just pass specs object

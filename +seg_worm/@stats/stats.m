@@ -49,19 +49,19 @@ classdef stats < handle
        q_normal_experiment
        q_normal_control
        z_score_experiment
-       z_score_control
+       z_score_control    = 0 %By definition ...
        p_significance
        p_normal
        
        %-------------------------------------------------------------------
-       z_score   %not populated if no controls are provided ...
-       mean      %mean of the mean hist values
-       std       %std of the hist values
-       n_samples %# of videos where the mean is not NaN
-       p_normal = NaN  %probability of being a normal distribution
-       %
-       %    seg_worm.fex.swtest(data(i).dataMeans, 0.05, 0)
-       q_normal  %
+%        z_score   %not populated if no controls are provided ...
+%        mean      %mean of the mean hist values
+%        std       %std of the hist values
+%        n_samples %# of videos where the mean is not NaN
+%        p_normal = NaN  %probability of being a normal distribution
+%        %
+%        %    seg_worm.fex.swtest(data(i).dataMeans, 0.05, 0)
+%        q_normal  %
     end
     
     methods
@@ -76,7 +76,7 @@ classdef stats < handle
     
     methods (Static)
        %seg_worm.stats.initObject(hist_objs)
-       stats_objs = initObject(hist_objs)
+       %stats_objs = initObject(hist_objs)
     end
     
 end
