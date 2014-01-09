@@ -99,6 +99,7 @@ end
 end
 
 function h__initMeta(obj,specs,hist_type,motion_type,data_type)
+obj.field            = specs.getLongField();
 obj.feature_category = specs.feature_category;
 obj.resolution       = specs.resolution;
 obj.is_zero_bin      = specs.is_zero_bin;

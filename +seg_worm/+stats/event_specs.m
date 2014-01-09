@@ -63,6 +63,12 @@ classdef event_specs < seg_worm.stats.specs
                 data = [data.(obj.sub_field)];
             end
         end
+        function value = getLongField(obj)
+           value = obj.feature_field;
+           if ~isempty(obj.sub_field)
+              value = [value '.' obj.sub_field]; 
+           end
+        end
     end
     
 end

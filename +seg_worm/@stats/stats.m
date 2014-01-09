@@ -36,6 +36,7 @@ classdef stats < handle
        %
        %ALSO: We need two, one for experiment and one for controls
        %Definitions in: seg_worm.stats.hist
+       field
        name
        short_name
        units
@@ -46,12 +47,28 @@ classdef stats < handle
         
        %New properties
        %-------------------------------------------------------------------
+       p_normal_experiment
+       p_normal_control
        q_normal_experiment
        q_normal_control
        z_score_experiment
        z_score_control    = 0 %By definition ...
+       
+       p_t  %Differential expression ...
+       %    - function: mattest (bioinformatics toolbox)
+       %    This doesn't seem like it is used ...
+       p_w  
+       q_t
+       q_w
+       
        p_significance
-       p_normal
+
+       
+       %pTValue
+       %pWValue
+       %qTValue
+       %qWValue
+       
        
        %-------------------------------------------------------------------
 %        z_score   %not populated if no controls are provided ...
@@ -69,8 +86,8 @@ classdef stats < handle
             %
             %   seg_worm.stats()
             %
+            %   See: seg_worm.stats.initObject
             
-            %obj = obj.initObject(exp_hist,ctl_hist);
         end
     end
     

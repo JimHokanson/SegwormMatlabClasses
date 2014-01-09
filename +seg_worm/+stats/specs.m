@@ -55,6 +55,11 @@ classdef specs < handle
            
         end
     end
+    methods
+        function value = getLongField(obj)
+           value = obj.feature_field;
+        end
+    end
     
 end
 

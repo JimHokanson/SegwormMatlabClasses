@@ -61,6 +61,7 @@ classdef hist < handle
     properties
         %Identification
         %--------------------------------------------------------------
+        field
         name
         short_name
         units               %units associated with the bin values
@@ -110,6 +111,7 @@ classdef hist < handle
     end
     
     properties (Dependent)
+        valid_means %mean_per_video, excluding NaN
         mean 
         std  %Standard deviation of means
         n_valid_measurements
@@ -123,6 +125,9 @@ classdef hist < handle
     end
     
     methods
+        function value = get.valid_means(obj)
+           value = obj.mean_per_video(~isnan(obj.mean_per_video)); 
+        end
         function value = get.mean(obj)
            value = nanmean(obj.mean_per_video); 
         end
@@ -130,10 +135,10 @@ classdef hist < handle
            value = nanstd(obj.mean_per_video); 
         end
         function value = get.n_valid_measurements(obj)
-           value = sum(~isnan(obj.mean)); 
+           value = sum(~isnan(obj.mean_per_video)); 
         end
         function value = get.n_videos(obj)
-            value = length(obj.mean);
+            value = length(obj.mean_per_video);
         end
         function value = get.first_bin(obj)
             value = obj.bins(1);
@@ -154,7 +159,9 @@ classdef hist < handle
             %
             %   TODO: Allow loading from saved file as well.
             
-            %objs = seg_worm.stats.hist.initObjects(feature_obj);
+            %Initializaton called by the manager ...
+            %seg_worm.stats.hist.manager
+            %seg_worm.stats.hist.initObjects
             
         end
         function obj_out = createCopy(obj_in)
@@ -170,7 +177,7 @@ classdef hist < handle
             
             
             obj_out = seg_worm.stats.hist;
-            
+            obj_out.field            = obj_in.field;
             obj_out.feature_category = obj_in.feature_category;
             obj_out.resolution       = obj_in.resolution;
             obj_out.is_zero_bin      = obj_in.is_zero_bin;
@@ -291,7 +298,7 @@ classdef hist < handle
                 final_obj.bins      = new_bins;
                 final_obj.counts    = new_counts;
                 final_obj.n_samples       = cat(1,cur_feature_array.n_samples);
-                final_obj.mean_per_video  = cat(1,cur_feature_array.std_per_video);
+                final_obj.mean_per_video  = cat(1,cur_feature_array.mean_per_video);
                 final_obj.std_per_video   = cat(1,cur_feature_array.std_per_video);
                 final_obj.pdf       = sum(final_obj.counts,2)./sum(final_obj.n_samples);
                 

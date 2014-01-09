@@ -1,8 +1,16 @@
-function stats_objs = initObject(obj,exp_hist,ctl_hist)
+function initObject(obj,exp_hist,ctl_hist)
 %worm2StatsInfo  Compute worm statistics information and save it to a file.
 %
 %   seg_worm.stats.initObject
+%
+%   See Also:
+%   seg_worm.stats.helpers.swtest
+%
 
+ALPHA = 0.05; %Not really used since we don't examine H, just p
+TAIL  = 0;
+
+obj.field              = exp_hist.field;
 obj.name               = exp_hist.name; 
 obj.short_name         = exp_hist.short_name;
 obj.units              = exp_hist.units;
@@ -11,14 +19,7 @@ obj.hist_type          = exp_hist.hist_type;
 obj.motion_type        = exp_hist.motion_type;
 obj.data_type          = exp_hist.data_type;
 
-
-%==========================================================================
-
-%control    - s
-%experiment - o
-   
-keyboard
-
+%zscore
 if isnan(exp_hist.mean)
     obj.z_score_experiment = -Inf;
 elseif isnan(ctl_hist.mean)
@@ -27,6 +28,42 @@ else
     %This might need to be means_per_video, not the mean ...
     obj.z_score_experiment = (exp_hist.mean - ctl_hist.mean)/ctl_hist.std;
 end
+
+%TODO: Move this to the histogram, not here ...
+%------------------------------------------------------------------------
+p_fields  = {'p_normal_experiment' 'p_normal_control'};
+hist_objs = {exp_hist ctl_hist};
+
+for iObj = 1:2
+    cur_field    = p_fields{iObj};
+    cur_hist_obj = hist_objs{iObj};
+    if cur_hist_obj.n_valid_measurements < 3
+        obj.(cur_field) = NaN;
+    else
+        obj.(cur_field) = seg_worm.stats.helpers.swtest(cur_hist_obj.mean_per_video,ALPHA,TAIL);
+    end
+end
+
+if isnan(exp_hist.mean) || isnan(ctl_hist.mean)
+    %This is a literal trasnlation of the code (I think)
+    %I'm a bit confused by it ...
+    n_expt  = exp_hist.n_videos;
+    n_total = n_expt + ctl_hist.n_videos;
+    obj.p_w = seg_worm.stats.helpers.fexact(n_expt,n_total,n_expt,n_expt);
+    obj.p_t = obj.p_w;
+else
+    obj.p_w = ranksum(exp_hist.valid_means,ctl_hist.valid_means);
+end
+
+
+%pWValues - these seem to be the real statistics used ...
+%- exclusive - fexact  seg_worm.stats.helpers.fexact
+%- ranksum
+
+
+
+
+
 
 %Not reimplemented ...
 %{
@@ -57,6 +94,7 @@ end
 %TODO: Just pass specs object
 
 
+%{
 
 %This could be incorrect if we have control data as well ...
 %------------------------------------------------------------
@@ -286,6 +324,6 @@ end
 
 
 
-
+%}
 
 

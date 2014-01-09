@@ -3,10 +3,15 @@ classdef hist_specs < handle
     %   Class:
     %   seg_worm.stats.hist_specs
     %   
+    %
+    %   What is this class? Is it used??????
+    %
+    
     
     properties
        field            %...
-       sub_fields       %...
+       sub_fields       %... TODO: I think this should be singular ...
+       %   I don't think this is ever plural
        type             %m ...
        category         %
        is_time_series   %
