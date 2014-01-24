@@ -1,4 +1,4 @@
-function testing_code
+function t001_oldVsNewStats
 
     %seg_worm.stats.testing_code
  
@@ -203,12 +203,11 @@ function testing_code
     %TODO: Need to reorganize my features to match order of their features
     %...
 
-    
     stats_info_path_v3 = fullfile(hist_path,'stats_info_v3.mat');
     stats_matrix_path_v3 = fullfile(hist_path,'stats_matrix_v3.mat');
     
-    h_si  = load(stats_info_path_v3);   %stats info
-    h_sm  = load(stats_matrix_path_v3); %stats matrix
+    h_si    = load(stats_info_path_v3);   %stats info
+    h_sm    = load(stats_matrix_path_v3); %stats matrix
     h_stats = stats_man.stats;
     
     %h_si.dataInfo
@@ -226,6 +225,7 @@ function testing_code
        sign_all{iObj}       = h_si.dataInfo(iObj).sign;
     end
     
+    %h_stats.field
         
     
     %add on .histogram.data.mean.all (or strip)
@@ -242,22 +242,125 @@ function testing_code
     
     %What about events
     
-    field_names_new = cell
+    field_names_new = cell(1,708);
+    for iObj = 1:708
+        
+       %eigenProjection
+       % - add (1)
+       %
+       %    TODO: Events are still mismatched ...
+       %
+       %    event with frames - remove frames
+       
+       
+       
+       cur_stat = h_stats(iObj);
+       cur_field_name = cur_stat.field;
+       
+       
+       if strcmp(cur_stat.hist_type,'event')
+           
+           %Different rules for frames and no frames
+           
+           I = strfind(cur_field_name,'frames');
+           
+           if ~isempty(I)
+           
+           cur_field_name = regexprep(cur_field_name,'\.frames\.','\.');
+           pre_str  = '';
+           post_str = '.all';
+           mid_str = '.histogram.data.mean';
+           else
+                pre_str  = '';
+                mid_str = '.data';
+                post_str = '';
+           end
+           
+%Mine:          
+% 'locomotion.motion.forward.time.data'
+% 'locomotion.motion.forward.distance.data'
+% 'locomotion.motion.forward.interTime.data'
+% 'locomotion.motion.forward.interDistance.data'
+           
+%Theirs:
+% 'locomotion.motion.forward.time.histogram.data.mean.all'
+% 'locomotion.motion.forward.distance.histogram.data.mean.all'
+% 'locomotion.motion.forward.interTime.histogram.data.mean.all'
+% 'locomotion.motion.forward.interDistance.histogram.data.mean.all'
+           
+%            if sl.str.contains(cur_field_name,'locomotion.motion','location','start')
+%             pre_str  = '';
+%             mid_str = '.data';
+%             post_str = '';
+%             
+%            end
+           
+       elseif strcmp(cur_stat.hist_type,'simple')
+           cur_field_name = regexprep(cur_field_name,'\.times','');
+           pre_str  = '';
+           post_str = '.all';
+           mid_str = '.histogram.data.mean';
+       else
+           switch cur_stat.motion_type
+               case 'all'
+                   pre_str = '';
+               otherwise
+                   %forward, paused, backward
+                   pre_str = ['.' cur_stat.motion_type];
+           end
+
+           %Indexing add on :/
+           if sl.str.contains(cur_field_name,'eigenProjection')
+              %We need to know the index ... 
+              index_number = cur_stat.short_name(end); %Hack for getting #
+              pre_str = ['(' index_number ')' pre_str];
+           end
+
+
+           switch cur_stat.data_type
+               case 'all'
+                   post_str = '.all';
+               case 'absolute'
+                   post_str = '.abs';
+               case 'negative'
+                   post_str = '.neg';
+               case 'positive'
+                   post_str = '.pos';
+           end
+           mid_str = '.histogram.data.mean';
+       end
+       
+       field_names_new{iObj} = sprintf('%s%s%s%s',cur_field_name,pre_str,mid_str,post_str);
+    end
     
+    [mask,loc] = ismember(field_names_new,fields_all);
+    field_names_new(~mask)'
     
-    'morphology.length.histogram.data.mean.all'
-    'morphology.length.forward.histogram.data.mean.all'
-    'morphology.length.paused.histogram.data.mean.all'
-    'morphology.length.backward.histogram.data.mean.all'
-    'morphology.width.head.histogram.data.mean.all'
-    'morphology.width.head.forward.histogram.data.mean.all'
-    'morphology.width.head.paused.histogram.data.mean.all'
-    'morphology.width.head.backward.histogram.data.mean.all'
-    'morphology.width.midbody.histogram.data.mean.all'
-    'morphology.width.midbody.forward.histogram.data.mean.all'
+    [mask2,loc2] = ismember(fields_all,field_names_new);
+    fields_all(~mask2)'
     
-    
-    
+%Current Status:
+%-------------------------------------------
+%Omegas and Upsilons are also being broken up by abs, pos, neg ...
+%MISSING FIELDS ...
+% 'locomotion.turns.omegas.time.histogram.data.mean.abs'
+% 'locomotion.turns.omegas.time.histogram.data.mean.pos'
+% 'locomotion.turns.omegas.time.histogram.data.mean.neg'
+% 'locomotion.turns.omegas.interTime.histogram.data.mean.abs'
+% 'locomotion.turns.omegas.interTime.histogram.data.mean.pos'
+% 'locomotion.turns.omegas.interTime.histogram.data.mean.neg'
+% 'locomotion.turns.omegas.interDistance.histogram.data.mean.abs'
+% 'locomotion.turns.omegas.interDistance.histogram.data.mean.pos'
+% 'locomotion.turns.omegas.interDistance.histogram.data.mean.neg'
+% 'locomotion.turns.upsilons.time.histogram.data.mean.abs'
+% 'locomotion.turns.upsilons.time.histogram.data.mean.pos'
+% 'locomotion.turns.upsilons.time.histogram.data.mean.neg'
+% 'locomotion.turns.upsilons.interTime.histogram.data.mean.abs'
+% 'locomotion.turns.upsilons.interTime.histogram.data.mean.pos'
+% 'locomotion.turns.upsilons.interTime.histogram.data.mean.neg'
+% 'locomotion.turns.upsilons.interDistance.histogram.data.mean.abs'
+% 'locomotion.turns.upsilons.interDistance.histogram.data.mean.pos'
+% 'locomotion.turns.upsilons.interDistance.histogram.data.mean.neg'
     
     
     plot(h.worm.stats.zScore)
