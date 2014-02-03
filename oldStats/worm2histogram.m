@@ -410,6 +410,11 @@ for i = 1:length(histFields)
     histData = setStructField(histData, [histFields{i} '.histogram'], ...
         histogram(eventData, resolution, isZeroBin, isSigned));
 end
+
+% if strcmp(field,'locomotion.motion.forward')
+%     keyboard
+% end
+
 end
 
 

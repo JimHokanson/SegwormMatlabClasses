@@ -1,8 +1,11 @@
 function hist_objs = initObjects(obj,feature_obj)
 %
-%   hist_objs = seg_worm.stats.hist.initObjects(feature_file_paths)
+%   hist_objs = seg_worm.stats.hist.manager.initObjects(feature_file_paths)
 %
-%
+%   INPUTS
+%   =======================================
+%   feature_obj : (seg_worm.features or strut) This may truly be a feature
+%       object or the old structure. Both have the same format.
 %
 %   This is essentially the constructor code. I moved it in here to avoid
 %   the indenting.
@@ -20,7 +23,11 @@ m_hists = h_computeMHists(feature_obj,seg_worm.stats.movement_specs.getSpecs);
 s_hists = h_computeSHists(feature_obj,seg_worm.stats.simple_specs.getSpecs);
 
 %Event histograms - DONE
-e_hists = h_computeEHists(feature_obj,seg_worm.stats.event_specs.getSpecs);
+
+%:/ HACK
+n_samples = length(feature_obj.morphology.length);
+
+e_hists = h_computeEHists(feature_obj,seg_worm.stats.event_specs.getSpecs,n_samples);
 
 hist_objs = [m_hists s_hists e_hists]';
 
@@ -33,7 +40,7 @@ function obj = h__createIndividualObject(data,specs,hist_type,motion_type,data_t
 %
 %   Inputs
 %   -----------------------------------------------------------------------
-%   
+%
 %
 %   TODO:
 %   - consider preinstantiating objects
@@ -84,7 +91,7 @@ mask = isinf(data) | isnan(data);
 end
 
 function h__computeStats(obj,data)
- 
+
 
 obj.mean_per_video  = mean(data);
 
@@ -132,7 +139,11 @@ function [bins,edges] = h__computeBinInfo(data,resolution)
 %
 
 
-MAX_N = 1e6;
+MAX_NUMBER_BINS = 1e6; %The maximum # of bins that we'll use. Since the data
+%is somewhat random, outliers could really chew up memory. I'd prefer not
+%to have some event which all of a sudden tells the computer we need to
+%allocate a few hundred gigabytes of data. If this does ever end up a
+%problem we'll need a better solution (or really A solution)
 
 %Compute the data range & padding
 %------------------------------------------------
@@ -157,7 +168,7 @@ end
 
 n_values = (max_edge - min_edge)/resolution + 1;
 
-if n_values > MAX_N
+if n_values > MAX_NUMBER_BINS
     %TODO: Make the error more explicit
     error('Given specified resolution there are too many data bins')
 end
@@ -169,7 +180,7 @@ end
 
 %Converting data to histograms
 %==========================================================================
-function e_hists = h_computeEHists(h,specs)
+function e_hists = h_computeEHists(h,specs,n_samples)
 
 n_specs    = length(specs);
 temp_hists = cell(1,n_specs);
@@ -181,36 +192,96 @@ temp_hists = cell(1,n_specs);
 %- check if end is equal to the total # of frames ...
 %- need to get video info for knowing # of frames
 
-for iSpec = 1:n_specs
-   cur_specs = specs(iSpec);
+%TODO: Perhaps we'll add a property in h instead for new stuff
+is_old_code = isstruct(h);
 
-   %NOTE: Because we are doing structure array indexing, we need to capture
-   %multiple outputs using [], otherwise we will only get the first value
-   %...
-   cur_data  = eval(['h.' cur_specs.feature_field]);
+if is_old_code
+    start_value = 0;
+    end_value   = n_samples; %BUG IN OLD CODE: n_samples matches
+    %behavior, n_samples -1 does not
+else
+    start_value = 1;
+    end_value   = n_samples;
+end
+            
+for iSpec = 1:n_specs
+    cur_specs = specs(iSpec);
     
-   if ~isempty(cur_data) && ~isempty(cur_specs.sub_field)
-      %This will go from:
-      %   frames (structure array) 
-      %to:
-      %   frames.time
-      %for example.
-      %
-      %It is also used for event.ratio.time and event.ratio.distance
-      %     going from:
-      %         ratio (structure or [])
-      %     to:
-      %         ratio.time
-      %         ratio.distance
-      %
-      %
-      cur_data = [cur_data.(cur_specs.sub_field)];
-   end
-   
-   cur_data = h__filterData(cur_data);
-   
-   temp_hists{iSpec} = h__createIndividualObject(cur_data,cur_specs,'event','all','all');
-   
+    %NOTE: Because we are doing structure array indexing, we need to capture
+    %multiple outputs using [], otherwise we will only get the first value
+    %...
+    cur_data  = eval(['h.' cur_specs.feature_field]);
+    
+    if ~isempty(cur_data) && ~isempty(cur_specs.sub_field)
+        %This will go from:
+        %   frames (structure array)
+        %to:
+        %   frames.time
+        %for example.
+        %
+        %It is also used for event.ratio.time and event.ratio.distance
+        %     going from:
+        %         ratio (structure or [])
+        %     to:
+        %         ratio.time
+        %         ratio.distance
+        
+        %Sadly, this little bit gets run numerous times, once for each
+        %field in the frames structure, even though the result is the same
+        %every time :/
+        
+        parent_data = cur_data;
+        
+        cur_data = [cur_data.(cur_specs.sub_field)];
+        
+%         if strcmp(cur_specs.feature_field,'locomotion.motion.paused.frames')
+%            keyboard 
+%         end
+        
+        %NOTE: This should always occur ...
+        if isfield(parent_data,'start')
+            
+            starts = [parent_data.start];
+            ends   = [parent_data.end];
+            
+            remove_mask = false(1,length(starts));
+
+            if starts(1) == start_value
+                remove_mask(1) = true;
+            end
+            
+            if ends(end) == end_value
+                remove_mask(end) = true;
+            end
+            
+            %NOTE: We don't need to update interTime and interDistance to
+            %be NaN because we know the borders, we just don't know the
+            %durations of the events themselves, so the events need to go
+            %...
+            
+            cur_data(remove_mask) = [];
+        end
+        
+        keyboard
+        
+        %THE FOLLOWING TWO STATEMENTS ARE HACKS, BETTER DEFAULS WOULD BE PREFERRED
+        %
+        %NOTE: I'm working off of saved previous versions where the defaults are
+        %empty instead of properly defined, so I need these checks for a later
+        %match ...
+        
+    elseif isempty(cur_data) && sl.str.contains(cur_specs.feature_field,'ratio','location','end')
+        cur_data = 0;
+    elseif isempty(cur_data) && (...
+            sl.str.contains(cur_specs.feature_field,'frequency','location','end') || ...
+            sl.str.contains(cur_specs.feature_field,'timeRatio','location','end'))
+        cur_data = 0;
+    end
+    
+    cur_data = h__filterData(cur_data);
+    
+    temp_hists{iSpec} = h__createIndividualObject(cur_data,cur_specs,'event','all','all');
+    
 end
 
 e_hists = [temp_hists{:}];
@@ -270,68 +341,66 @@ data_types   = {'all' 'absolute'    'positive'  'negative'};
 %---------------------------------------------------------
 
 all_hist_objects = cell(1,MAX_NUM_HIST_OBJECTS);
-hist_count = 0; 
+hist_count = 0;
 
 n_specs = length(specs);
 
 for iSpec = 1:n_specs
-       
-   cur_specs = specs(iSpec);
- 
-   cur_data = cur_specs.getData(feature_obj);
-   
-   good_data_mask = ~h__getFilterMask(cur_data);
-   
-   
-   
-   for iMotion = 1:4 
-      cur_motion_type = motion_types{iMotion};
-       
-      hist_count = hist_count + 1;
-      temp_data  = cur_data(indices_use_mask{iMotion} & good_data_mask);
+    
+    cur_specs = specs(iSpec);
+    
+    cur_data = cur_specs.getData(feature_obj);
+    
+    good_data_mask = ~h__getFilterMask(cur_data);
+    
+    for iMotion = 1:4
+        cur_motion_type = motion_types{iMotion};
+        
+        hist_count = hist_count + 1;
+        temp_data  = cur_data(indices_use_mask{iMotion} & good_data_mask);
+        
+        all_obj = h__createIndividualObject(temp_data,cur_specs,'motion',cur_motion_type,data_types{1});
+        all_hist_objects{hist_count} = all_obj;
+        if cur_specs.is_signed
             
-      all_obj = h__createIndividualObject(temp_data,cur_specs,'motion',cur_motion_type,data_types{1});
-      all_hist_objects{hist_count} = all_obj;
-      if cur_specs.is_signed
-         
-         %TODO: This could be improved by merging results from positive and
-         %negative ...
-         all_hist_objects{hist_count+1} = h__createIndividualObject(abs(temp_data),cur_specs,'motion',cur_motion_type,data_types{2});
-         
-         
-         %positive object ----------------------------------------
-         pos_obj  = h__getObject(0,cur_specs,'motion',cur_motion_type,data_types{3});
-         
-         I_pos = find(all_obj.bins > 0 & all_obj.counts > 0,1);
-         
-         if ~isempty(I_pos)
-         pos_obj.bins      = all_obj.bins(I_pos:end);
-         pos_obj.counts    = all_obj.counts(I_pos:end);
-         pos_obj.n_samples = sum(pos_obj.counts);
-         
-         h__computeStats(pos_obj,temp_data(temp_data > 0))
-         end
-         
-         %negative object -----------------------------------------
-         neg_obj  = h__getObject(0,cur_specs,'motion',cur_motion_type,data_types{4});
-         
-         I_neg = find(all_obj.bins < 0 & all_obj.counts > 0,1,'last');
-         
-         if ~isempty(I_neg)
-         neg_obj.bins      = all_obj.bins(1:I_neg);
-         neg_obj.counts    = all_obj.counts(1:I_neg);
-         neg_obj.n_samples = sum(neg_obj.counts);
-         h__computeStats(neg_obj,temp_data(temp_data < 0))
-         end
-
-         
-         
-         %final assignments --------------------------------------
-         all_hist_objects{hist_count+2} = pos_obj;
-         all_hist_objects{hist_count+3} = neg_obj;
-         hist_count = hist_count + 3;     
-      end
-   end
+            %TODO: This could be improved by merging results from positive and
+            %negative ...
+            all_hist_objects{hist_count+1} = h__createIndividualObject(abs(temp_data),cur_specs,'motion',cur_motion_type,data_types{2});
+            
+            
+            %positive object ----------------------------------------
+            pos_obj  = h__getObject(0,cur_specs,'motion',cur_motion_type,data_types{3});
+            
+            I_pos = find(all_obj.bins > 0 & all_obj.counts > 0,1);
+            
+            if ~isempty(I_pos)
+                pos_obj.bins      = all_obj.bins(I_pos:end);
+                pos_obj.counts    = all_obj.counts(I_pos:end);
+                pos_obj.n_samples = sum(pos_obj.counts);
+                
+                h__computeStats(pos_obj,temp_data(temp_data > 0))
+            end
+            
+            %negative object -----------------------------------------
+            neg_obj  = h__getObject(0,cur_specs,'motion',cur_motion_type,data_types{4});
+            
+            I_neg = find(all_obj.bins < 0 & all_obj.counts > 0,1,'last');
+            
+            if ~isempty(I_neg)
+                neg_obj.bins      = all_obj.bins(1:I_neg);
+                neg_obj.counts    = all_obj.counts(1:I_neg);
+                neg_obj.n_samples = sum(neg_obj.counts);
+                h__computeStats(neg_obj,temp_data(temp_data < 0))
+            end
+            
+            
+            
+            %final assignments --------------------------------------
+            all_hist_objects{hist_count+2} = pos_obj;
+            all_hist_objects{hist_count+3} = neg_obj;
+            hist_count = hist_count + 3;
+        end
+    end
 end
 
 m_hists = [all_hist_objects{1:hist_count}];
@@ -344,11 +413,11 @@ n_specs = length(specs);
 
 temp_hists = cell(1,n_specs);
 
-for iSpec = 1:n_specs    
-   cur_specs = specs(iSpec);
-   cur_data  = h__filterData(cur_specs.getData(feature_obj));
+for iSpec = 1:n_specs
+    cur_specs = specs(iSpec);
+    cur_data  = h__filterData(cur_specs.getData(feature_obj));
     
-   temp_hists{iSpec} = h__createIndividualObject(cur_data,cur_specs,'simple','all','all');
+    temp_hists{iSpec} = h__createIndividualObject(cur_data,cur_specs,'simple','all','all');
 end
 
 s_hists = [temp_hists{:}];

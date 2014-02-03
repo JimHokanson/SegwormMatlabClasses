@@ -2,14 +2,14 @@ function getOmegaEvents(obj,omega_frames_from_angles,sx,sy,body_angles,midbody_d
 %
 %
 %
-%   seg_worm.feature_helpers.locomotion.getOmegaEvents
+%   seg_worm.features.locomotion.getOmegaEvents
 %
 %   Inputs
 %   =======================================================================
 %   sx :
 %   sy :
 %   fps
-%   body_angles :
+%   body_angles : average bend angle of the middle third of the worm
 %   midbody_distance :
 %   omega_frames_from_angles : [1 x n_frames], each frame has the value 0,
 %       1, or -1, 
@@ -18,9 +18,12 @@ function getOmegaEvents(obj,omega_frames_from_angles,sx,sy,body_angles,midbody_d
 %   =======================================================================
 %   omega_events : event structure 
 %
+%   Called By:
+%   
+%
 %   See Also:
-%   seg_worm.feature_helpers.locomotion.getOmegaAndUpsilonTurns
-%   seg_worm.feature_helpers.locomotion.getTurnEventsFromSignedFrames
+%   seg_worm.features.locomotion.getOmegaAndUpsilonTurns
+%   seg_worm.features.locomotion.getTurnEventsFromSignedFrames
 
 MIN_OMEGA_EVENT_LENGTH = round(fps/4);
 

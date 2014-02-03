@@ -8,6 +8,13 @@ classdef hist < handle
     %   - seg_worm.util.histogram
     %   - seg_worm.util.nanHistogram
     %   - seg_worm.w.stats.addWormHistograms
+    %   See original code in folder "oldStats"
+    %   
+    %
+    %   Differences:
+    %   ===================================================================
+    %   1) Stats are sorted by date in the old code, they are not here ...
+    %   
     %
     %   Current Status:
     %   -----------------------------------------------------------------
@@ -21,7 +28,7 @@ classdef hist < handle
     %
     %
     %   TODO:
-    %   --------------------
+    %   -------------------------------------------------
     %   cleanup property instantation and documentation ...
     %
     %   Missing Features:
@@ -33,8 +40,11 @@ classdef hist < handle
     %   File Dependencies
     %   ------------------------------------------------------------------
     %
+    %   Main Function:
+    %   seg_worm.stats.hist.manager.initObjects
     %
-    %
+    %   See Also:
+    %   seg_worm.stats.hist.manager
     
     %{
     
@@ -48,12 +58,18 @@ classdef hist < handle
     2) Two types of data are missing from the histogram.
         - stats computed on all video data merged together
         - stats computed on the stats, i.e. the mean of the means
-    3) No special code is given to "experimental" vs "control" data.
-    4) Signed histograms are separate objects instead of different
-    properties in one object. This leads to more hist objects for a given
-    set of features, but makes the code more straighforward.
     
-    Functionally nothing should be lost by doing this.
+        These could easily be readded but they are not used in the final
+        statistical calculations so I have omitted them for now.
+    
+    3) No special code is given to "experimental" vs "control" data.
+    4) Signed histograms (positive, negative, absolute => all for motion)
+    are separate objects instead of different
+    properties in one object. This leads to more hist objects for a given
+    set of features, but makes the code more straighforward. Later in the
+    old code these are separated as well.
+    
+    5) sorting of values ... - or is this just in stats
     
     %}
     
@@ -246,7 +262,7 @@ classdef hist < handle
             %
             %This simplifies the merging process a bit. This is accomplished by
             %always setting bin edges at multiples of the resolution. This was
-            %not done previously ...
+            %not done previously.
             
             all_objs = [hist_cell_array{:}];
             

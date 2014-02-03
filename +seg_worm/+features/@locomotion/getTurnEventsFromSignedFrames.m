@@ -1,9 +1,19 @@
 function turn_events = getTurnEventsFromSignedFrames(obj,signed_frames,midbody_distance,FPS)
 %
-%
 %   seg_worm.features.locomotion.getTurnEventsFromSignedFrames
 %
+%   Inputs
+%   =======================================================================
+%   obj : Class: seg_worm.features.locomotion
+%   signed_frames : ??? - I believe the values are -1 or 1, based on
+%   whether something is dorsal or ventral ....
+%
 %   This code is common to omega and upsilon turns.
+%
+%   Called by:
+%   seg_worm.features.locomotion.getUpsilonEvents
+%   seg_worm.features.locomotion.getOmegaEvents  
+%
 
 INTER_DATA_SUM_NAME = 'interDistance';
 DATA_SUM_NAME       = '';

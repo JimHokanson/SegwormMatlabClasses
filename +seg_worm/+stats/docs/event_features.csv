@@ -1,6 +1,6 @@
 Field,Sub Field,Category,Resolution,Is_Signed,Name,Short Name,Units
-posture.coils.frames,time,Posture,0.1,1,Coil Time,Time,seconds
-posture.coils.frames,interTime,Posture,5,1,Inter Coil Time,Inter Time,seconds
+posture.coils.frames,time,Posture,0.1,0,Coil Time,Time,seconds
+posture.coils.frames,interTime,Posture,5,0,Inter Coil Time,Inter Time,seconds
 posture.coils.frames,interDistance,Posture,100,0,Inter Coil Distance,Inter Distance,microns
 posture.coils.frequency,,Posture,0.001,0,Coils Frequency,Frequency,Hz
 posture.coils.timeRatio,,Posture,0.001,0,Coils Time Ratio,Time Ratio,no units
