@@ -21,6 +21,13 @@ classdef stats < handle
     %       - seg_worm.stats.hist
     %   2)
     %
+    %   Main initialization code in:
+    %   --------------------------------------------------------------
+    %   
+    %   See Also:
+    %   seg_worm.stats.manager.initObject
+    %   seg_worm.stats.initObject
+    %   seg_worm.stats.hist
     %
     %   Some of the statistics are aggegrate:
     %   p_value
@@ -52,14 +59,32 @@ classdef stats < handle
        q_normal_experiment
        q_normal_control
        z_score_experiment
+       %From documentation:
+       %- no controls, this is empty
+       %- absent in controls, but 2+ experiments, Inf
+       %- present in 2+ controls, -Inf
+       %Technically, this is incorrect
+       %
+       
        z_score_control    = 0 %By definition ...
        
        p_t  %Differential expression ...
        %    - function: mattest (bioinformatics toolbox)
        %    This doesn't seem like it is used ...
-       p_w  
+       
+       p_w = NaN %NaN Default value, if all videos have a valid value 
+       %then this is not set
+       
+       %NOTE: For the following, the corrections can be per strain or
+       %across strains. I think the current implementation is per strain.
+       %I'd like to go with the values used in the paper ...
+       
        q_t
+       %In the old code corrections were per strain or across all strains. 
+       
        q_w
+       %In the old code corrections were per strain or across all strains. 
+       %Current implementation is per strain, not across strains ...
        
        p_significance
 

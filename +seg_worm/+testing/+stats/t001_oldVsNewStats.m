@@ -71,75 +71,30 @@ function t001_oldVsNewStats
     %TODO: This worked: write comparison script
     %stats_info_path_v3 = fullfile(hist_path,'stats_info_v3.mat');
     
-   
-    
-    %Comparison code
-    %----------------------------------------------------------------------
-    %This needs to be moved somewhere else ...
-    %
-    %      control: [1x1 struct]
-    %     dataInfo: [726x1 struct]
-    %         worm: [1x1 struct]
-    %
-    %h.control.stats
-    %        mean: [1x726 double]
-    %      stdDev: [1x726 double]
-    %     samples: [1x726 double]
-    %     pNormal: [1x726 double]
-    %     qNormal: [1x1 struct]
-    %               strain: [1x726 double]
-    %                  all: [1x726 double]  %This looks the same as strain
-    %                  ....
-    %
-    %h.worm
-    %      info: [1x1 struct]
-    %     stats: [1x1 struct]
-    %       sig: [1x1 struct]
-    %   
-    %h.worm.info
-    %       strain: {'AQ2947'}
-    %     genotype: {'C. elegans Wild Isolate, CGC N2 (Bristol, UK)'}
-    %         gene: {[]}
-    %       allele: {[]}
-    %
-    %h.worms.stats
-    %
-    %        mean: [1x726 double]
-    %      stdDev: [1x726 double]
-    %     samples: [1x726 double]
-    %     pNormal: [1x726 double]
-    %     qNormal: [1x1 struct]
-    %      zScore: [1x726 double]
-    %
-    
     %????
     %- how does the order compare????
 
 
+    %Older code
+    %----------------------------------------------------------------------
+    %This still needs to be linked up ...
+    %h__generateOldStats
 
-    %======================================================================
-    %======================================================================
-    %                     Comparison Code
-    %======================================================================
-    %======================================================================
-
-    stats_info_path_v3 = fullfile(hist_path,'stats_info_v3.mat');
+    stats_info_path_v3  = fullfile(hist_path,'stats_info_v3.mat');
     stats_matrix_path_v3 = fullfile(hist_path,'stats_matrix_v3.mat');
     
     h_si    = load(stats_info_path_v3);   %stats info - old objects
     h_sm    = load(stats_matrix_path_v3); %stats matrix - old objects
     h_stats = stats_man.stats; %new objects
-    
-    %h_si.dataInfo
-    
-    h__generateOldStats
-    
+
     [index_new__value_old,field_names_new,fields_old] = h_getOrder(h_si,h_sm,h_stats);
 
 %==========================================================================    
 %                   Comparison Code    
 %==========================================================================
-   
+%h_si - contains    
+
+
 field_names_new_ordered(index_new__value_old) = field_names_new;
 h_new(index_new__value_old) = h_stats;
 
@@ -158,106 +113,76 @@ kept_indices = find(keep_mask);
 
 %zscore_control - 0 by definition
 
-%zscore_experiment
+%zscore_experiment - looks the same, 1 NaN mismatch due to differences in
+%definition ...
+%--------------------------------------------------------------------------
+%old code - set in worm2StatsInfo
 zscore_experiment_old = h_sm.worm.stats.zScore(keep_mask);
 zscore_experiment_new = [h_new(keep_mask).z_score_experiment];
 
 d_zscore_experiment = zscore_experiment_old - zscore_experiment_new;
+nan_mismatch_zscore = find(xor(isnan(zscore_experiment_old),isnan(zscore_experiment_new)));
+zscore_experiment_old(nan_mismatch_zscore)
+zscore_experiment_new(nan_mismatch_zscore)
+fields_old(nan_mismatch_zscore)
 
-I = find(abs(d_zscore_experiment) > 0.00001);
+%Many olds are NaN, not -Inf
+%433   571   572   573   574
 
+%p_t comparison - values same, except for exclusive values ...
+%--------------------------------------------------------------------------
+p_t_old = h_sm.worm.sig.pTValue;
+p_t_new = [h_new.p_t];
 
-%Discrepancy: - AND MORE INDICES - some are NaN
-%----------------------------------------------------------
-%h_ctl_new(217).mean
-%h_sm.control.stats.mean(217)
+d_p_t = p_t_old - p_t_new;
 
-%Indices new
-%677   681   685   691   695   699
-%Indices old
-%677   678   679   682   683   684
-
-%     {h_ctl_new(kept_indices(I)).field}'
-%
-%
-%   ???? Why is the order changing ?????
-%
-%     'locomotion.turns.omegas.frames.time'
-%     'locomotion.turns.omegas.frames.interTime'
-%     'locomotion.turns.omegas.frames.interDistance'
-%     'locomotion.turns.upsilons.frames.time'
-%     'locomotion.turns.upsilons.frames.interTime'
-%     'locomotion.turns.upsilons.frames.interDistance'
+nan_mismatch_p_t = find(xor(isnan(p_t_old),isnan(p_t_new)));
+%433   571   572   573   574   587   588   589   590
 
 
-%NOTES: 677 - all old are negative except one from experiment data, wtf?
-%
-%   678 - completely different scales - is resolution or something wrong?
-%   679 - many from old are NaN (in fact almost all)
-%
-%   These might not be aligned correctly ...
-%   NOPE: These are not aligned correctly ... WHY NOT?????
+%p_w comparison - values look the same
+%-------------------------------------------------------------------
+p_w_old = h_sm.worm.sig.pWValue;
+p_w_new = [h_new.p_w];
 
-IDX = 682;
-IDX_NEW = kept_indices(IDX);
-fprintf(2,'Control Data\n');
-sort(h_ctl_new(IDX_NEW).mean_per_video)
-sort(h_si.controlData(IDX).dataMeans)
-fprintf(2,'Experiment Data\n');
-sort(h_exp_new(IDX_NEW).mean_per_video)
-sort(h_si.wormData(IDX).dataMeans)
+d_p_w = p_w_old - p_w_new;
+
+nan_mismatch_p_w = find(xor(isnan(p_w_old),isnan(p_w_new)));
 
 
-%Names:
-%---------------------
-h_si.dataInfo(IDX).field
-h_ctl_new(IDX_NEW).field
-     
-%worm2histogram('wasfdsadf',ctl_files{5})
+%I think the differences might be because of the NaN mismatch between
+%between the p-values, since the q values are dependent on the aggregate.
 
-%motion.forward.frames.time
-%motion.forward.frames.distance
+%q_t comparison - values look the same ...
+%-------------------------------------------------------
+q_t_old = [h_si.significance.features.qTValue];
+%q_t_old = h_sm.worm.sig.qTValue.all;
+%q_t_old = h_sm.worm.sig.qTValue.strain;
+q_t_new = [h_new.q_t];
 
-%Let's look at the calculated statistics
-%----------------------------------------------------------
-pt_old  = h_sm.worm.sig.pTValue(keep_mask);
-pt_new  = [h_new(keep_mask).p_t];
-pt_diff = pt_old - pt_new;
+d_q_t = q_t_old - q_t_new;
 
-%h_sm.worm.stats.zScore(I(1))
-%h_new(1)
+nan_mismatch_q_t = find(xor(isnan(q_t_old),isnan(q_t_new)));
 
-%h_sm.worm.stats.mean(217)
-%h_sm.worm.stats.stdDev(217)
-%h_sm.control.stats.mean(217)
-%h_sm.control.stats.stdDev(217)
+%q_w comparison - strain is relatively close ...
+%-------------------------------------------------------------
+q_w_old = h_sm.worm.sig.qWValue.all;
+q_w_old = h_sm.worm.sig.qWValue.strain;
+q_w_new = [h_new.q_w];
 
+d_q_w = q_w_old - q_w_new;
 
-%Temporary Code
-%==========================================================================
-    plot(h.worm.stats.zScore)
-    hold all
-    plot([stats_man.stats.z_score_experiment])
-    hold off
-    
-    plot(h.worm.sig.pWValue)
-    hold all
-    plot([stats_man.stats.p_w])
-    hold off
-    
-    %Similar but different ...
-    plot(sort(h.worm.sig.pWValue))
-    hold all
-    plot(sort([stats_man.stats.p_w]))
-    hold off
-    
-    %Manual comparison ...
-    index = 1;
-    h.worm.stats.pNormal(index)
-    s(index).p_normal_experiment
+nan_mismatch_q_w = find(xor(isnan(q_w_old),isnan(q_w_new)));
+
 end
 
 function [index_new__value_old,field_names_new,fields_old] = h_getOrder(h_si,h_sm,h_stats)
+%
+%
+%   This function is a hack to align the old and new stats ordering (look
+%   away :/ )
+%
+%
 
 
 %
@@ -315,12 +240,14 @@ function [index_new__value_old,field_names_new,fields_old] = h_getOrder(h_si,h_s
 %         sign: 'u'
 
 
-    fields_old     = cell(1,726);
-    categories_all = cell(1,726);
-    type_all       = cell(1,726);
-    sub_type_all   = cell(1,726);
-    sign_all       = cell(1,726);
-    for iObj = 1:726
+    n_old = length(h_si.controlData);
+
+    fields_old     = cell(1,n_old);
+    categories_all = cell(1,n_old);
+    type_all       = cell(1,n_old);
+    sub_type_all   = cell(1,n_old);
+    sign_all       = cell(1,n_old);
+    for iObj = 1:n_old
        fields_old{iObj}     = h_si.dataInfo(iObj).field.histogram;
        categories_all{iObj} = h_si.dataInfo(iObj).category;
        type_all{iObj}       = h_si.dataInfo(iObj).type;
@@ -328,11 +255,24 @@ function [index_new__value_old,field_names_new,fields_old] = h_getOrder(h_si,h_s
        sign_all{iObj}       = h_si.dataInfo(iObj).sign;
     end
         
-    field_names_new = cell(1,708);
-    for iObj = 1:708       
+    n_new = length(h_stats);
+    
+    field_names_new = cell(1,n_new);
+    for iObj = 1:n_new       
        cur_stat = h_stats(iObj);
        cur_field_name = cur_stat.field;
 
+           switch cur_stat.data_type
+               case 'all'
+                   post_str = '.all';
+               case 'absolute'
+                   post_str = '.abs';
+               case 'negative'
+                   post_str = '.neg';
+               case 'positive'
+                   post_str = '.pos';
+           end
+       
        if strcmp(cur_stat.hist_type,'event')
            
            %Different rules for frames and no frames
@@ -341,10 +281,9 @@ function [index_new__value_old,field_names_new,fields_old] = h_getOrder(h_si,h_s
            
            if ~isempty(I)
            
-           cur_field_name = regexprep(cur_field_name,'\.frames\.','\.');
-           pre_str  = '';
-           post_str = '.all';
-           mid_str = '.histogram.data.mean';
+               cur_field_name = regexprep(cur_field_name,'\.frames\.','\.');
+               pre_str  = '';
+               mid_str = '.histogram.data.mean';
            else
                 pre_str  = '';
                 mid_str = '.data';
@@ -353,7 +292,6 @@ function [index_new__value_old,field_names_new,fields_old] = h_getOrder(h_si,h_s
        elseif strcmp(cur_stat.hist_type,'simple')
            cur_field_name = regexprep(cur_field_name,'\.times','');
            pre_str  = '';
-           post_str = '.all';
            mid_str = '.histogram.data.mean';
        else
            switch cur_stat.motion_type
@@ -371,21 +309,15 @@ function [index_new__value_old,field_names_new,fields_old] = h_getOrder(h_si,h_s
               pre_str = ['(' index_number ')' pre_str]; %#ok<AGROW>
            end
 
-           switch cur_stat.data_type
-               case 'all'
-                   post_str = '.all';
-               case 'absolute'
-                   post_str = '.abs';
-               case 'negative'
-                   post_str = '.neg';
-               case 'positive'
-                   post_str = '.pos';
-           end
            mid_str = '.histogram.data.mean';
        end
        
        field_names_new{iObj} = sprintf('%s%s%s%s',cur_field_name,pre_str,mid_str,post_str);
     end
+    
+    
+    %NOTE: This needs the better ismember function that I've been meaning
+    %to right for a while ...
     
     [mask,index_new__value_old] = ismember(field_names_new,fields_old);
     

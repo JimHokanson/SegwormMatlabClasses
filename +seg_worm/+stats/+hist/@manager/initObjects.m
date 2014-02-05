@@ -69,6 +69,10 @@ h__computeStats(obj,data)
 end
 
 function obj = h__getObject(n_samples,specs,hist_type,motion_type,data_type)
+%
+%   
+%
+%
 
 obj = seg_worm.stats.hist;
 
@@ -183,108 +187,34 @@ end
 function e_hists = h_computeEHists(h,specs,n_samples)
 
 n_specs    = length(specs);
-temp_hists = cell(1,n_specs);
+temp_hists = cell(1,4*n_specs);
 
-%TODO: Need to incorporate removing partial events :/, this is made more
-%difficult since all the fields are broken out as separate instructions ...
-%
-%- check if start is 1
-%- check if end is equal to the total # of frames ...
-%- need to get video info for knowing # of frames
+cur_hist_index = 0;
 
-%TODO: Perhaps we'll add a property in h instead for new stuff
-is_old_code = isstruct(h);
-
-if is_old_code
-    start_value = 0;
-    end_value   = n_samples; %BUG IN OLD CODE: n_samples matches
-    %behavior, n_samples -1 does not
-else
-    start_value = 1;
-    end_value   = n_samples;
-end
-            
 for iSpec = 1:n_specs
     cur_specs = specs(iSpec);
     
-    %NOTE: Because we are doing structure array indexing, we need to capture
-    %multiple outputs using [], otherwise we will only get the first value
-    %...
-    cur_data  = eval(['h.' cur_specs.feature_field]);
-    
-    if ~isempty(cur_data) && ~isempty(cur_specs.sub_field)
-        %This will go from:
-        %   frames (structure array)
-        %to:
-        %   frames.time
-        %for example.
-        %
-        %It is also used for event.ratio.time and event.ratio.distance
-        %     going from:
-        %         ratio (structure or [])
-        %     to:
-        %         ratio.time
-        %         ratio.distance
-        
-        %Sadly, this little bit gets run numerous times, once for each
-        %field in the frames structure, even though the result is the same
-        %every time :/
-        
-        parent_data = cur_data;
-        
-        cur_data = [cur_data.(cur_specs.sub_field)];
-        
-%         if strcmp(cur_specs.feature_field,'locomotion.motion.paused.frames')
-%            keyboard 
-%         end
-        
-        %NOTE: This should always occur ...
-        if isfield(parent_data,'start')
-            
-            starts = [parent_data.start];
-            ends   = [parent_data.end];
-            
-            remove_mask = false(1,length(starts));
-
-            if starts(1) == start_value
-                remove_mask(1) = true;
-            end
-            
-            if ends(end) == end_value
-                remove_mask(end) = true;
-            end
-            
-            %NOTE: We don't need to update interTime and interDistance to
-            %be NaN because we know the borders, we just don't know the
-            %durations of the events themselves, so the events need to go
-            %...
-            
-            cur_data(remove_mask) = [];
-        end
-        
-        keyboard
-        
-        %THE FOLLOWING TWO STATEMENTS ARE HACKS, BETTER DEFAULS WOULD BE PREFERRED
-        %
-        %NOTE: I'm working off of saved previous versions where the defaults are
-        %empty instead of properly defined, so I need these checks for a later
-        %match ...
-        
-    elseif isempty(cur_data) && sl.str.contains(cur_specs.feature_field,'ratio','location','end')
-        cur_data = 0;
-    elseif isempty(cur_data) && (...
-            sl.str.contains(cur_specs.feature_field,'frequency','location','end') || ...
-            sl.str.contains(cur_specs.feature_field,'timeRatio','location','end'))
-        cur_data = 0;
-    end
+    %seg_worm.stats.event_specs.getData
+    cur_data = cur_specs.getData(h,n_samples);
     
     cur_data = h__filterData(cur_data);
     
-    temp_hists{iSpec} = h__createIndividualObject(cur_data,cur_specs,'event','all','all');
+    if cur_specs.is_signed
+        temp_hists{cur_hist_index+1} = h__createIndividualObject(cur_data,cur_specs,'event','all','all');
+        temp_hists{cur_hist_index+2} = h__createIndividualObject(abs(cur_data),cur_specs,'event','all','absolute');
+        positive_mask = cur_data > 0;
+        negative_mask = cur_data < 0;
+        temp_hists{cur_hist_index+3} = h__createIndividualObject(cur_data(positive_mask),cur_specs,'event','all','positive');
+        temp_hists{cur_hist_index+4} = h__createIndividualObject(cur_data(negative_mask),cur_specs,'event','all','negative');
+        cur_hist_index    = cur_hist_index + 4;
+    else
+        cur_hist_index    = cur_hist_index + 1;
+        temp_hists{cur_hist_index} = h__createIndividualObject(cur_data,cur_specs,'event','all','all');
+    end
     
 end
 
-e_hists = [temp_hists{:}];
+e_hists = [temp_hists{1:cur_hist_index}];
 
 
 end
@@ -367,6 +297,10 @@ for iSpec = 1:n_specs
             %negative ...
             all_hist_objects{hist_count+1} = h__createIndividualObject(abs(temp_data),cur_specs,'motion',cur_motion_type,data_types{2});
             
+            
+            %NOTE: To get a speed up, we don't rely on h__createIndividualObject
+            %Instead we take the positive and negative aspects of the
+            %object that included all data.
             
             %positive object ----------------------------------------
             pos_obj  = h__getObject(0,cur_specs,'motion',cur_motion_type,data_types{3});

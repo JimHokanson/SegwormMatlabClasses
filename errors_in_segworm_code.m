@@ -46,3 +46,12 @@
 % - indices used in body angle doesn't match description
 % - NOTE: There is a comment about not using the ends because of noise,
 %   but they are in seg_worm.feature_helpers.locomotion.getWormVelocity
+%
+%
+%removePartialEvents.m
+%--------------------------------------------------------------------------
+%- indexing for the end event is off by 1
+%
+%worm2StatsInfo.m
+%--------------------------------------------------------------------------
+%- description of z-score doesn't match reality

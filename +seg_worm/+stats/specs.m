@@ -17,9 +17,15 @@ classdef specs < handle
     methods (Static,Hidden)
         function objs = getObjectsHelper(csv_path,class_function_handle,prop_names,prop_types)
            %
+           %    The inherited objects can give relatively simple
+           %    instructions on how their properties should be interpreted
+           %    from their csv specification file.
+           %
            %
            %    seg_worm.stats.specs.getObjectsHelper
            %
+           %    INPUTS
+           %    ===========================================================
            %
            %    TODO: Cleanup and finish documentation
            %

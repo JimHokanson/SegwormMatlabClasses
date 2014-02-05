@@ -131,6 +131,8 @@ classdef hist < handle
         mean 
         std  %Standard deviation of means
         n_valid_measurements
+        all_valid
+        none_valid
     end
     
     properties (Hidden, Dependent)
@@ -164,6 +166,12 @@ classdef hist < handle
         end
         function value = get.n_bins(obj)
             value = length(obj.bins);
+        end
+        function value = get.all_valid(obj)
+           value = all(~isnan(obj.mean_per_video));  
+        end
+        function value = get.none_valid(obj)
+           value = obj.n_valid_measurements == 0; 
         end
     end
     

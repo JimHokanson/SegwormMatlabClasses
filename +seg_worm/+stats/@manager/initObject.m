@@ -6,9 +6,10 @@ function initObject(obj,exp_hists,ctl_hists)
 
 
 n_objs = length(exp_hists);
-
 stats_objs(n_objs) = seg_worm.stats();
 
+%p_t Initialization
+%----------------------------------------------------------------------
 %:/ Sadly this needs to be done before hand to be the same ...
 %It might be updated during object initialization ...
 %
@@ -20,6 +21,8 @@ stats_objs(n_objs) = seg_worm.stats();
 p_t_all          = mattest([exp_hists.mean_per_video]',[ctl_hists.mean_per_video]');
 [stats_objs.p_t] = sl.struct.dealArray(p_t_all);
 
+%This is the main call to initialize each object
+%--------------------------------------------------------------------------
 for iObj = 1:n_objs
    %seg_worm.stats.initObject
    stats_objs(iObj).initObject(exp_hists(iObj),ctl_hists(iObj)); 
@@ -27,12 +30,13 @@ end
 
 obj.stats = stats_objs;
 
+%Followup with properties that depend on the aggregate
+%--------------------------------------------------------------------------
 [~,q_t_all]      = mafdr([stats_objs.p_t]);
 [stats_objs.q_t] = sl.struct.dealArray(q_t_all);
 
 [~,q_w_all]      = mafdr([stats_objs.p_w]);
 [stats_objs.q_w] = sl.struct.dealArray(q_w_all);
-
 
 obj.p_worm = min([stats_objs.p_w]);
 obj.q_worm = min([stats_objs.q_w]);
