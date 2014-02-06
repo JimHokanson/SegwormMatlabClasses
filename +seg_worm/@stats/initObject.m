@@ -10,6 +10,11 @@ function initObject(obj,exp_hist,ctl_hist)
 ALPHA = 0.05; %Not really used since we don't examine H, just p
 TAIL  = 0;
 
+%NOTE: This should be passed in instead of being changed here ...
+USE_OLD_CODE = false;
+
+%TODO: I'm not a big fan of all of this copying. I'd rather just copy an
+%object (use name: seg_worm.stats.description?)
 obj.field              = exp_hist.field;
 obj.name               = exp_hist.name; 
 obj.short_name         = exp_hist.short_name;
@@ -27,14 +32,20 @@ is_exclusive = (exp_hist.none_valid && ctl_hist.all_valid) ...
 %--------------------------------------------------------------------------
 %This definition is slightly different than the old version, but matches
 %the textual description (in code, what about in published paper?)
+
+%From Nature Methods 2013 Supplemental Description:
+%--------------------------------------------------------------------------
+% Measurements exclusively found in the experimental group have a zScore of
+% infinity and those found exclusively found in the control are -infinity.
+
 if isnan(exp_hist.mean)
-    if ctl_hist.n_valid_measurements > 1
+    if (USE_OLD_CODE && is_exclusive) || (~USE_OLD_CODE && ctl_hist.n_valid_measurements > 1)
         obj.z_score_experiment = -Inf;
     else
         obj.z_score_experiment = NaN;
     end
 elseif isnan(ctl_hist.mean)
-    if exp_hist.n_valid_measurements > 1
+    if (USE_OLD_CODE && is_exclusive) || (~USE_OLD_CODE && exp_hist.n_valid_measurements > 1)
         obj.z_score_experiment = Inf;
     else
         obj.z_score_experiment = NaN;

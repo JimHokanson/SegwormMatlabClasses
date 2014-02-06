@@ -1,31 +1,11 @@
 function t001_oldVsNewStats
 %
-%
-%   Calling this code
-%
+%   seg_worm.testing.stats.t001_oldVsNewStats
 %
 %   NOTES: I am using the original code from MRC, not my modified versions
-%   which have been cleaned up
+%   which have been cleaned up. To run this code the folder "oldStats"
+%   needs to be on the path.
 %
-%   BUGS FOUND:
-%   ---------------------------------------
-%   1) removePartialEvents - end match is wrong
-%
-%   Frequency - my defaults might be wrong - no events should be 0, not NaN
-%   
-%   This should be clearly stated in the events spec, rather than in the
-%   code ...
-%
-%   MY ERRORS - that I haven't fixed yet
-%   ================================================
-%   1) I am not signing certain events properly
-%   
-%   - signing looks like it happens in worm2histogram() in event2histograms()
-%
-%   2) I need to add on that certain events have defaults of zero if the
-%   event never occurred ...
-%
-%   - code might be in addWormHistograms() in addEventData()
 %
 %   HUH
 %   -------------------------------------------------
@@ -41,12 +21,14 @@ function t001_oldVsNewStats
 %   features each paused all, paused abs., paused neg, paused pos, 24
 %   total)
 %
-
-    %seg_worm.stats.testing_code
-    %seg_worm.w.stats.worm2histogram - create a hist file for a feature file
-    
-    %Current summary: The newer code needs to be run manually.
-    
+%   Current Status:
+%   ------------------------------------------------------------------
+%   1) This code is really meant to be run via evaluation. It needs a bit
+%   of cleaning up to run as a function. It also needs to have test results
+%   actually by displayed
+%   2) It would be nice if the test files were passed in.
+%   3) The new method and old method seem to match.
+%
     
     %Newer code
     %----------------------------------------------------------------------
