@@ -8,9 +8,9 @@ function getOmegaAndUpsilonTurns(obj, bend_angles,is_stage_movement,midbody_dist
 %
 %   See Also:
 %   seg_worm.feature_calculator.getLocomotionFeatures   %Parent
-%   seg_worm.feature_helpers.locomotion.getOmegaEvents
-%   seg_worm.feature_helpers.locomotion.getTurnEventsFromSignedFrames
-%   seg_worm.feature_helpers.locomotion.getUpsilonEvents
+%   seg_worm.features.locomotion.getOmegaEvents
+%   seg_worm.features.locomotion.getTurnEventsFromSignedFrames
+%   seg_worm.features.locomotion.getUpsilonEvents
 %   
 %   Nature Methods Description
 %   =======================================================================

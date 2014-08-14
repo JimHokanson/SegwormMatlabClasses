@@ -165,7 +165,7 @@ for iBend = 1:3
         avg_bend_angles(interpI) = interp1(dataI, avg_bend_angles(dataI), interpI, interpType, NaN);
     end
     
-    [amps,freqs] = h__getBendData(avg_bend_angles,fps,options,is_paused);
+    [amps,freqs] = h__getBendData(avg_bend_angles,fps,options,is_paused,section{iBend});
     
     bends.(section{iBend}).frequency = freqs;
     bends.(section{iBend}).amplitude = amps;
@@ -175,7 +175,7 @@ obj.bends = bends;
 
 end
 
-function [amps,freqs] = h__getBendData(avg_bend_angles, fps, options, is_paused)
+function [amps,freqs] = h__getBendData(avg_bend_angles, fps, options, is_paused, section_name)
 %
 %
 %   Compute the bend amplitude and frequency.

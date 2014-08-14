@@ -99,6 +99,8 @@ end
 %Event Tests
 %==========================================================================
 
+n_frames = 4642; %TODO: Remove hardcoding
+
 e_specs = seg_worm.stats.event_specs.getSpecs;
 
 passed_events = true;
@@ -112,8 +114,8 @@ for iSpec = 1:length(e_specs)
         cur_deep_field_name = [cur_deep_field_name '.' cur_spec.sub_field]; %#ok<AGROW>
     end
 
-    x = cur_spec.getData(old_worm);
-    y = cur_spec.getData(new_worm);
+    x = cur_spec.getData(old_worm,n_frames);
+    y = cur_spec.getData(new_worm,n_frames);
     
     %NOTE: Some of the values are singular, can't do correlation on single values ...
     if isequaln(x,y) || (isequal(size(x),size(y)) && all(h__percentDiff(x,y) < 0.001 | isnan(x) | isnan(y)))
