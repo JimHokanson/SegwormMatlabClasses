@@ -2,7 +2,7 @@ function [worms,orig_images,fixed_images] = segWormFrames(video_file_path, frame
 %SEGWORMFRAMES  Segment the worm in a set of video frames and organize
 %   the information in a structure.
 %
-%   [worms,orig_images,fixed_images] = segWormFrames(videoFile, frames, verbose)
+%   [worms,orig_images,fixed_images] = seg_worm.segWormFrames(videoFile, frames, verbose)
 %
 %   INPUTS
 %   -----------------------------------------------------------
@@ -79,7 +79,7 @@ function [worms,orig_images,fixed_images] = segWormFrames(video_file_path, frame
 
 
 
-vr = videoReader(video_file_path,true);
+vr = seg_worm.videoReader(video_file_path,true);
 
 if ~exist('frames','var') || isempty(frames)
    frames = 1:vr.n_frames;

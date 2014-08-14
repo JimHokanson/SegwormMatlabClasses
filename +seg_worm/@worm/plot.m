@@ -1,4 +1,4 @@
-function plot(obj)
+function plot(obj,varargin)
 
 error('Not yet finished')
 

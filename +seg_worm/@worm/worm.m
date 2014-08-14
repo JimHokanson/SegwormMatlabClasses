@@ -33,7 +33,7 @@ classdef worm < sl.obj.handle_light
         function obj = worm(img, frame_number, isNormalized, verbose, varargin)
             
            %TODO: Create error object here, pass into intialization object 
-           obj.error_handler       = seg_worm.parse_error(img,frame_number,verbose);
+           obj.error_handler       = seg_worm.parsing.parse_error(img,frame_number,verbose);
            
            obj.original_image      = img;
            obj.frame_number        = frame_number;
@@ -43,6 +43,10 @@ classdef worm < sl.obj.handle_light
            %seg_worm.worm.initialize
            obj.intialize(img, isNormalized, varargin{:}) 
 
+           if obj.error_handler.error_found, return; end
+           
+           %TODO: orientation_handler sounds weird, why not just hold onto
+           %an orientation object?????
            obj.orientation_handler = seg_worm.worm.orientation(obj);
         end
         function addManipulation(obj,code,description,details)

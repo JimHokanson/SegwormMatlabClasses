@@ -42,6 +42,12 @@ classdef orientation < sl.obj.handle_light
     
     methods
         function obj = orientation(parent)
+            %
+            %   Inputs:
+            %   -------
+            %   parent : seg_worm.worm
+            %       
+            
             obj.parent = parent;
             obj.populateHeadTailConfidence();
             obj.populateVulvaConfidence();
