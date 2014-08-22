@@ -28,7 +28,7 @@ min_corr_values = 0.99*ones(size(all_field_names));
 amp_wavelength_names = {...
     'posture.amplitude.ratio'
     'posture.wavelength.primary'
-    'posture.wavelength.secondary'}';
+    'posture.wavelength.secondary'};
 
 min_corr_values(ismember(all_field_names,amp_wavelength_names)) = 0.97;
 
