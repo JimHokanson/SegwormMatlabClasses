@@ -15,11 +15,11 @@ Project Status
 
 Test files
 ==========
-Files for features, somewhere in the [Google Drive folder example_data] examples(https://drive.google.com/folderview?id=0B7to9gBdZEyGNWtWUElWVzVxc0E&usp=sharing)
+Files for features, somewhere in the [Google Drive folder example_data](https://drive.google.com/folderview?id=0B7to9gBdZEyGNWtWUElWVzVxc0E&usp=sharing)
 
 [Jim & Michael need to work this out ... (i.e. issue 80 of the movement_validation repo)](https://github.com/openworm/movement_validation/issues/80)
 
-Files for stats are all on the MRC ftp, see (TODO: INSERT FTP LINK HERE)
+Files for stats are all on the MRC ftp, see [@slarson's discussion of the how to connect to the FTP](https://github.com/openworm/OpenWorm/issues/82)
 
 Setting up code
 ===============
