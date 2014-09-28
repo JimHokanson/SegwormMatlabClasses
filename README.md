@@ -9,9 +9,9 @@ As of Sep 2014, the idea is for this repo to be completely ported over to [movem
 
 Project Status
 ==============
-- video to normalized worm - unfinished, current work at [`seg_worm.parseWormFromVideo`](https://github.com/JimHokanson/SegwormMatlabClasses/blob/master/%2Bseg_worm/parseWormFromVideo.m)
-- normalized worm to features - finished, see example of usage in [`seg_worm.testing.features.t_001__mrcCodeVsNewCode`](https://github.com/JimHokanson/SegwormMatlabClasses/blob/master/%2Bseg_worm/%2Btesting/%2Bfeatures/t_001__mrcCodeVsNewCode.m)
-- features to stats - finished - see example usage in [`seg_worm.testing.stats.t001_oldVsNewStats`](https://github.com/JimHokanson/SegwormMatlabClasses/blob/master/%2Bseg_worm/%2Btesting/%2Bstats/t001_oldVsNewStats.m)
+- **video to normalized worm**: unfinished, current work at [`seg_worm.parseWormFromVideo`](https://github.com/JimHokanson/SegwormMatlabClasses/blob/master/%2Bseg_worm/parseWormFromVideo.m)
+- **normalized worm to features**: finished, see example of usage in [`seg_worm.testing.features.t_001__mrcCodeVsNewCode`](https://github.com/JimHokanson/SegwormMatlabClasses/blob/master/%2Bseg_worm/%2Btesting/%2Bfeatures/t_001__mrcCodeVsNewCode.m)
+- **features to stats**: finished - see example usage in [`seg_worm.testing.stats.t001_oldVsNewStats`](https://github.com/JimHokanson/SegwormMatlabClasses/blob/master/%2Bseg_worm/%2Btesting/%2Bstats/t001_oldVsNewStats.m)
 
 Test files
 ==========
