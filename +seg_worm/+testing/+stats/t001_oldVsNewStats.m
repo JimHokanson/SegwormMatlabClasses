@@ -30,19 +30,81 @@ function t001_oldVsNewStats
 %   3) The new method and old method seem to match.
 %
     
-    %Newer code
+    %NOTE: These files don't necessarily make a valid set of comparisons,
+    %we are just grabbing a set of feature files, not a set that reproduces
+    %a spec
+
+    root_path = 'C:\Users\RNEL\Google Drive\open_worm\example_data\30m_wait';
+    
+    %This should be an empty folder for saving things into temporarlly for
+    %multiple runs since some of the old code is quite slow
+    temp_save_path = 'F:\worm_data\stats_testing';
+
+    sl.dir.createFolderIfNoExist(temp_save_path);
+    
+    feature_files = sl.dir.rdir([root_path '\**\*.mat']);
+    
+    
+    %We'll take the first 10 for the "experiment" and the next 10 for the
+    %"control"
+    expt_files = {feature_files(1:10).name};
+    ctl_files  = {feature_files(11:20).name};
+    
+    %Step 1: Compute Old Histograms - write to disk
     %----------------------------------------------------------------------
-    base_path = 'C:\Backup\Dropbox\worm_data\segworm_data\features\gene_NA\allele_NA';
-    hist_path = 'C:\Backup\Dropbox\worm_data\segworm_data\histograms';
+    old_hist_save_path =  sl.dir.createFolderIfNoExist(temp_save_path,'histograms');
     
-    feature_files = sl.dir.rdir([base_path '\**\*.mat']);
+    %This process is slow - many minutes, we'll save the results to disk
+    %for faster running later. Additionally, the old files are built to
+    %handle reading and writing things from disk, not from memory
     
-    wormFiles = {feature_files.name};
+    all_expt_hists_v3 = cell(1,10);
+    for iFile = 1:10
+        cur_file_path   = expt_files{iFile};
+        [~,cur_name]    = fileparts(cur_file_path);
+        cur_output_path = fullfile(old_hist_save_path,[cur_name '_v3.mat']);
+        %If this is not on the path, you need to add the folder 'oldStats'
+        if ~exist(cur_output_path,'file')
+            worm2histogram(cur_output_path, cur_file_path)
+        end
+        all_expt_hists_v3{iFile} = cur_output_path;
+    end
     
-    %This is somewhat arbitrary for now ...
-    expt_files = wormFiles(1:10);
-    ctl_files  = wormFiles(25:34);
+    all_ctl_hists_v3 = cell(1,10);
+    for iFile = 1:10
+        cur_file_path   = ctl_files{iFile};
+        [~,cur_name]    = fileparts(cur_file_path);
+        cur_output_path = fullfile(old_hist_save_path,[cur_name '_v3.mat']);
+        if ~exist(cur_output_path,'file')
+            worm2histogram(cur_output_path, cur_file_path)
+        end
+        all_ctl_hists_v3{iFile} = cur_output_path;
+    end
+
+    %We've previously computed individual histogram files for each video.
+    %The stats are computed on a set of hisograms versus another set. To
+    %compute the merged set, the following code is run.
+    expt_hist_merged = fullfile(old_hist_save_path,'expt_hist_file_old_merged_v3.mat');
+    ctl_hist_merged  = fullfile(old_hist_save_path,'ctl_hist_file_old_merged_v3.mat');
     
+    if ~exist(expt_hist_merged,'file')
+        addWormHistograms(expt_hist_merged,all_expt_hists_v3);
+    end
+    if ~exist(ctl_hist_merged,'file')
+        addWormHistograms(ctl_hist_merged,all_ctl_hists_v3);
+    end
+    
+    %Compute old stats
+    %-----------------
+    stats_info_path_v3 = fullfile(temp_save_path,'stats_info_v3.mat');
+    stats_matrix_path_v3 = fullfile(temp_save_path,'stats_matrix_v3.mat');
+    if ~exist(stats_matrix_path_v3,'file')
+        worm2StatsInfo(stats_info_path_v3, expt_hist_merged,[],[],ctl_hist_merged)
+        wormStats2Matrix(stats_matrix_path_v3, stats_info_path_v3)
+    end
+    
+    %Newer code
+    %----------------------------------------------------------------------    
     %TODO: Make this seg_worm.getHists for short
     hist_man_exp = seg_worm.stats.hist.manager(expt_files);
     hist_man_ctl = seg_worm.stats.hist.manager(ctl_files);
@@ -50,20 +112,10 @@ function t001_oldVsNewStats
     %TODO: Make this seg_worm.getStats for short
     stats_man = seg_worm.stats.manager(hist_man_exp,hist_man_ctl);
     
-    %TODO: This worked: write comparison script
-    %stats_info_path_v3 = fullfile(hist_path,'stats_info_v3.mat');
     
-    %????
-    %- how does the order compare????
-
-
-    %Older code
-    %----------------------------------------------------------------------
-    %This still needs to be linked up ...
-    %h__generateOldStats
-
-    stats_info_path_v3  = fullfile(hist_path,'stats_info_v3.mat');
-    stats_matrix_path_v3 = fullfile(hist_path,'stats_matrix_v3.mat');
+%==========================================================================    
+%                   Comparison Code    
+%========================================================================== 
     
     h_si    = load(stats_info_path_v3);   %stats info - old objects
     h_sm    = load(stats_matrix_path_v3); %stats matrix - old objects
@@ -71,9 +123,7 @@ function t001_oldVsNewStats
 
     [index_new__value_old,field_names_new,fields_old] = h_getOrder(h_si,h_sm,h_stats);
 
-%==========================================================================    
-%                   Comparison Code    
-%==========================================================================
+
 %h_si - contains    
 
 
@@ -85,6 +135,7 @@ clear h_ctl_new
 h_exp_new(index_new__value_old) = hist_man_exp.hists;
 h_ctl_new(index_new__value_old) = hist_man_ctl.hists;
 
+%??? - why were some of the names empty????
 keep_mask    = ~cellfun('isempty',{h_new.name});
 kept_indices = find(keep_mask);
 
@@ -93,23 +144,37 @@ kept_indices = find(keep_mask);
 %mean_control_old = h_sm.control.stats.mean(keep_mask);
 %mean_control_new = [
 
-%zscore_control - 0 by definition
 
-%zscore_experiment - looks the same, 1 NaN mismatch due to differences in
-%definition ...
+
+%zscore comparision
+%--------------------------------------------------------------------------
+%zscore_control - 0 by definition
+%
+%zscore_experiment - looks the same except for NaN mismatch due to 
+%differences in definition ...
 %--------------------------------------------------------------------------
 %old code - set in worm2StatsInfo
+fprintf('Zscore comparison --------------------------\n')
 zscore_experiment_old = h_sm.worm.stats.zScore(keep_mask);
 zscore_experiment_new = [h_new(keep_mask).z_score_experiment];
 
+%difference in the z_scores, 1 is a bit high with the 30m_wait set, but
+%isn't too bad (0.01)
 d_zscore_experiment = zscore_experiment_old - zscore_experiment_new;
+%find fields where only 1 is nan
 nan_mismatch_zscore = find(xor(isnan(zscore_experiment_old),isnan(zscore_experiment_new)));
+
+%These are being displayed but they probably don't need to be
+%
+%Many olds are NaN, not -Inf or Inf as the documentation states 
 zscore_experiment_old(nan_mismatch_zscore)
 zscore_experiment_new(nan_mismatch_zscore)
-fields_old(nan_mismatch_zscore)
+fields_old(nan_mismatch_zscore)'
 
-%Many olds are NaN, not -Inf
-%433   571   572   573   574
+%TODO: What to summarize here for z_score
+
+
+
 
 %p_t comparison - values same, except for exclusive values ...
 %--------------------------------------------------------------------------
