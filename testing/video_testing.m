@@ -9,7 +9,7 @@ function video_testing(use_new)
 %
 
 if ispc
-    base_path       = 'F:\worm_data\segworm_data\video';
+    base_path       = 'C:\Backup\Dropbox\worm_data\video\testing_with_GUI\';
 else
     base_path       = '/Users/jameshokanson/Desktop/worm_data/segworm_data/video';
 end

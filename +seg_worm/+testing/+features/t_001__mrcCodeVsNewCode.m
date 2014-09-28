@@ -7,9 +7,12 @@ function t_001__mrcCodeVsNewCode()
 
 %NORM_PATH = '/Users/jameshokanson/Dropbox/worm_data/video/testing_with_GUI/.data/mec-4 (u253) off food x_2010_04_21__17_19_20__1_seg/normalized'
 
-base_path = 'F:\worm_data\segworm_data\video\testing_with_GUI';
+%base_path = 'F:\worm_data\segworm_data\video\testing_with_GUI';
+base_path = 'C:\Backup\Dropbox\worm_data\video\testing_with_GUI';
+
 
 NORM_PATH = fullfile(base_path,'.data\mec-4 (u253) off food x_2010_04_21__17_19_20__1_seg\normalized');
+
 fmp = fullfile(base_path,'results\mec-4 (u253) off food x_2010_04_21__17_19_20__1_features.mat');
 
 nw = seg_worm.normalized_worm.getObject(NORM_PATH);

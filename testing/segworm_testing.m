@@ -5,8 +5,9 @@
 %   - segWorm
 %   
 
-base_path = 'F:\worm_data\segworm_data';
-
+base_path = 'C:\Backup\DropBox\worm_data\video';
+% 'F:\worm_data\segworm_data';
+%%
 
 video_file_name = 'mec-4 (u253) off food x_2010_04_21__17_19_20__1.avi';
 video_file_path = fullfile(base_path,video_file_name);

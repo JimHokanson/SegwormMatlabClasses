@@ -33,7 +33,7 @@ classdef movement_specs < seg_worm.stats.specs
         function objs = getSpecs()
             %seg_worm.stats.movement_specs.getSpecs();
             
-            csv_path = fullfile(sl.dir.getMyBasePath,'docs','movement_features.csv');
+            csv_path = fullfile(sl.stack.getMyBasePath,'docs','movement_features.csv');
             
             
             
