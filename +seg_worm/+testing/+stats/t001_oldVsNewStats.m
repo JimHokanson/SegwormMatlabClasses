@@ -32,8 +32,8 @@ function t001_oldVsNewStats
     
     %Newer code
     %----------------------------------------------------------------------
-    base_path = 'F:\worm_data\segworm_data\features\gene_NA\allele_NA';
-    hist_path = 'F:\worm_data\segworm_data\histograms';
+    base_path = 'C:\Backup\Dropbox\worm_data\segworm_data\features\gene_NA\allele_NA';
+    hist_path = 'C:\Backup\Dropbox\worm_data\segworm_data\histograms';
     
     feature_files = sl.dir.rdir([base_path '\**\*.mat']);
     
