@@ -65,6 +65,11 @@ classdef event_specs < seg_worm.stats.specs
                 start_value = 0;
                 end_value   = n_samples; %BUG IN OLD CODE: n_samples matches
                 %behavior, n_samples -1 does not
+                
+                %Except, for locomotion.motion.forward.frames - yikes!
+                if strcmp(obj.feature_field,'locomotion.motion.forward.frames')
+                    end_value = end_value - 1;
+                end
             else
                 start_value = 1;
                 end_value   = n_samples;

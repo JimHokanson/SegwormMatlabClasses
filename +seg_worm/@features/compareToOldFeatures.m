@@ -118,7 +118,12 @@ for iSpec = 1:length(e_specs)
     y = cur_spec.getData(new_worm,n_frames);
     
     %NOTE: Some of the values are singular, can't do correlation on single values ...
-    if isequaln(x,y) || (isequal(size(x),size(y)) && all(h__percentDiff(x,y) < 0.001 | isnan(x) | isnan(y)))
+    if isequaln(x,y)
+        fprintf(1,'%s are equal!\n',cur_deep_field_name);
+    elseif ~isequal(numel(x),numel(y))
+        passed_events = false;
+        fprintf(2,'%s not equal, size mismatch\n',cur_deep_field_name);
+    elseif all(h__percentDiff(x,y) < 0.001 | isnan(x) | isnan(y))
         fprintf(1,'%s are equal!\n',cur_deep_field_name);
     else
         passed_events = false;
