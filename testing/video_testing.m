@@ -50,6 +50,8 @@ tic
 toc
 end
 
+keyboard
+
 % profile on
 % tic
 % seg_worm.cv.video2Diff(video_file_path);
