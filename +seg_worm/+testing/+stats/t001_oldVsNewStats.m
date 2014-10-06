@@ -5,6 +5,7 @@ function t001_oldVsNewStats
 %   NOTES: I am using the original code from MRC, not my modified versions
 %   which have been cleaned up. To run this code the folder "oldStats"
 %   needs to be on the path.
+addpath('C:\Users\mcurrie\Desktop\GitHub\SegwormMatlabClasses\oldStats')
 %
 %
 %   HUH
@@ -34,11 +35,13 @@ function t001_oldVsNewStats
     %we are just grabbing a set of feature files, not a set that reproduces
     %a spec
 
-    root_path = 'C:\Users\RNEL\Google Drive\open_worm\example_data\30m_wait';
+    %root_path = 'C:\Users\RNEL\Google Drive\open_worm\example_data\30m_wait';
+    root_path = 'C:\Backup\Google Drive\OpenWorm\OpenWorm Public\movement_validation\example_data\30m_wait';
     
     %This should be an empty folder for saving things into temporarlly for
     %multiple runs since some of the old code is quite slow
-    temp_save_path = 'F:\worm_data\stats_testing';
+    %temp_save_path = 'F:\worm_data\stats_testing';
+    temp_save_path = 'C:\Backup\stats_testing';
 
     sl.dir.createFolderIfNoExist(temp_save_path);
     
@@ -95,6 +98,11 @@ function t001_oldVsNewStats
     end
     
     %Compute old stats
+    % Take the 10 experiments and 10 controls and compares them
+    % e.g. mean fwd velocity per video across ten videos
+    %      so take those 10 and compare to the other 10 and 
+    %      calculates p's and q's from the null hypothesis that 
+    %      the figures were drawn from the same distribution
     %-----------------
     stats_info_path_v3 = fullfile(temp_save_path,'stats_info_v3.mat');
     stats_matrix_path_v3 = fullfile(temp_save_path,'stats_matrix_v3.mat');
