@@ -1,18 +1,27 @@
 function t001_oldVsNewStats
+    % To run the old code the folder "oldStats" needs to be on the path:
+    addpath('C:\Users\mcurrie\Desktop\GitHub\SegwormMatlabClasses\oldStats')
+
+    %NOTE: These files don't necessarily make a valid set of comparisons,
+    %we are just grabbing a set of feature files, not a set that reproduces
+    %a specific worm.
+    %root_path = 'C:\Users\RNEL\Google Drive\open_worm\example_data\30m_wait';
+    root_path = 'C:\Backup\Google Drive\OpenWorm\OpenWorm Public\movement_validation\example_data\30m_wait';
+
+    %This should be an empty folder for saving things into temporarlly for
+    %multiple runs since some of the old code is quite slow
+    %temp_save_path = 'F:\worm_data\stats_testing';
+    temp_save_path = 'C:\Backup\stats_testing';
+
+    old_vs_new_stats(root_path, temp_save_path)
+end
+
+
+function old_vs_new_stats(root_path, temp_save_path)
 %
-%   seg_worm.testing.stats.t001_oldVsNewStats
-%
-%   NOTES: I am using the original code from MRC, not my modified versions
-%   which have been cleaned up. To run this code the folder "oldStats"
-%   needs to be on the path.
-addpath('C:\Users\mcurrie\Desktop\GitHub\SegwormMatlabClasses\oldStats')
-%
-%
-%   HUH
-%   -------------------------------------------------
-%   1) In the Nature Methods paper, crawling features while the body motion
-%   is paused are omitted. (Specifically amplitude and frequency for head,
-%   midbody, and tail)
+%   Compares old vs. new code for statistics.  As a result, we need
+%   to use the original code from MRC in addition to Jim's modified 
+%   versions which have been cleaned up (the "new" code).
 %
 %   Feature Count
 %   --------------------------------------------------
@@ -30,29 +39,158 @@ addpath('C:\Users\mcurrie\Desktop\GitHub\SegwormMatlabClasses\oldStats')
 %   2) It would be nice if the test files were passed in.
 %   3) The new method and old method seem to match.
 %
-    
-    %NOTE: These files don't necessarily make a valid set of comparisons,
-    %we are just grabbing a set of feature files, not a set that reproduces
-    %a spec
 
-    %root_path = 'C:\Users\RNEL\Google Drive\open_worm\example_data\30m_wait';
-    root_path = 'C:\Backup\Google Drive\OpenWorm\OpenWorm Public\movement_validation\example_data\30m_wait';
-    
-    %This should be an empty folder for saving things into temporarlly for
-    %multiple runs since some of the old code is quite slow
-    %temp_save_path = 'F:\worm_data\stats_testing';
-    temp_save_path = 'C:\Backup\stats_testing';
-
-    sl.dir.createFolderIfNoExist(temp_save_path);
-    
     feature_files = sl.dir.rdir([root_path '\**\*.mat']);
-    
     
     %We'll take the first 10 for the "experiment" and the next 10 for the
     %"control"
     expt_files = {feature_files(1:10).name};
     ctl_files  = {feature_files(11:20).name};
     
+    
+    % STEP 1: Compute Old Histograms - write to disk
+    %----------------------------------------------------------------------
+    sl.dir.createFolderIfNoExist(temp_save_path);
+    [stats_info_path_v3, stats_matrix_path_v3] ...
+        = compute_old_histograms(temp_save_path, expt_files, ctl_files);
+
+    
+    % STEP 2: Compute "new" Histograms - (just save in memory, don't 
+    %                                    bother writing to disk)
+    %----------------------------------------------------------------------    
+    % TODO: Make this seg_worm.getHists for short
+    hist_man_exp = seg_worm.stats.hist.manager(expt_files);
+    hist_man_ctl = seg_worm.stats.hist.manager(ctl_files);
+    % TODO: Make this seg_worm.getStats for short
+    stats_manager = seg_worm.stats.manager(hist_man_exp,hist_man_ctl);
+
+    
+    % STEP 3: Compare old vs. new statistics, display the results
+    %----------------------------------------------------------------------
+    compare_old_vs_new_stats(stats_info_path_v3, ...
+                             stats_matrix_path_v3, ...
+                             hist_man_exp, hist_man_ctl,stats_manager)
+    
+end
+
+
+
+function compare_old_vs_new_stats(stats_info_path_v3, ...
+                                  stats_matrix_path_v3, ...
+                                  hist_man_exp, hist_man_ctl,stats_manager)
+%==========================================================================    
+%                   Comparison Code    
+%========================================================================== 
+    
+    h_si    = load(stats_info_path_v3);   %stats info   - old objects
+    h_sm    = load(stats_matrix_path_v3); %stats matrix - old objects
+    h_stats = stats_manager.stats;        %               new objects
+
+    [index_new__value_old, field_names_new, fields_old] = ...
+        h_getOrder(h_si,h_sm,h_stats);
+
+
+    %h_si - contains    
+
+
+    field_names_new_ordered(index_new__value_old) = field_names_new;
+    h_new(index_new__value_old) = h_stats;
+
+    clear h_exp_new
+    clear h_ctl_new
+    h_exp_new(index_new__value_old) = hist_man_exp.hists;
+    h_ctl_new(index_new__value_old) = hist_man_ctl.hists;
+
+    %??? - why were some of the names empty????
+    keep_mask    = ~cellfun('isempty',{h_new.name});
+    kept_indices = find(keep_mask);
+
+    %We don't have the mean or std data here
+    %mean control
+    %mean_control_old = h_sm.control.stats.mean(keep_mask);
+    %mean_control_new = [
+
+
+
+    %zscore comparision
+    %--------------------------------------------------------------------------
+    %zscore_control - 0 by definition
+    %
+    %zscore_experiment - looks the same except for NaN mismatch due to 
+    %differences in definition ...
+    %--------------------------------------------------------------------------
+    %old code - set in worm2StatsInfo
+    fprintf('Zscore comparison --------------------------\n')
+    zscore_experiment_old = h_sm.worm.stats.zScore(keep_mask);
+    zscore_experiment_new = [h_new(keep_mask).z_score_experiment];
+
+    %difference in the z_scores, 1 is a bit high with the 30m_wait set, but
+    %isn't too bad (0.01)
+    d_zscore_experiment = zscore_experiment_old - zscore_experiment_new;
+    %find fields where only 1 is nan
+    nan_mismatch_zscore = find(xor(isnan(zscore_experiment_old),isnan(zscore_experiment_new)));
+
+    %These are being displayed but they probably don't need to be
+    %
+    %Many olds are NaN, not -Inf or Inf as the documentation states 
+    zscore_experiment_old(nan_mismatch_zscore)
+    zscore_experiment_new(nan_mismatch_zscore)
+    fields_old(nan_mismatch_zscore)'
+
+    %TODO: What to summarize here for z_score
+
+
+
+
+    %p_t comparison - values same, except for exclusive values ...
+    %--------------------------------------------------------------------------
+    p_t_old = h_sm.worm.sig.pTValue;
+    p_t_new = [h_new.p_t];
+
+    d_p_t = p_t_old - p_t_new;
+
+    nan_mismatch_p_t = find(xor(isnan(p_t_old),isnan(p_t_new)));
+    %433   571   572   573   574   587   588   589   590
+
+
+    %p_w comparison - values look the same
+    %-------------------------------------------------------------------
+    p_w_old = h_sm.worm.sig.pWValue;
+    p_w_new = [h_new.p_w];
+
+    d_p_w = p_w_old - p_w_new;
+
+    nan_mismatch_p_w = find(xor(isnan(p_w_old),isnan(p_w_new)));
+
+
+    %I think the differences might be because of the NaN mismatch between
+    %between the p-values, since the q values are dependent on the aggregate.
+
+    %q_t comparison - values look the same ...
+    %-------------------------------------------------------
+    q_t_old = [h_si.significance.features.qTValue];
+    %q_t_old = h_sm.worm.sig.qTValue.all;
+    %q_t_old = h_sm.worm.sig.qTValue.strain;
+    q_t_new = [h_new.q_t];
+
+    d_q_t = q_t_old - q_t_new;
+
+    nan_mismatch_q_t = find(xor(isnan(q_t_old),isnan(q_t_new)));
+
+    %q_w comparison - strain is relatively close ...
+    %-------------------------------------------------------------
+    q_w_old = h_sm.worm.sig.qWValue.all;
+    q_w_old = h_sm.worm.sig.qWValue.strain;
+    q_w_new = [h_new.q_w];
+
+    d_q_w = q_w_old - q_w_new;
+
+    nan_mismatch_q_w = find(xor(isnan(q_w_old),isnan(q_w_new)));
+
+end
+
+function [stats_info_path_v3, stats_matrix_path_v3] = ...
+        compute_old_histograms(temp_save_path, expt_files, ctl_files)
     %Step 1: Compute Old Histograms - write to disk
     %----------------------------------------------------------------------
     old_hist_save_path =  sl.dir.createFolderIfNoExist(temp_save_path,'histograms');
@@ -110,124 +248,6 @@ addpath('C:\Users\mcurrie\Desktop\GitHub\SegwormMatlabClasses\oldStats')
         worm2StatsInfo(stats_info_path_v3, expt_hist_merged,[],[],ctl_hist_merged)
         wormStats2Matrix(stats_matrix_path_v3, stats_info_path_v3)
     end
-    
-    %Newer code
-    %----------------------------------------------------------------------    
-    %TODO: Make this seg_worm.getHists for short
-    hist_man_exp = seg_worm.stats.hist.manager(expt_files);
-    hist_man_ctl = seg_worm.stats.hist.manager(ctl_files);
-    
-    %TODO: Make this seg_worm.getStats for short
-    stats_man = seg_worm.stats.manager(hist_man_exp,hist_man_ctl);
-    
-    
-%==========================================================================    
-%                   Comparison Code    
-%========================================================================== 
-    
-    h_si    = load(stats_info_path_v3);   %stats info - old objects
-    h_sm    = load(stats_matrix_path_v3); %stats matrix - old objects
-    h_stats = stats_man.stats; %new objects
-
-    [index_new__value_old,field_names_new,fields_old] = h_getOrder(h_si,h_sm,h_stats);
-
-
-%h_si - contains    
-
-
-field_names_new_ordered(index_new__value_old) = field_names_new;
-h_new(index_new__value_old) = h_stats;
-
-clear h_exp_new
-clear h_ctl_new
-h_exp_new(index_new__value_old) = hist_man_exp.hists;
-h_ctl_new(index_new__value_old) = hist_man_ctl.hists;
-
-%??? - why were some of the names empty????
-keep_mask    = ~cellfun('isempty',{h_new.name});
-kept_indices = find(keep_mask);
-
-%We don't have the mean or std data here
-%mean control
-%mean_control_old = h_sm.control.stats.mean(keep_mask);
-%mean_control_new = [
-
-
-
-%zscore comparision
-%--------------------------------------------------------------------------
-%zscore_control - 0 by definition
-%
-%zscore_experiment - looks the same except for NaN mismatch due to 
-%differences in definition ...
-%--------------------------------------------------------------------------
-%old code - set in worm2StatsInfo
-fprintf('Zscore comparison --------------------------\n')
-zscore_experiment_old = h_sm.worm.stats.zScore(keep_mask);
-zscore_experiment_new = [h_new(keep_mask).z_score_experiment];
-
-%difference in the z_scores, 1 is a bit high with the 30m_wait set, but
-%isn't too bad (0.01)
-d_zscore_experiment = zscore_experiment_old - zscore_experiment_new;
-%find fields where only 1 is nan
-nan_mismatch_zscore = find(xor(isnan(zscore_experiment_old),isnan(zscore_experiment_new)));
-
-%These are being displayed but they probably don't need to be
-%
-%Many olds are NaN, not -Inf or Inf as the documentation states 
-zscore_experiment_old(nan_mismatch_zscore)
-zscore_experiment_new(nan_mismatch_zscore)
-fields_old(nan_mismatch_zscore)'
-
-%TODO: What to summarize here for z_score
-
-
-
-
-%p_t comparison - values same, except for exclusive values ...
-%--------------------------------------------------------------------------
-p_t_old = h_sm.worm.sig.pTValue;
-p_t_new = [h_new.p_t];
-
-d_p_t = p_t_old - p_t_new;
-
-nan_mismatch_p_t = find(xor(isnan(p_t_old),isnan(p_t_new)));
-%433   571   572   573   574   587   588   589   590
-
-
-%p_w comparison - values look the same
-%-------------------------------------------------------------------
-p_w_old = h_sm.worm.sig.pWValue;
-p_w_new = [h_new.p_w];
-
-d_p_w = p_w_old - p_w_new;
-
-nan_mismatch_p_w = find(xor(isnan(p_w_old),isnan(p_w_new)));
-
-
-%I think the differences might be because of the NaN mismatch between
-%between the p-values, since the q values are dependent on the aggregate.
-
-%q_t comparison - values look the same ...
-%-------------------------------------------------------
-q_t_old = [h_si.significance.features.qTValue];
-%q_t_old = h_sm.worm.sig.qTValue.all;
-%q_t_old = h_sm.worm.sig.qTValue.strain;
-q_t_new = [h_new.q_t];
-
-d_q_t = q_t_old - q_t_new;
-
-nan_mismatch_q_t = find(xor(isnan(q_t_old),isnan(q_t_new)));
-
-%q_w comparison - strain is relatively close ...
-%-------------------------------------------------------------
-q_w_old = h_sm.worm.sig.qWValue.all;
-q_w_old = h_sm.worm.sig.qWValue.strain;
-q_w_new = [h_new.q_w];
-
-d_q_w = q_w_old - q_w_new;
-
-nan_mismatch_q_w = find(xor(isnan(q_w_old),isnan(q_w_new)));
 
 end
 
