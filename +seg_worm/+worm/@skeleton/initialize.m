@@ -14,6 +14,8 @@ contour_pixels = contour.pixels;
 cc_lengths     = contour.cc_lengths;
 wormSegLength  = contour.avg_segment_length(true);
 
+%See:
+%https://github.com/openworm/SegWorm/blob/master/Worms/Segmentation/linearSkeleton.m
 % Compute the worm's skeleton.
 obj.linearSkeleton(...
     headI, tailI, lfCMinP, lfCMinI, ...

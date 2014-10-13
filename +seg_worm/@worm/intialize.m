@@ -109,8 +109,11 @@ if ~exist('isNormalized','var') || isempty(isNormalized)
     isNormalized = true;
 end
 %--------------------------------------------------------------------------
+%Type: seg_worm.parse_error
 error_handler = obj.error_handler;
 
+%Lines - 93 - 537 of:
+%https://github.com/openworm/SegWorm/blob/master/Worms/Segmentation/segWorm.m
 contour_obj = seg_worm.worm.contour(obj,img,num_erode,num_dilate,isNormalized);
 if error_handler.error_found, return; end
 
@@ -119,12 +122,17 @@ obj.contour = contour_obj;
 skeleton_obj = seg_worm.worm.skeleton(contour_obj);
 obj.skeleton = skeleton_obj;
 
+%Lines 552 - 796:
+%https://github.com/openworm/SegWorm/blob/master/Worms/Segmentation/segWorm.m
 obj.head = seg_worm.worm.head(obj);
 obj.tail = seg_worm.worm.tail(obj);
 
+%Lines 
+%https://github.com/openworm/SegWorm/blob/master/Worms/Segmentation/segWorm.m#L798
 error_handler.checkHeadTailArea(obj);
 if error_handler.error_found, return; end
 
+%Lines 884 - 921
 [obj.left_side,obj.right_side] = seg_worm.worm.left_right.createSides(obj);
 
 error_handler.headTailSmallOrBodyLarge(obj);
@@ -145,6 +153,8 @@ cplot.addList('tail',[0 1 0],obj.tail.contour_pixels);
 plot(cplot)
 %}
 
+%This looks like it may be out of order:
+%Looks like it comes in at line 579
 obj.checkIfWormIsCoiled();
 if error_handler.error_found, return; end
 

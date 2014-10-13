@@ -142,6 +142,9 @@ end
 
 function [mhSkeleton,mtSkeleton,mhWidths,mtWidths] = helper__skeletonize(contour,mI,b1,ib1,b2,ib2,h1,h2,t1,t2)
 
+
+
+
 import seg_worm.cv.*
 
 % Skeletonize the worm from its midbody to its head.
@@ -152,7 +155,7 @@ j = 1;
 while i > 1
     
     % Skeletonize the segment from the bend to the interbend.
-    [segment,widths] = skeletonize(b1(i), ib1(i - 1), -1, ...
+    [segment,widths] = seg_worm.cv.skeletonize(b1(i), ib1(i - 1), -1, ...
         b2(i), ib2(i - 1), 1, contour, contour, false);
     nextJ = j + size(segment, 1) - 1;
     mhSkeleton(j:nextJ,:) = segment;
@@ -161,7 +164,7 @@ while i > 1
     i = i - 1;
     
     % Skeletonize the segment from the next bend back to the interbend.
-    [segment,widths] = skeletonize(b1(i), ib1(i), 1, ...
+    [segment,widths] = seg_worm.cv.skeletonize(b1(i), ib1(i), 1, ...
         b2(i), ib2(i), -1, contour, contour, false);
     nextJ = j + size(segment, 1) - 1;
     mhSkeleton(j:nextJ,:) = flipud(segment);
@@ -170,7 +173,7 @@ while i > 1
 end
 
 % Skeletonize the segment from the last bend to the head.
-[segment,widths] = skeletonize(b1(i), h1, -1, b2(i), h2, 1, ...
+[segment,widths] = seg_worm.cv.skeletonize(b1(i), h1, -1, b2(i), h2, 1, ...
     contour, contour, false);
 nextJ = j + size(segment, 1) - 1;
 mhSkeleton(j:nextJ,:) = segment;
@@ -188,7 +191,7 @@ j = 1;
 while i < length(b1)
     
     % Skeletonize the segment from the bend to the interbend.
-    [segment,widths] = skeletonize(b1(i), ib1(i), 1, ...
+    [segment,widths] = seg_worm.cv.skeletonize(b1(i), ib1(i), 1, ...
         b2(i), ib2(i), -1, contour, contour, false);
     nextJ = j + size(segment, 1) - 1;
     mtSkeleton(j:nextJ,:) = segment;
@@ -197,7 +200,7 @@ while i < length(b1)
     i = i + 1;
 
     % Skeletonize the segment from the next bend back to the interbend.
-    [segment,widths] = skeletonize(b1(i), ib1(i - 1), -1, ...
+    [segment,widths] = seg_worm.cv.skeletonize(b1(i), ib1(i - 1), -1, ...
         b2(i), ib2(i - 1), 1, contour, contour, false);
     nextJ = j + size(segment, 1) - 1;
     mtSkeleton(j:nextJ,:) = flipud(segment);
@@ -206,7 +209,7 @@ while i < length(b1)
 end
 
 % Skeletonize the segment from the last bend to the tail.
-[segment,widths] = skeletonize(b1(i), t1, 1, b2(i), t2, -1, contour, contour, false);
+[segment,widths] = seg_worm.cv.skeletonize(b1(i), t1, 1, b2(i), t2, -1, contour, contour, false);
 nextJ = j + size(segment, 1) - 1;
 mtSkeleton(j:nextJ,:) = segment;
 mtWidths(j:nextJ) = widths;

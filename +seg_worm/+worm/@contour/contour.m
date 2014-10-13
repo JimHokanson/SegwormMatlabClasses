@@ -132,6 +132,8 @@ classdef contour < sl.obj.handle_light
             obj.initializeFirstPassContour(num_erode,num_dilate,is_normalized)
             if obj.parse_error, return; end
             
+            %This corresponds to line 250 at:
+            %https://github.com/openworm/SegWorm/blob/master/Worms/Segmentation/segWorm.m#L250
             obj.cleanWorm();
             obj.error_handler.contourTooSmall(obj.pixels,obj.N_SEGS,img);
             if obj.parse_error, return; end

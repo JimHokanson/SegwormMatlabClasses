@@ -2,7 +2,10 @@ classdef head_tail < seg_worm.worm.body_side
     %
     %   Class:
     %   seg_worm.worm.head_tail
-    
+    %
+    %   See Also:
+    %   seg_worm.worm.head
+    %   seg_worm.worm.tail
 
         
     properties (Hidden)

@@ -1,4 +1,7 @@
 function checkIfWormIsCoiled(obj)
+%
+%
+%https://github.com/openworm/SegWorm/blob/master/Worms/Segmentation/segWorm.m#L579
 
 contour_obj = obj.contour;
 
@@ -12,7 +15,6 @@ lf_contour_bend_I = contour_obj.lf_ap_min_I(contour_obj.lf_ap_min < BEND_ANGLE_C
 %Possible early return ...
 %-------------------------------------------------------
 if isempty(lf_contour_bend_I)
-    
     return
 end
 

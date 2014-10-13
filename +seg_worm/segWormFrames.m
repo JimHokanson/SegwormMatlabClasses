@@ -17,67 +17,17 @@ function [worms,orig_images,fixed_images] = segWormFrames(video_file_path, frame
 %                    use [] to allow all frames
 %       verbose   - verbose mode shows the results in figures
 %
-%   Output:
-%       worms - the worms' information organized in a cell array of structures
-%               This structure contains 8 sub-structures,
-%               6 sub-sub-structures, and 4 sub-sub-sub-structures:
-%
-%               * Video *
-%               video = {frame}
-%
-%               * Contour *
-%               contour = {pixels, touchI, inI, outI, angles, headI, tailI}
-%
-%               * Skeleton *
-%               skeleton = {pixels, touchI, inI, outI, inOutI, angles,
-%                           length, chainCodeLengths, widths}
-%
-%               * Head *
-%               head = {bounds, pixels, area,
-%                       cdf (at [2.5% 25% 50% 75% 97.5%]), stdev}
-%               head.bounds{contour.left (indices for [start end]),
-%                           contour.right (indices for [start end]),
-%                           skeleton indices for [start end]}
-%
-%               * Tail *
-%               tail = {bounds, pixels, area,
-%                       cdf (at [2.5% 25% 50% 75% 97.5%]), stdev}
-%               tail.bounds{contour.left (indices for [start end]),
-%                           contour.right (indices for [start end]),
-%                           skeleton indices for [start end]}
-%
-%               * Left Side (Counter Clockwise from the Head) *
-%               left = {bounds, pixels, area,
-%                       cdf (at [2.5% 25% 50% 75% 97.5%]), stdev}
-%               left.bounds{contour (indices for [start end]),
-%                           skeleton (indices for [start end])}
-%
-%               * Right Side (Clockwise from the Head) *
-%               right = {bounds, pixels, area,
-%                        cdf (at [2.5% 25% 50% 75% 97.5%]), stdev}
-%               right.bounds{contour (indices for [start end]),
-%                            skeleton (indices for [start end])}
-%
-%               * Orientation *
-%               orientation = {head, vulva}
-%               orientation.head = {isFlipped,
-%                                   confidence.head, confidence.tail}
-%               orientation.vulva = {isClockwiseFromHead,
-%                                   confidence.vulva, confidence.nonVulva}
-%
-%       imgs  - a cell array of the requested frames converted to grayscale
-%               and corrected for vignetting
-%       oImgs - a cell array of the requested frames
-%
-%   See also WORM2STRUCT, SEGWORM, and SEGWORMVIDEO
-%
-%
-% © Medical Research Council 2012
-% You will not remove any copyright or other notices from the Software;
-% you must reproduce all copyright notices and other proprietary
-% notices on any copies of the Software.
+%   Outputs:
+%   --------
+%   worms : seg_worm.worm
+%   orig_images : cell array of image matrices
+%   fixed_images : 
 
 
+%Original code at:
+%https://github.com/openworm/SegWorm/blob/master/Worms/Video/segWormVideo.m
+%https://github.com/openworm/SegWorm/blob/master/Worms/Video/segWormFrames.m
+%https://github.com/openworm/SegWorm/blob/master/Worms/Segmentation/segWorm.m
 
 vr = seg_worm.videoReader(video_file_path,true);
 
@@ -114,11 +64,7 @@ for iFrame = 1:n_frames
     [oimg_temp,gimg_temp] = vr.getFrame(cur_frame_number);
     
     % Segment the worm and store its information.
-    if isempty(oimg_temp)
-%         warning('segWormFrames:NoFrame',...
-%            'Cannot find frame %d, Perhaps it was dropped',...
-%             cur_frame_number);
-    else
+    if ~isempty(oimg_temp)
         orig_images{iFrame} = oimg_temp;
         
         if use_vignette
@@ -131,9 +77,6 @@ for iFrame = 1:n_frames
         
         worm_parsed(iFrame) = ~temp_worm.parse_error;
         worms{iFrame} = temp_worm;
-        %NOTE: We might want to delete the original image which
-        %is currently stored in the worm so that we can save memory
-        
     end
 end
 % Clean up.
@@ -142,6 +85,16 @@ close(vr);
 %JAH TODO: I'm at this point, need to implement code that is commented out
 %below. This is all very confusing. I need to look back at what the overall
 %strategy is for orienting the worm
+%
+%   Things left to do:
+%   ------------------
+%   1) orient the worm
+%   2) normalize the worm
+%   3) 
+
+%This begins roughly line 352 of:
+%https://github.com/openworm/SegWorm/blob/master/Worms/Video/segWormVideo.m#L352
+
 
 % for iFrame = 1:n_frames-1
 %    previous_worm  = worms{iFrame};

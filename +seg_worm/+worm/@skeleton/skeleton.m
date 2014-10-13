@@ -38,6 +38,7 @@ classdef skeleton < sl.obj.handle_light
            value = obj.cc_lengths(end); 
         end
         function set.pixels(obj,value)
+           %Any time the pixels are set we run the following
            obj.pixels = value;
            obj.computeChainCodeLengths();
            obj.computeAngles();

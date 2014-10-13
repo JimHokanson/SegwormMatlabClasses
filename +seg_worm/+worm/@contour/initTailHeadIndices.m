@@ -35,9 +35,12 @@ end
 obj.head_I = head_I;
 obj.tail_I = tail_I;
 
+%At this point we are around line 446:
+%https://github.com/openworm/SegWorm/blob/master/Worms/Segmentation/segWorm.m#L446
 obj.error_handler.lopsidedSides(obj);
 if obj.parse_error, return; end
 
+%https://github.com/openworm/SegWorm/blob/master/Worms/Segmentation/segWorm.m#L522
 % Orient the contour and angles at the maximum curvature (the head or tail).
 if head_I > 1
     %???? Why would head_I be at 1, what about our contour parsing makes

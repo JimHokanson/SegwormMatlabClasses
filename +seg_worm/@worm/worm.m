@@ -13,7 +13,7 @@ classdef worm < sl.obj.handle_light
     end
     
     properties
-        error_handler  %seg_worm.parse_error
+        error_handler  %seg_worm.parsing.parse_error
         orientation_handler
         frame_number   %(frame)
         original_image 
