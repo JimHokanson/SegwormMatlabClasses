@@ -104,7 +104,7 @@ classdef event_specs < seg_worm.stats.specs
                     end
                     
                     if obj.remove_partials
-                       starts = [parent_data.start];
+                        starts = [parent_data.start];
                         ends   = [parent_data.end];
 
                         remove_mask = false(1,length(starts));

@@ -44,8 +44,12 @@ function old_vs_new_stats(root_path, temp_save_path)
     
     %We'll take the first 10 for the "experiment" and the next 10 for the
     %"control"
+    %expt_files = {feature_files(1:3).name};
+    %ctl_files  = {feature_files(14:16).name};
     expt_files = {feature_files(1:10).name};
+    %ctl_files  = {feature_files(14:23).name};
     ctl_files  = {feature_files(11:20).name};
+
     
     
     % STEP 1: Compute Old Histograms - write to disk
@@ -69,7 +73,7 @@ function old_vs_new_stats(root_path, temp_save_path)
     %----------------------------------------------------------------------
     compare_old_vs_new_stats(stats_info_path_v3, ...
                              stats_matrix_path_v3, ...
-                             hist_man_exp, hist_man_ctl,stats_manager)
+                             hist_man_exp, hist_man_ctl, stats_manager)
     
 end
 
