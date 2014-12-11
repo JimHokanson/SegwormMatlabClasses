@@ -30,10 +30,17 @@ classdef worm < sl.obj.handle_light
     end
     
     methods
-        function obj = worm(img, frame_number, isNormalized, verbose, varargin)
+        function obj = worm(img, frame_number, varargin)
+           
+           in.verbose  = true;
+           in.n_erode  = [];
+           in.n_dilate = [];
+           in.is_normalized = true;
+           in = sl.in.processVarargin(in,varargin);
+           %TODO: Pass these into the  
             
            %TODO: Create error object here, pass into intialization object 
-           obj.error_handler       = seg_worm.parsing.parse_error(img,frame_number,verbose);
+           obj.error_handler       = seg_worm.parsing.parse_error(img,frame_number,in.verbose);
            
            obj.original_image      = img;
            obj.frame_number        = frame_number;
@@ -41,7 +48,7 @@ classdef worm < sl.obj.handle_light
            %Initialization
            %---------------------------------------------------------------
            %seg_worm.worm.initialize
-           obj.intialize(img, isNormalized, varargin{:}) 
+           obj.intialize(img, in.is_normalized, varargin{:}) 
 
            if obj.error_handler.error_found, return; end
            
@@ -51,8 +58,15 @@ classdef worm < sl.obj.handle_light
         end
         function addManipulation(obj,code,description,details)
             %
-            %   This can be used to document code manipulations ...
+            %   addManipulation(obj,code,description,details)
             %
+            %   Inputs:
+            %   -------
+            %   code : string
+            %       Reference 
+            %
+            %   This can be used to document code manipulations ...
+            
            obj.manipulations = [obj.manipulations ...
                struct('code',code,'desc',description,'details',details)]; 
         end

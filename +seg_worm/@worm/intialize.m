@@ -1,19 +1,23 @@
-function intialize(obj,img,isNormalized, varargin)
-%SEGWORM Segment the worm in an image and organize the information in a
-%   structure.
+function intialize(obj,img, is_normalized, varargin)
+%x Segment the worm in an image
 %
-%   WORM = SEGWORM(IMG, FRAME, ISNORMALIZED, VERBOSE, 
 %
 %   These have been lost in translation. Build an options object which
 %   exposes these values ...
 %   *NUMERODE, *NUMDILATE, *SAMPLES, *ISINTERP)
 %
 %   Inputs:
-%       img          - the image to segment
-%       frame        - the frame number (if the image comes from video)
-%       isNormalized - is the image already normalized (i.e., all pixel
-%                      values are between 0 to 1, inclusive)?
-%       verbose      - verbose mode shows the results in a figure
+%   -------
+%   img : 
+%       The image to segment
+%   is_normalized : logical
+%       Is the image already normalized (i.e., all pixel values are 
+%       between 0 to 1, inclusive)?
+%
+%   
+%   These have been lost in translation and eventually should be
+%   reintroduced.
+%   
 %       numErode     - the number of time to erode the binary worm image;
 %                      if empty or 0, the binary image is left unchanged
 %       numDilate    - the number of time to dilate the binary worm image;
@@ -24,104 +28,41 @@ function intialize(obj,img,isNormalized, varargin)
 %                      data or copy it from the original worm;
 %                      if empty, we interpolate the missing data.
 %
-%   Output:
-%       worm - the worm information organized in a structure
-%              This structure contains 8 sub-structures,
-%              6 sub-sub-structures, and 4 sub-sub-sub-structures:
-%
-%              * Video *
-%              video = {frame}
-%
-%              * Contour *
-%              contour = {pixels, touchI, inI, outI, angles, headI, tailI}
-%
-%              * Skeleton *
-%              skeleton = {pixels, touchI, inI, outI, inOutI, angles,
-%                          length, chainCodeLengths, widths}
-%
-%              Note: positive skeleton angles bulge towards the side
-%              clockwise from the worm's head (unless the worm is flipped).
-%
-%              * Head *
-%              head = {bounds, pixels, area,
-%                      cdf (at [2.5% 25% 50% 75% 97.5%]), stdev}
-%              head.bounds{contour.left (indices for [start end]),
-%                          contour.right (indices for [start end]),
-%                          skeleton indices for [start end]}
-%
-%              * Tail *
-%              tail = {bounds, pixels, area,
-%                      cdf (at [2.5% 25% 50% 75% 97.5%]), stdev}
-%              tail.bounds{contour.left (indices for [start end]),
-%                          contour.right (indices for [start end]),
-%                          skeleton indices for [start end]}
-%
-%              * Left Side (Counter Clockwise from the Head) *
-%              left = {bounds, pixels, area,
-%                      cdf (at [2.5% 25% 50% 75% 97.5%]), stdev}
-%              left.bounds{contour (indices for [start end]),
-%                          skeleton (indices for [start end])}
-%
-%              * Right Side (Clockwise from the Head) *
-%              right = {bounds, pixels, area,
-%                       cdf (at [2.5% 25% 50% 75% 97.5%]), stdev}
-%              right.bounds{contour (indices for [start end]),
-%                           skeleton (indices for [start end])}
-%
-%              * Orientation *
-%              orientation = {head, vulva}
-%              orientation.head = {isFlipped,
-%                                  confidence.head, confidence.tail}
-%              orientation.vulva = {isClockwiseFromHead,
-%                                  confidence.vulva, confidence.nonVulva}
-%
-%       errNum - the error number if segmentation failed
-%                (see also WORMFRAMEANNOTATION)
-%       errMsg - the error message if segmentation failed
-%
-%   See also WORM2STRUCT, NORMWORMS
 %
 %   See Also:
-%   segWormFrames
-%
-%
-%
-% © Medical Research Council 2012
-% You will not remove any copyright or other notices from the Software;
-% you must reproduce all copyright notices and other proprietary
-% notices on any copies of the Software.
+%   seg_worm.segWormFrames
+%   seg_worm.worm.contour
+
+%Old Code:
+%---------
+%/SegWorm/Pipeline/segmentationMain.m
+
 
 import seg_worm.cv.*
 
-%INPUT HANDLING
-%--------------------------------------------------------------------------
-% Are we eroding and/or dilating the worm?
-num_erode  = [];
-num_dilate = [];
-if ~isempty(varargin)
-    num_erode = varargin{1};
-end
-if length(varargin) > 1
-    num_dilate = varargin{2};
-end
+%Placeholders. Eventually we should pass these in ...
+n_erode  = [];
+n_dilate = [];
 
-if ~exist('isNormalized','var') || isempty(isNormalized)
-    isNormalized = true;
-end
-%--------------------------------------------------------------------------
+
 %Type: seg_worm.parse_error
 error_handler = obj.error_handler;
 
+%1) Create the contour
+%--------------------------------------------------------------------------
 %Lines - 93 - 537 of:
 %https://github.com/openworm/SegWorm/blob/master/Worms/Segmentation/segWorm.m
-contour_obj = seg_worm.worm.contour(obj,img,num_erode,num_dilate,isNormalized);
+contour_obj = seg_worm.worm.contour(obj,img,n_erode,n_dilate,is_normalized);
 if error_handler.error_found, return; end
 
 obj.contour = contour_obj;
 
+%2) Create skeleton from contour
+%--------------------------------------------------------------------------
 skeleton_obj = seg_worm.worm.skeleton(contour_obj);
 obj.skeleton = skeleton_obj;
 
+%3) Parse 
 %Lines 552 - 796:
 %https://github.com/openworm/SegWorm/blob/master/Worms/Segmentation/segWorm.m
 obj.head = seg_worm.worm.head(obj);
@@ -157,25 +98,6 @@ plot(cplot)
 %Looks like it comes in at line 579
 obj.checkIfWormIsCoiled();
 if error_handler.error_found, return; end
-
-
-% Organize the available worm information.
-%{
-worm = worm2struct(frame_number, cPixels, [], [], [], lfCAngles, ...
-headI, tailI, cCCLengths, sPixels, [], [], [], [], ...
-sAngles, sLength, sCCLengths, cWidths, ...
-hlcBounds, hrcBounds, hsBounds, head, hArea, hCDF, hStdev, ...
-tlcBounds, trcBounds, tsBounds, tail, tArea, tCDF, tStdev, ...
-lcBounds, sBounds, lSide, lArea, lCDF, lStdev, ...
-rcBounds, sBounds, rSide, rArea, rCDF, rStdev, ...
-isHeadTailFlipped, hConfidence, tConfidence, ...
-isVulvaClockwiseFromHead, vConfidence, nvConfidence);
-%}
-
-
-
-%=================================================================================
-
 
 end
 

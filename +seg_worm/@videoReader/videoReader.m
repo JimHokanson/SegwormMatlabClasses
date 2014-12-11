@@ -1,5 +1,7 @@
 classdef videoReader
     %
+    %   Class:
+    %   seg_worm.videoReader
     %
     %   This is an interface class for the seg_worm code to
     %   a video reader. It may change as we change the video
@@ -22,12 +24,20 @@ classdef videoReader
     
     methods
         function obj = videoReader(file_path,read_as_gray)
+           %
+           %
+           %    
+            
+           %NOTE: sl is a reference to:
+           %https://github.com/JimHokanson/matlab_standard_library
            obj.r      = sl.video.avi.reader(file_path);
            
            %NOTE: This is currently assuming that we are using
            %the mjpg codec where I can read only the luminance
            %values
            
+           %This little bit allows me to speed up reading of the
+           %the video
            if exist('read_as_gray','var') && read_as_gray
               obj.r.codec.read_as_gray = true;
            end
@@ -38,14 +48,18 @@ classdef videoReader
            obj.width  = r_local.width;
            obj.n_frames = r_local.n_frames;
         end
-        function [oimg,gimg] = getFrame(obj,frame_number)
-           oimg = obj.r.getFrame(frame_number);
+        function [original_image,grayscale_image] = getFrame(obj,frame_number)
+           %
+           %
+           %    
+           original_image = obj.r.getFrame(frame_number);
            
-           if ismatrix(oimg)
-              gimg = oimg; 
+           %Check for 
+           if ismatrix(original_image)
+              grayscale_image = original_image; 
            else
               %TODO: We might really want rgb2gray
-              gimg = oimg(:,:,1); 
+              grayscale_image = original_image(:,:,1); 
            end
         end
         function close(obj)

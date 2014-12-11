@@ -25,9 +25,6 @@ video_path = fullfile(BASE_PATH,video_name);
 %       OR
 %      normWormProcess.m
 
-%NOTE: I'm not sure where I am at in this process. It would probably be
-%good to 
-
 [worms,orig_images,fixed_images] = seg_worm.segWormFrames(video_path, FRAMES, VERBOSE);
 
 keyboard

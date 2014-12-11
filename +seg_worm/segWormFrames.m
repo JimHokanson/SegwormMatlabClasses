@@ -1,16 +1,17 @@
-function [worms,orig_images,fixed_images] = segWormFrames(video_file_path, frames, verbose)
+function [worms,orig_images,fixed_images] = segWormFrames(video_file_path,varargin)
 %SEGWORMFRAMES  Segment the worm in a set of video frames and organize
 %   the information in a structure.
 %
-%   [worms,orig_images,fixed_images] = seg_worm.segWormFrames(videoFile, frames, verbose)
+%   [worms,orig_images,fixed_images] = seg_worm.segWormFrames(video_file_path)
 %
-%   INPUTS
-%   -----------------------------------------------------------
+%   Inputs:
+%   -------
 %   - At some point I lost 'num_erode' and 'num_dilate'
 %   - I removed 'samples' and 'isInterp'
 %   - See: seg_worm.worm.initialize
 %
 %   Inputs:
+%   -------
 %       videoFile - the name of the video to segment
 %       frames    - the frames of the video to segment
 %                   Note: video frame indexing begins at 0
@@ -23,6 +24,11 @@ function [worms,orig_images,fixed_images] = segWormFrames(video_file_path, frame
 %   orig_images : cell array of image matrices
 %   fixed_images : 
 
+in.verbose = true;
+in.frames  = [];
+in = sl.in.processVarargin(in,varargin);
+
+
 
 %Original code at:
 %https://github.com/openworm/SegWorm/blob/master/Worms/Video/segWormVideo.m
@@ -31,11 +37,12 @@ function [worms,orig_images,fixed_images] = segWormFrames(video_file_path, frame
 
 vr = seg_worm.videoReader(video_file_path,true);
 
-if ~exist('frames','var') || isempty(frames)
-   frames = 1:vr.n_frames;
+if isempty(in.frames)
+   in.frames = 1:vr.n_frames;
 end
+frames_to_process = in.frames;
 
-if any(diff(frames) ~= 1)
+if any(diff(frames_to_process) ~= 1)
     error('Non-consecutive frame requests not yet supported')
 end
 
@@ -48,32 +55,33 @@ file_manager = seg_worm.file_manager(video_file_path);
 vignette     = seg_worm.vignette.create(file_manager,vr);
 use_vignette = ~isempty(vignette);
 
-% Pre-allocate memory.
-orig_images  = cell(length(frames),1);
-fixed_images = cell(length(frames),1);
-worms        = cell(length(frames),1);
+n_frames = length(frames_to_process);
+
+orig_images  = cell(n_frames,1);
+fixed_images = cell(n_frames,1);
+worms        = cell(n_frames,1);
+worm_parsed  = false(1,n_frames);
 
 % Segment the video frames.
 %--------------------------------------------------------------------------
-n_frames    = length(frames);
-worm_parsed = false(1,n_frames);
 for iFrame = 1:n_frames
-    cur_frame_number = frames(iFrame);
+    cur_frame_number = frames_to_process(iFrame);
     
     %Retrieve frame data
-    [oimg_temp,gimg_temp] = vr.getFrame(cur_frame_number);
+    [original_image,grayscale_image] = vr.getFrame(cur_frame_number);
     
     % Segment the worm and store its information.
-    if ~isempty(oimg_temp)
-        orig_images{iFrame} = oimg_temp;
+    if ~isempty(original_image)
+        orig_images{iFrame} = original_image;
         
         if use_vignette
-            fixed_images{iFrame} = vignette.apply(gimg_temp);
+            fixed_images{iFrame} = vignette.apply(grayscale_image);
         else
-            fixed_images{iFrame} = gimg_temp;
+            fixed_images{iFrame} = grayscale_image;
         end
         
-        temp_worm = seg_worm.worm(fixed_images{iFrame}, cur_frame_number, 1, verbose);
+        temp_worm = seg_worm.worm(fixed_images{iFrame},cur_frame_number, ...
+            'verbose',in.verbose,'is_normalized',true);
         
         worm_parsed(iFrame) = ~temp_worm.parse_error;
         worms{iFrame} = temp_worm;
